@@ -1,15 +1,15 @@
 import React from 'react';
 import styled from 'styled-components';
-import {useTranslation} from 'react-i18next';
-import {withTransaction} from '@elastic/apm-rum-react';
 import {ButtonText} from '@aragon/ui-components';
 import {useNavigate} from 'react-router-dom';
+import {useTranslation} from 'react-i18next';
+import {withTransaction} from '@elastic/apm-rum-react';
 import {useGlobalModalContext} from 'context/globalModals';
 
 const Home: React.FC = () => {
   const {t} = useTranslation();
-  const navigate = useNavigate();
   const {open} = useGlobalModalContext();
+  const navigate = useNavigate();
 
   return (
     <div className="col-span-full my-10">

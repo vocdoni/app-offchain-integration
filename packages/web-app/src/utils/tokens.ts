@@ -1,6 +1,6 @@
 /* eslint-disable no-empty */
 import {erc20TokenABI} from 'abis/erc20TokenABI';
-import {BaseTokenInfo, TreasuryToken} from './types';
+import {TokenWithMetadata} from './types';
 import {constants, ethers, providers as EthersProviders} from 'ethers';
 
 import {formatUnits} from 'utils/library';
@@ -19,39 +19,26 @@ import {formatUnits} from 'utils/library';
  * @example sortTokens(baseTokenInfos[], 'name');
  * @example sortTokens(baseTokenInfos[], 'count');
  */
-export function sortTokens<K extends keyof TreasuryToken>(
-  tokens: TreasuryToken[],
-  criteria: K,
+export function sortTokens<Type>(
+  tokens: Type[],
+  criteria: keyof Type,
   reverse = false
 ) {
-  function sorter(a: TreasuryToken, b: TreasuryToken) {
+  function sorter(a: Type, b: Type) {
     // ensure that undefined fields are placed last.
     if (!a[criteria]) return 1;
     if (!b[criteria]) return -1;
 
     if (a[criteria] < b[criteria]) {
-      return -1;
+      return reverse ? 1 : -1;
     }
     if (a[criteria] > b[criteria]) {
-      return 1;
-    }
-    return 0;
-  }
-  function reverseSorter(a: TreasuryToken, b: TreasuryToken) {
-    // ensure that undefined fields are placed last.
-    if (!a[criteria]) return 1;
-    if (!b[criteria]) return -1;
-
-    if (a[criteria] > b[criteria]) {
-      return -1;
-    }
-    if (a[criteria] < b[criteria]) {
-      return 1;
+      return reverse ? -1 : 1;
     }
     return 0;
   }
 
-  tokens.sort(reverse ? reverseSorter : sorter);
+  tokens.sort(sorter);
 }
 
 /**
@@ -63,12 +50,12 @@ export function sortTokens<K extends keyof TreasuryToken>(
  * @returns Filtered list of (basic) token information that contains search
  * term.
  */
-export function filterTokens(tokens: BaseTokenInfo[], searchTerm: string) {
-  function tokenInfoMatches(token: BaseTokenInfo, term: string) {
+export function filterTokens(tokens: TokenWithMetadata[], searchTerm: string) {
+  function tokenInfoMatches(token: TokenWithMetadata, term: string) {
     const lowercaseTerm = term.toLocaleLowerCase();
-    const lowercaseSymbol = token.symbol.toLocaleLowerCase();
-    const lowercaseAddress = token.address.toLocaleLowerCase();
-    const lowercaseName = token.name.toLocaleLowerCase();
+    const lowercaseSymbol = token.metadata.symbol.toLocaleLowerCase();
+    const lowercaseAddress = token.metadata.id.toLocaleLowerCase();
+    const lowercaseName = token.metadata.name.toLocaleLowerCase();
     return (
       lowercaseSymbol.indexOf(lowercaseTerm) >= 0 ||
       lowercaseName.indexOf(lowercaseTerm) >= 0 ||
