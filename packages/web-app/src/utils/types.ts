@@ -1,5 +1,5 @@
 import {Address} from '@aragon/ui-components/dist/utils/addresses';
-import {TimeFilter, TransferTypes} from './constants';
+import {TimeFilter} from './constants';
 
 /*************************************************
  *                   Finance types               *
@@ -25,6 +25,7 @@ export type TokenBalance = {
     name: string;
     symbol: string;
     decimals: number;
+    price?: number;
   };
   balance: bigint;
 };
@@ -39,6 +40,21 @@ export type TokenWithMetadata = {
     apiId?: string;
     imgUrl: string;
   };
+};
+
+/** The Dao transfer */
+export type DaoTransfer = {
+  __typename: 'VaultDeposit' | 'VaultWithdraw';
+  amount: number;
+  createdAt: number;
+  dao: {
+    id: string;
+  };
+  token: TokenBalance['token'];
+  id: string;
+  reference: string;
+  sender: Address;
+  transaction: string;
 };
 
 /** Token populated with the current price, and price change percentage for given filter */
@@ -61,10 +77,11 @@ export type PollTokenOptions = {interval?: number; filter: TimeFilter};
 /** A transfer transaction */
 export type Transfer = {
   title: string;
-  tokenAmount: number;
+  tokenAmount: string;
   tokenSymbol: string;
   transferDate: string;
-  transferType: TransferTypes;
+  transferType: 'VaultDeposit' | 'VaultWithdraw';
+  transferTimestamp?: string | number;
   usdValue: string;
   isPending?: boolean;
 };
