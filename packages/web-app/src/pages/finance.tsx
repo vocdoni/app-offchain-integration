@@ -8,20 +8,17 @@ import {
   TransferSectionWrapper,
 } from 'components/wrappers';
 import TokenList from 'components/tokenList';
+import {TEST_DAO} from 'utils/constants';
 import {sortTokens} from 'utils/tokens';
 import TransferList from 'components/transferList';
 import {useDaoVault} from 'hooks/useDaoVault';
-import {useDaoTransfers} from 'hooks/useDaoTransfers';
 import {useGlobalModalContext} from 'context/globalModals';
-import {TEST_DAO} from 'utils/constants';
 
 const Finance: React.FC = () => {
   const {t} = useTranslation();
   const {open} = useGlobalModalContext();
   const {tokens, totalAssetChange, totalAssetValue, transfers} =
     useDaoVault(TEST_DAO);
-
-  useDaoTransfers(TEST_DAO);
 
   sortTokens(tokens, 'treasurySharePercentage');
   const displayedTokens = tokens.slice(0, 5);
