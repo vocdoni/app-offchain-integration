@@ -191,6 +191,16 @@ export type ActionItem = {
   name: ActionsTypes;
   inputs?: ParamType[];
 };
+
+export type TransactionItem = {
+  type: TransferTypes;
+  data: {
+    sender: string;
+    amount: number;
+    tokenContract: Address;
+  };
+};
+
 export type NetworkIndicatorStatus = 'default' | 'testnet' | 'unsupported';
 
 export type StringIndexed = {
