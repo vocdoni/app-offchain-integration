@@ -5,6 +5,8 @@ import {useNavigate} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import {withTransaction} from '@elastic/apm-rum-react';
 
+import {CreateDAO} from 'utils/paths';
+
 const Home: React.FC = () => {
   const {t} = useTranslation();
   const navigate = useNavigate();
@@ -21,7 +23,7 @@ const Home: React.FC = () => {
         label="Create DAO"
         className="mx-auto"
         size="large"
-        onClick={() => navigate('/create-dao')}
+        onClick={() => navigate(CreateDAO)}
       />
     </div>
   );

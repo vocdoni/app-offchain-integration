@@ -15,11 +15,11 @@ import {i18n} from '../../../i18n.config';
 import MobileNav from './mobile';
 import useScreen from 'hooks/useScreen';
 import DesktopNav from './desktop';
+import {CHAIN_METADATA} from 'utils/constants';
+import {useNetwork} from 'context/network';
 import {useWallet} from 'hooks/useWallet';
-import {CHAIN_METADATA as chains} from 'utils/constants';
 import {useGlobalModalContext} from 'context/globalModals';
 
-type NumberIndexed = {[key: number]: {}};
 type StringIndexed = {[key: string]: {processLabel: string; returnURL: string}};
 
 const processPaths = [
@@ -45,26 +45,30 @@ const processes: StringIndexed = {
   },
 };
 
-const getNetworkStatus = (id: number) => {
-  if ((chains.test as NumberIndexed)[id]) return 'testnet';
-  if (!(chains.main as NumberIndexed)[id]) return 'unsupported';
-  return 'default';
-};
-
 const Navbar: React.FC = () => {
   const {open} = useGlobalModalContext();
   const {pathname} = useLocation();
   const {isDesktop} = useScreen();
-  const {chainId, methods, isConnected} = useWallet();
+  const {network} = useNetwork();
+  const {methods, isConnected} = useWallet();
 
   const processName = useMemo(() => {
     const results = matchRoutes(processPaths, pathname);
     if (results) return results[0].route.path;
   }, [pathname]);
 
+  // NOTE: Since the wallet is no longer the determining factor for the app's
+  // network, this logic needs to be reconsidered. Currently, the app can no
+  // longer be on an "unsupported network" (the user would be redirected to a
+  // "not found" page instead). So the status currently really just shows
+  // whether the app operates on a testnet or on a mainnet ("default").
   const status = useMemo(() => {
-    return isConnected ? getNetworkStatus(chainId) : 'default';
-  }, [chainId, isConnected]);
+    if (CHAIN_METADATA[network].testnet) {
+      return 'testnet';
+    } else {
+      return 'default';
+    }
+  }, [network]);
 
   const handleWalletButtonClick = () => {
     if (isConnected) {

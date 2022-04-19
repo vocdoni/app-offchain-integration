@@ -49,7 +49,7 @@ function App() {
             <Route path={paths.NewDeposit} element={<NewDepositPage />} />
             <Route path={paths.NewWithDraw} element={<NewWithdrawPage />} />
             <Route path={paths.CreateDAO} element={<CreateDAOPage />} />
-            <Route path={paths.Dashboard} element={<HomePage />} />
+            <Route path={paths.Landing} element={<HomePage />} />
             <Route path={paths.Community} element={<CommunityPage />} />
             <Route path={paths.Finance} element={<FinancePage />} />
             <Route path={paths.Governance} element={<GovernancePage />} />
@@ -58,7 +58,10 @@ function App() {
             <Route path={paths.AllTokens} element={<TokensPage />} />
             <Route path={paths.AllTransfers} element={<TransfersPage />} />
             <Route path={paths.NotFound} element={<NotFoundPage />} />
-            <Route path="*" element={<Navigate to={paths.NotFound} />} />
+            <Route
+              path="*"
+              element={<Navigate to={paths.NotFound} replace />}
+            />
           </Routes>
         </Suspense>
       </Layout>

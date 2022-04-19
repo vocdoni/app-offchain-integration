@@ -9,6 +9,7 @@ import {WalletMenuProvider} from 'context/walletMenu';
 import {GlobalModalsProvider} from 'context/globalModals';
 import {ApolloClientProvider} from 'context/apolloClient';
 import {ProvidersProvider} from 'context/providers';
+import {NetworkProvider} from 'context/network';
 import {TransactionsProvider} from 'context/transactions';
 import {UseSignerProvider} from 'use-signer';
 import {IProviderOptions} from 'web3modal';
@@ -27,23 +28,25 @@ const providerOptions: IProviderOptions = {
 ReactDOM.render(
   <React.StrictMode>
     <APMProvider>
-      <WalletProvider>
-        <UseSignerProvider providerOptions={providerOptions}>
-          <ProvidersProvider>
-            <WalletMenuProvider>
-              <GlobalModalsProvider>
-                <TransactionsProvider>
-                  <Router>
-                    <ApolloClientProvider>
-                      <App />
-                    </ApolloClientProvider>
-                  </Router>
-                </TransactionsProvider>
-              </GlobalModalsProvider>
-            </WalletMenuProvider>
-          </ProvidersProvider>
-        </UseSignerProvider>
-      </WalletProvider>
+      <Router>
+        <NetworkProvider>
+          <WalletProvider>
+            <UseSignerProvider providerOptions={providerOptions}>
+              <ProvidersProvider>
+                <WalletMenuProvider>
+                  <GlobalModalsProvider>
+                    <TransactionsProvider>
+                      <ApolloClientProvider>
+                        <App />
+                      </ApolloClientProvider>
+                    </TransactionsProvider>
+                  </GlobalModalsProvider>
+                </WalletMenuProvider>
+              </ProvidersProvider>
+            </UseSignerProvider>
+          </WalletProvider>
+        </NetworkProvider>
+      </Router>
     </APMProvider>
   </React.StrictMode>,
   document.getElementById('root')

@@ -6,26 +6,32 @@ import {useFormContext} from 'react-hook-form';
 // TODO reintroduce this by adding back the postInstall script in packages.json
 // that executes the generate-abis-and-types command.
 import {Breadcrumb, ButtonText, IconChevronRight} from '@aragon/ui-components';
+import {useNavigate} from 'react-router-dom';
 
 import Blockchain from './blockchain';
 import DaoMetadata from './daoMetadata';
 import Community from './community';
 import Governance from './governance';
 import goLive from 'public/goLive.svg';
-import {useNavigate} from 'react-router-dom';
-import {Dashboard} from 'utils/paths';
+import {Dashboard, replaceNetworkParam} from 'utils/paths';
+import {useNetwork} from 'context/network';
 import {useTransactionContext} from 'context/transactions';
 
 export const GoLiveHeader: React.FC = () => {
   const {t} = useTranslation();
   const navigate = useNavigate();
+  const {network} = useNetwork();
+
+  const clickHandler = (path: string) => {
+    navigate(replaceNetworkParam(path, network));
+  };
 
   return (
     <div className="tablet:p-3 desktop:p-6 px-2 pt-2 desktop:pt-3 pb-3 bg-ui-0 tablet:rounded-xl">
       <div className="desktop:hidden">
         <Breadcrumb
           crumbs={{label: t('createDAO.title'), path: Dashboard}}
-          onClick={(path: string) => navigate(path)}
+          onClick={clickHandler}
         />
       </div>
       <div className="flex justify-between">
