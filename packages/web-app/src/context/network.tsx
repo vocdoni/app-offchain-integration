@@ -9,7 +9,6 @@ import {useMatch, useNavigate} from 'react-router-dom';
 
 import {isSupportedNetwork, SupportedNetworks} from 'utils/constants';
 import {NotFound} from 'utils/paths';
-import {Nullable} from 'utils/types';
 
 /* CONTEXT PROVIDER ========================================================= */
 
@@ -18,7 +17,10 @@ type NetworkContext = {
   setNetwork: (network: SupportedNetworks) => void;
 };
 
-const NetworkContext = createContext<Nullable<NetworkContext>>(null);
+const NetworkContext = createContext<NetworkContext>({
+  network: 'ethereum',
+  setNetwork: () => {},
+});
 
 type NetworkProviderProps = {
   children: React.ReactNode;
