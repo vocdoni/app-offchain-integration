@@ -17,6 +17,7 @@ import {
   URL_PATTERN,
   URL_WITH_PROTOCOL_PATTERN,
 } from 'utils/constants';
+import {isOnlyWhitespace} from 'utils/library';
 
 type LinkRowProps = {
   index: number;
@@ -60,7 +61,7 @@ const LinkRow: React.FC<LinkRowProps> = ({index, onDelete}) => {
     (label: string, index: number) => {
       if (linkedFieldsAreValid(label, `links.${index}.href`)) return;
 
-      return label === '' ? t('errors.required.label') : true;
+      return isOnlyWhitespace(label) ? t('errors.required.label') : true;
     },
     [linkedFieldsAreValid, t]
   );
