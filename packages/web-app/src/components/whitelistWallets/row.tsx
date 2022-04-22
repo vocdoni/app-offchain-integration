@@ -1,10 +1,11 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
   ButtonIcon,
   IconMenuVertical,
   ListItemAction,
   AlertInline,
   ValueInput,
+  Dropdown,
 } from '@aragon/ui-components';
 import {t} from 'i18next';
 import {Controller, useFieldArray, useFormContext} from 'react-hook-form';
@@ -12,7 +13,6 @@ import styled from 'styled-components';
 import {useWallet} from 'hooks/useWallet';
 import {handleClipboardActions} from 'utils/library';
 import {validateAddress} from 'utils/validators';
-import {Dropdown} from '@aragon/ui-components/src';
 import {WhitelistWallet} from 'pages/createDAO';
 
 type WhitelistWalletsRowProps = {
@@ -22,22 +22,22 @@ type WhitelistWalletsRowProps = {
 export const Row = ({index}: WhitelistWalletsRowProps) => {
   const {control, watch, trigger} = useFormContext();
   const {address} = useWallet();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const {remove, update, append} = useFieldArray({
     control,
     name: 'whitelistWallets',
   });
   const whitelistWallets: WhitelistWallet[] = watch('whitelistWallets');
-
-  const addressValidator = (address: string, addressIndex: number) => {
-    let validationResult = validateAddress(address);
-    const wallets = whitelistWallets;
-    if (wallets) {
-      wallets.forEach((wallet: WhitelistWallet, walletIndex: number) => {
-        if (address === wallet.address && addressIndex !== walletIndex) {
-          validationResult = t('errors.duplicateAddress') as string;
+  const addressValidator = (address: string, index: number) => {
+    let validationResult =
+      address === 'My Wallet' ? true : validateAddress(address);
+    if (whitelistWallets) {
+      whitelistWallets.forEach(
+        (wallet: WhitelistWallet, walletIndex: number) => {
+          if (address === wallet.address && index !== walletIndex) {
+            validationResult = t('errors.duplicateAddress') as string;
+          }
         }
-      });
+      );
     }
     return validationResult;
   };
@@ -55,7 +55,7 @@ export const Row = ({index}: WhitelistWalletsRowProps) => {
         <Container>
           <InputContainer>
             <ValueInput
-              value={value === address ? 'My Wallet' : value}
+              value={value}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 onChange(
                   e.target.value === address ? 'My Wallet' : e.target.value
@@ -64,8 +64,12 @@ export const Row = ({index}: WhitelistWalletsRowProps) => {
               mode="default"
               placeholder="0x..."
               adornmentText={value ? 'Copy' : 'Paste'}
-              disabled={value === address}
-              onAdornmentClick={() => handleClipboardActions(value, onChange)}
+              disabled={index === 0}
+              onAdornmentClick={() =>
+                handleClipboardActions(value, pasteValue =>
+                  onChange(pasteValue === address ? 'My Wallet' : value)
+                )
+              }
             />
             {error?.message && (
               <AlertInline label={error.message} mode="critical" />
@@ -74,9 +78,8 @@ export const Row = ({index}: WhitelistWalletsRowProps) => {
           <Dropdown
             side="bottom"
             align="start"
-            open={dropdownOpen}
-            onOpenChange={(open: boolean) => setDropdownOpen(open)}
             sideOffset={4}
+            disabled={index === 0}
             trigger={
               <ButtonIcon
                 size="large"
@@ -106,7 +109,10 @@ export const Row = ({index}: WhitelistWalletsRowProps) => {
                     bgWhite
                   />
                 ),
-                callback: () => update(index, {address: ''}),
+                callback: () => {
+                  trigger('whitelistWallets');
+                  update(index, {address: ''});
+                },
               },
               {
                 component: (
@@ -117,7 +123,6 @@ export const Row = ({index}: WhitelistWalletsRowProps) => {
                 ),
                 callback: () => {
                   remove(index);
-                  trigger('whitelistWallets');
                 },
               },
             ]}
