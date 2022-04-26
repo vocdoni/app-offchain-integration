@@ -16,6 +16,7 @@ import {IProviderOptions} from 'web3modal';
 import WalletConnectProvider from '@walletconnect/web3-provider/dist/umd/index.min.js';
 import {client} from 'context/apolloClient';
 import 'tailwindcss/tailwind.css';
+import {PrivacyContextProvider} from 'context/privacyContext';
 
 const providerOptions: IProviderOptions = {
   walletconnect: {
@@ -28,29 +29,31 @@ const providerOptions: IProviderOptions = {
 
 ReactDOM.render(
   <React.StrictMode>
-    <APMProvider>
-      <Router>
-        <NetworkProvider>
-          <WalletProvider>
-            <UseSignerProvider providerOptions={providerOptions}>
-              <ProvidersProvider>
-                <WalletMenuProvider>
-                  <GlobalModalsProvider>
-                    <TransactionsProvider>
-                      {/* By default, rinkeby client is chosen, each useQuery needs to pass the network client it needs as argument
+    <PrivacyContextProvider>
+      <APMProvider>
+        <Router>
+          <NetworkProvider>
+            <WalletProvider>
+              <UseSignerProvider providerOptions={providerOptions}>
+                <ProvidersProvider>
+                  <WalletMenuProvider>
+                    <GlobalModalsProvider>
+                      <TransactionsProvider>
+                        {/* By default, rinkeby client is chosen, each useQuery needs to pass the network client it needs as argument
                       For REST queries using apollo, there's no need to pass a different client to useQuery  */}
-                      <ApolloProvider client={client['rinkeby']}>
-                        <App />
-                      </ApolloProvider>
-                    </TransactionsProvider>
-                  </GlobalModalsProvider>
-                </WalletMenuProvider>
-              </ProvidersProvider>
-            </UseSignerProvider>
-          </WalletProvider>
-        </NetworkProvider>
-      </Router>
-    </APMProvider>
+                        <ApolloProvider client={client['rinkeby']}>
+                          <App />
+                        </ApolloProvider>
+                      </TransactionsProvider>
+                    </GlobalModalsProvider>
+                  </WalletMenuProvider>
+                </ProvidersProvider>
+              </UseSignerProvider>
+            </WalletProvider>
+          </NetworkProvider>
+        </Router>
+      </APMProvider>
+    </PrivacyContextProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );
