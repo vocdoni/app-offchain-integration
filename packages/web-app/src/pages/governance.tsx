@@ -9,7 +9,7 @@ import {
   Link,
 } from '@aragon/ui-components';
 import {useTranslation} from 'react-i18next';
-import {useNavigate} from 'react-router-dom';
+import {generatePath, useNavigate, useParams} from 'react-router-dom';
 import styled from 'styled-components';
 import {useQuery} from '@apollo/client';
 
@@ -17,18 +17,19 @@ import {PageWrapper} from 'components/wrappers';
 import ProposalList from 'components/proposalList';
 import NoProposals from 'public/noProposals.svg';
 import {useNetwork} from 'context/network';
-import {NewProposal, replaceNetworkParam} from 'utils/paths';
 import {getRemainingTime} from 'utils/date';
 import {ERC20VOTING_PROPOSAL_LIST} from 'queries/proposals';
 import {
   erc20VotingProposals,
   erc20VotingProposals_erc20VotingProposals,
 } from 'queries/__generated__/erc20VotingProposals';
+import {NewProposal} from 'utils/paths';
 import {TEST_DAO} from 'utils/constants';
 
 const Governance: React.FC = () => {
   const {t} = useTranslation();
   const {network} = useNetwork();
+  const {dao} = useParams();
   const navigate = useNavigate();
   const [filterValue, setFilterValue] = useState<string>('all');
   const [page, setPage] = useState(1);
@@ -93,7 +94,7 @@ const Governance: React.FC = () => {
             label="New Proposal"
             iconLeft={<IconAdd />}
             className="mt-4"
-            onClick={() => navigate(replaceNetworkParam(NewProposal, network))}
+            onClick={() => navigate(generatePath(NewProposal, {network, dao}))}
           />
         </EmptyStateContainer>
       </Container>
@@ -105,7 +106,7 @@ const Governance: React.FC = () => {
       title={'Proposals'}
       buttonLabel={'New Proposal'}
       subtitle={'1 active Proposal'}
-      onClick={() => navigate('/new-proposal')}
+      onClick={() => navigate(generatePath(NewProposal, {network, dao}))}
     >
       <div className="flex mt-3 desktop:mt-8">
         <ButtonGroup

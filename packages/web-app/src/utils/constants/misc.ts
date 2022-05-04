@@ -3,6 +3,7 @@ import {
   IconDashboard,
   IconFinance,
   IconGovernance,
+  IconType,
   IconSettings,
 } from '@aragon/ui-components';
 
@@ -25,7 +26,13 @@ export const enum TransactionState {
   ERROR = 'ERROR',
 }
 
-export const NAV_LINKS = [
+export type NavLinkData = {
+  path: string;
+  label: string;
+  icon: IconType;
+};
+
+export const NAV_LINKS_DATA: NavLinkData[] = [
   {
     label: i18n.t('navLinks.dashboard'),
     path: Dashboard,

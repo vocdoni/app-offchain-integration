@@ -8,7 +8,6 @@ import {Navigate, Routes, Route, useLocation, Outlet} from 'react-router-dom';
 import Navbar from 'containers/navbar';
 import {WalletMenu} from 'containers/navbar/walletMenu';
 import {trackPage} from 'services/analytics';
-import TransferMenu from 'containers/transferMenu';
 import '../i18n.config';
 
 // HACK: All pages MUST be exported with the withTransaction function
@@ -63,6 +62,7 @@ function App() {
             <Route path={paths.CreateDAO} element={<CreateDAOPage />} />
             <Route path={paths.Community} element={<CommunityPage />} />
             <Route path={paths.Finance} element={<FinancePage />} />
+            <Route path={paths.Dashboard} element={<CommunityPage />} />
             <Route path={paths.Governance} element={<GovernancePage />} />
             <Route path={paths.NewProposal} element={<NewProposalPage />} />
             <Route path={paths.Proposal} element={<ProposalPage />} />
@@ -78,7 +78,6 @@ function App() {
           </Route>
         </Routes>
       </Suspense>
-      <TransferMenu />
       <DaoSelectMenu />
       <WalletMenu />
     </>

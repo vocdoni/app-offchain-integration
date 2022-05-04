@@ -19,8 +19,6 @@ import {useWallet} from 'hooks/useWallet';
 import {usePrivacyContext} from 'context/privacyContext';
 import {useGlobalModalContext} from 'context/globalModals';
 
-// TODO is this stuff really only used in the Desktop version of the Navbar? If
-// so, it should be moved there.
 type StringIndexed = {[key: string]: {processLabel: string; returnURL: string}};
 
 const processPaths = [
@@ -77,13 +75,16 @@ const Navbar: React.FC = () => {
     });
   };
 
-  return isDesktop ? (
-    <DesktopNav
-      {...(processName ? {...processes[processName]} : {})}
-      onDaoSelect={handleOnDaoSelect}
-      onWalletClick={handleWalletButtonClick}
-    />
-  ) : (
+  if (isDesktop) {
+    return (
+      <DesktopNav
+        {...(processName ? {...processes[processName]} : {})}
+        onDaoSelect={handleOnDaoSelect}
+        onWalletClick={handleWalletButtonClick}
+      />
+    );
+  }
+  return (
     <MobileNav
       isProcess={processName !== undefined}
       onDaoSelect={handleOnDaoSelect}
