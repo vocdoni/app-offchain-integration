@@ -19,6 +19,8 @@ import PublishDaoModal from 'containers/transactionModals/publishDaoModal';
 import {TransactionState} from 'utils/constants';
 import {getSecondsFromDHM} from 'utils/date';
 import {CreateDaoFormData} from 'pages/createDAO';
+import {useNavigate} from 'react-router-dom';
+import {Landing} from 'utils/paths';
 
 type DAOCreationSettings = ICreateDaoERC20Voting | ICreateDaoWhitelistVoting;
 
@@ -34,6 +36,7 @@ const CreateDaoContext = createContext<CreateDaoContextType | null>(null);
 const CreateDaoProvider: React.FC<Props> = ({children}) => {
   const [showModal, setShowModal] = useState(false);
   const [daoCreationData, setDaoCreationData] = useState<DAOCreationSettings>();
+  const navigate = useNavigate();
   const [creationProcessState, setCreationProcessState] =
     useState<TransactionState>();
 
@@ -83,7 +86,15 @@ const CreateDaoProvider: React.FC<Props> = ({children}) => {
 
   // Handler for modal close; don't close modal if transaction is still running
   const handleCloseModal = () => {
-    if (creationProcessState !== TransactionState.LOADING) setShowModal(false);
+    switch (creationProcessState) {
+      case TransactionState.LOADING:
+        break;
+      case TransactionState.SUCCESS:
+        navigate(Landing);
+        break;
+      default:
+        setShowModal(false);
+    }
   };
 
   /*************************************************
@@ -139,7 +150,13 @@ const CreateDaoProvider: React.FC<Props> = ({children}) => {
 
       // mint configuration
       mintConfig: values.wallets
-        .filter(wallet => isAddress(wallet.address))
+        .filter(
+          wallet =>
+            isAddress(wallet.address) &&
+            // Temporarily removing dao treasury; not yet supported
+            // TODO: add DAO treasury once contracts have been refactored
+            wallet.address !== constants.AddressZero
+        )
         .map(wallet => ({
           address: wallet.address,
           balance: BigInt(wallet.amount),

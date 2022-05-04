@@ -32,13 +32,8 @@ export const WhitelistWallets = () => {
   });
 
   useEffect(() => {
-    if (address && whitelistWallets[0]?.address !== address) prepend({address});
-
-    // disabling the following because eslint plugin is incorrect in forcing
-    // whitelistWallets as a dependency. The useEffect will be ran twice if
-    // there was no address
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address, prepend, whitelistWallets[0]?.address]);
+    prepend({address});
+  }, [address, prepend]);
 
   // add empty wallet
   const handleAdd = () => {
@@ -76,12 +71,6 @@ export const WhitelistWallets = () => {
     trigger('whitelistWallets');
   };
 
-  // duplicate wallet
-  const handleDuplicateEntry = (index: number) => {
-    append(controlledWallets[index]);
-    trigger('whitelistWallets');
-  };
-
   return (
     <Container>
       <TableContainer>
@@ -93,7 +82,6 @@ export const WhitelistWallets = () => {
               index={index}
               onResetEntry={handleResetEntry}
               onDeleteEntry={handleDeleteEntry}
-              onDuplicateEntry={handleDuplicateEntry}
             />
           </div>
         ))}

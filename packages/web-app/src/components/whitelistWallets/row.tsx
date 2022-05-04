@@ -6,7 +6,7 @@ import {
   ValueInput,
   Dropdown,
 } from '@aragon/ui-components';
-import React, {useMemo} from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import {useTranslation} from 'react-i18next';
 import {Controller, useFormContext, useWatch} from 'react-hook-form';
@@ -20,7 +20,6 @@ type WhitelistWalletsRowProps = {
   index: number;
   onResetEntry: (index: number) => void;
   onDeleteEntry: (index: number) => void;
-  onDuplicateEntry: (index: number) => void;
 };
 
 export const Row = ({index, ...props}: WhitelistWalletsRowProps) => {
@@ -29,10 +28,6 @@ export const Row = ({index, ...props}: WhitelistWalletsRowProps) => {
 
   const {control} = useFormContext();
   const whitelistWallets = useWatch({name: 'whitelistWallets', control});
-
-  const shouldDisable = useMemo(() => {
-    return index === 0 && whitelistWallets[index].address === address;
-  }, [address, index, whitelistWallets]);
 
   const addressValidator = (address: string, index: number) => {
     let validationResult = validateAddress(address);
@@ -67,7 +62,6 @@ export const Row = ({index, ...props}: WhitelistWalletsRowProps) => {
               mode="default"
               placeholder="0x..."
               adornmentText={value ? t('labels.copy') : t('labels.paste')}
-              disabled={shouldDisable}
               onAdornmentClick={() => handleClipboardActions(value, onChange)}
             />
             {error?.message && (
@@ -78,28 +72,15 @@ export const Row = ({index, ...props}: WhitelistWalletsRowProps) => {
             side="bottom"
             align="start"
             sideOffset={4}
-            disabled={shouldDisable}
             trigger={
               <ButtonIcon
                 size="large"
                 mode="secondary"
-                disabled={shouldDisable}
                 icon={<IconMenuVertical />}
                 data-testid="trigger"
               />
             }
             listItems={[
-              {
-                component: (
-                  <ListItemAction
-                    title={t('labels.whitelistWallets.duplicateEntry')}
-                    bgWhite
-                  />
-                ),
-                callback: () => {
-                  props.onDuplicateEntry(index);
-                },
-              },
               {
                 component: (
                   <ListItemAction
