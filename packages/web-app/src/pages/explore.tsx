@@ -1,7 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
 import {generatePath, useNavigate} from 'react-router-dom';
-import 'react-responsive-carousel/lib/styles/carousel.min.css';
 import {ActionListItem, IconExpand} from '@aragon/ui-components';
 
 import Footer from 'containers/exploreFooter';
@@ -10,6 +9,8 @@ import Hero from 'containers/hero';
 import {Finance} from 'utils/paths';
 import Carousel from 'containers/carousel';
 import {Layout} from '../app';
+import ActiveProposalsExplore from 'containers/activeProposalsExplore';
+import 'react-responsive-carousel/lib/styles/carousel.min.css';
 
 const Explore: React.FC = () => {
   const navigate = useNavigate();
@@ -22,6 +23,8 @@ const Explore: React.FC = () => {
         <Layout>
           <ContentWrapper>
             <Carousel />
+            <ActiveProposalsExplore />
+            <div className="h-20"></div>
             <div className="p-2 m-5 space-y-1 bg-primary-100">
               <p>
                 This is a temporarily added section for demonstration purposes.
