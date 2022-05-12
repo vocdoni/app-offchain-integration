@@ -13,8 +13,9 @@ import '../i18n.config';
 // HACK: All pages MUST be exported with the withTransaction function
 // from the '@elastic/apm-rum-react' package in order for analytics to
 // work properly on the pages.
-import * as paths from 'utils/paths';
+import {NotFound} from 'utils/paths';
 import DaoSelectMenu from 'containers/navbar/daoSelectMenu';
+import {Loading} from 'components/temporary/loading';
 import CreateDAO from 'pages/createDAO';
 
 const ExplorePage = lazy(() => import('pages/explore'));
@@ -48,7 +49,7 @@ function App() {
   return (
     <>
       {/* TODO: replace with loading indicator */}
-      <Suspense fallback={<p>Loading...</p>}>
+      <Suspense fallback={<Loading />}>
         <Routes>
           <Route path="/" element={<ExplorePage />} />
           <Route element={<DaoLayout />}>
@@ -79,7 +80,7 @@ function App() {
               <Route path="settings/edit" element={<EditSettingsPage />} />
             </Route>
           </Route>
-          <Route path={paths.NotFound} element={<NotFoundPage />} />
+          <Route path={NotFound} element={<NotFoundPage />} />
           <Route path="*" element={<NotFoundWrapper />} />
         </Routes>
       </Suspense>
@@ -92,9 +93,7 @@ function App() {
 const NotFoundWrapper: React.FC = () => {
   const {pathname} = useLocation();
 
-  return (
-    <Navigate to={paths.NotFound} state={{incorrectPath: pathname}} replace />
-  );
+  return <Navigate to={NotFound} state={{incorrectPath: pathname}} replace />;
 };
 
 // TODO the layout/background structure for the application will be
