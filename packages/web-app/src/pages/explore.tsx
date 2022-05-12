@@ -9,6 +9,7 @@ import Hero from 'containers/hero';
 import {Finance} from 'utils/paths';
 import Carousel from 'containers/carousel';
 import {Layout} from '../app';
+import {DaoExplorer} from 'containers/daoExplorer';
 import ActiveProposalsExplore from 'containers/activeProposalsExplore';
 import 'react-responsive-carousel/lib/styles/carousel.min.css';
 
@@ -23,8 +24,8 @@ const Explore: React.FC = () => {
         <Layout>
           <ContentWrapper>
             <Carousel />
+            <DaoExplorer />
             <ActiveProposalsExplore />
-            <div className="h-20"></div>
             <div className="p-2 m-5 space-y-1 bg-primary-100">
               <p>
                 This is a temporarily added section for demonstration purposes.
@@ -55,7 +56,6 @@ const Explore: React.FC = () => {
             </div>
           </ContentWrapper>
         </Layout>
-        <div className="h-96"></div>
         <Footer />
       </Container>
     </>
@@ -67,7 +67,8 @@ const Container = styled.div.attrs({
 })``;
 
 const ContentWrapper = styled.div.attrs({
-  className: 'col-span-full desktop:col-start-2 desktop:col-end-12',
+  className:
+    'col-span-full desktop:col-start-2 desktop:col-end-12 space-y-5 desktop:space-y-9 mb-5 desktop:mb-10',
 })``;
 
 export default Explore;
