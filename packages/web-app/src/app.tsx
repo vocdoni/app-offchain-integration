@@ -17,6 +17,7 @@ import {NotFound} from 'utils/paths';
 import DaoSelectMenu from 'containers/navbar/daoSelectMenu';
 import {Loading} from 'components/temporary/loading';
 import CreateDAO from 'pages/createDAO';
+import DepositModal from 'containers/transactionModals/DepositModal';
 
 const ExplorePage = lazy(() => import('pages/explore'));
 const NotFoundPage = lazy(() => import('pages/notFound'));
@@ -86,6 +87,7 @@ function App() {
       </Suspense>
       <DaoSelectMenu />
       <WalletMenu />
+      <DepositModal />
     </>
   );
 }

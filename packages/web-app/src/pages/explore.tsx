@@ -69,12 +69,12 @@ const Explore: React.FC = () => {
 };
 
 const Container = styled.div.attrs({
-  className: 'mx-auto',
+  className: 'mx-auto relative h-max ultraWide:h-screen',
 })``;
 
 const ContentWrapper = styled.div.attrs({
   className:
-    'col-span-full desktop:col-start-2 desktop:col-end-12 space-y-5 desktop:space-y-9 mb-5 desktop:mb-10',
+    'col-span-full desktop:col-start-2 desktop:col-end-12 space-y-5 desktop:space-y-9 mb-5 desktop:mb-10 pb-5',
 })``;
 
 export default Explore;
