@@ -10,6 +10,7 @@ import Carousel from 'containers/carousel';
 import {TemporarySection} from 'components/temporary';
 import {DaoExplorer} from 'containers/daoExplorer';
 import ActiveProposalsExplore from 'containers/activeProposalsExplore';
+import useScreen from 'hooks/useScreen';
 import {GridLayout} from 'components/layout';
 
 const existingDaos = [
@@ -19,6 +20,9 @@ const existingDaos = [
 
 const Explore: React.FC = () => {
   const navigate = useNavigate();
+
+  // Temporary; for QA-purposes
+  const {isMobile} = useScreen();
 
   return (
     <>
@@ -33,7 +37,7 @@ const Explore: React.FC = () => {
             {existingDaos.map(dao => (
               <ActionListItem
                 key={dao}
-                title={'Dao: ' + dao}
+                title={`DAO: ${isMobile ? dao.slice(0, 15) + '...' : dao}`}
                 subtitle={'Rinkeby Testnet'}
                 icon={<IconExpand />}
                 background={'white'}

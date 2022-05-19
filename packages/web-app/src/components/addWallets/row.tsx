@@ -10,6 +10,7 @@ import {
   ValueInput,
 } from '@aragon/ui-components';
 import styled from 'styled-components';
+import {BigNumber} from 'ethers';
 import React, {useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Controller, useFormContext} from 'react-hook-form';
@@ -20,6 +21,7 @@ import {
 } from 'utils/library';
 import {useWallet} from 'hooks/useWallet';
 import {validateAddress} from 'utils/validators';
+import {MAX_TOKEN_AMOUNT} from 'utils/constants';
 
 type WalletRowProps = {
   index: number;
@@ -41,12 +43,15 @@ const WalletRow: React.FC<WalletRowProps> = ({index, onDelete}) => {
 
   const calculateTotalTokenSupply = (value: number) => {
     let totalSupply = 0;
-    if (walletFieldArray) {
-      walletFieldArray.forEach(
-        (wallet: WalletField) =>
-          (totalSupply = parseInt(wallet.amount) + totalSupply)
-      );
-    }
+
+    walletFieldArray?.forEach((wallet: WalletField) => {
+      if (Number(wallet.amount) > 0) {
+        totalSupply = parseInt(wallet.amount) + totalSupply;
+      }
+    });
+
+    if (value < 0) return '';
+
     const CalculateNaN = Math.floor((value / totalSupply) * 100);
     return totalSupply && !isNaN(CalculateNaN) ? CalculateNaN + '%' : '';
   };
@@ -65,14 +70,24 @@ const WalletRow: React.FC<WalletRowProps> = ({index, onDelete}) => {
     return validationResult;
   };
 
-  const amountValidation = (index: number) => {
+  const amountValidation = (amount: string) => {
     let totalSupply = 0;
     const address = getValues(`wallets.${index}.address`);
     if (address === '') trigger(`wallets.${index}.address`);
+
+    // calculate total token supply disregarding error invalid fields
     walletFieldArray.forEach((wallet: WalletField) => {
-      totalSupply = parseInt(wallet.amount) + totalSupply;
+      if (Number(wallet.amount) > 0)
+        totalSupply = parseInt(wallet.amount) + totalSupply;
     });
     setValue('tokenTotalSupply', totalSupply);
+
+    // show max amount error
+    if (BigNumber.from(amount).gt(MAX_TOKEN_AMOUNT))
+      return t('errors.ltAmount', {amount: '~ 2.69 * 10^49'});
+
+    // show negative amount error
+    if (BigNumber.from(amount).lt(0)) return t('errors.lteZero');
     return totalSupply === 0 ? t('errors.totalSupplyZero') : true;
   };
 
@@ -120,7 +135,7 @@ const WalletRow: React.FC<WalletRowProps> = ({index, onDelete}) => {
         control={control}
         rules={{
           required: t('errors.required.amount'),
-          validate: () => amountValidation(index),
+          validate: amountValidation,
         }}
         render={({field, fieldState: {error}}) => (
           <AmountsWrapper>
