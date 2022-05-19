@@ -25,7 +25,6 @@ const NetworkContext = createContext<NetworkContext>({
 type NetworkProviderProps = {
   children: React.ReactNode;
 };
-
 /**
  * Returns the network on which the app operates.
  *
@@ -74,7 +73,10 @@ export function NetworkProvider({children}: NetworkProviderProps) {
 
   return (
     <NetworkContext.Provider
-      value={{network: networkState, setNetwork: changeNetwork}}
+      value={{
+        network: networkState,
+        setNetwork: changeNetwork,
+      }}
     >
       {children}
     </NetworkContext.Provider>
