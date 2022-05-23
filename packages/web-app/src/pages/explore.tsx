@@ -41,11 +41,14 @@ const Explore: React.FC = () => {
                 subtitle={'Rinkeby Testnet'}
                 icon={<IconExpand />}
                 background={'white'}
-                onClick={() =>
+                onClick={() => {
                   navigate(
-                    generatePath(Finance, {network: 'rinkeby', dao: dao})
-                  )
-                }
+                    generatePath(Finance, {
+                      network: 'rinkeby',
+                      dao: dao,
+                    })
+                  );
+                }}
               />
             ))}
             <ActionListItem
