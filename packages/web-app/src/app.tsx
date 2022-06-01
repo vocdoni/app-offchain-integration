@@ -5,7 +5,7 @@ import React, {useEffect, lazy, Suspense} from 'react';
 import {Navigate, Routes, Route, useLocation, Outlet} from 'react-router-dom';
 
 import Navbar from 'containers/navbar';
-import {WalletMenu} from 'containers/navbar/walletMenu';
+import {WalletMenu} from 'containers/walletMenu';
 import {trackPage} from 'services/analytics';
 import '../i18n.config';
 
@@ -115,9 +115,11 @@ const ExploreWrapper: React.FC = () => (
 const DaoWrapper: React.FC = () => (
   <>
     <Navbar />
-    <GridLayout>
-      <Outlet />
-    </GridLayout>
+    <div className="pb-10">
+      <GridLayout>
+        <Outlet />
+      </GridLayout>
+    </div>
   </>
 );
 
