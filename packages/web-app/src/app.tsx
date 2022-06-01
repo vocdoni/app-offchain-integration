@@ -19,7 +19,6 @@ import CreateDAO from 'pages/createDAO';
 import {GridLayout} from 'components/layout';
 import ExploreNav from 'containers/navbar/exploreNav';
 import Footer from 'containers/exploreFooter';
-import DepositModal from 'containers/transactionModals/DepositModal';
 import NetworkErrorMenu from 'containers/networkErrorMenu';
 
 const ExplorePage = lazy(() => import('pages/explore'));
@@ -95,7 +94,6 @@ function App() {
       <DaoSelectMenu />
       <WalletMenu />
       <NetworkErrorMenu />
-      <DepositModal />
     </>
   );
 }
