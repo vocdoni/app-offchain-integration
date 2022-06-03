@@ -20,6 +20,7 @@ import {GridLayout} from 'components/layout';
 import ExploreNav from 'containers/navbar/exploreNav';
 import Footer from 'containers/exploreFooter';
 import NetworkErrorMenu from 'containers/networkErrorMenu';
+import TransferMenu from 'containers/transferMenu';
 
 const ExplorePage = lazy(() => import('pages/explore'));
 const NotFoundPage = lazy(() => import('pages/notFound'));
@@ -123,6 +124,7 @@ const DaoWrapper: React.FC = () => (
     <div className="pb-10">
       <GridLayout>
         <Outlet />
+        <TransferMenu />
       </GridLayout>
     </div>
   </>
