@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {IconType} from '../icons';
+import {IconType} from '../../icons';
 
 export type IlluObjectProps = {
   object:
@@ -26,6 +26,6 @@ export type IlluObjectProps = {
 };
 
 export const IlluObject: React.FC<IlluObjectProps> = ({object}) => {
-  const Module: IconType = require('./object')[object];
+  const Module: IconType = require('./')[object];
   return <Module data-testid="illu-object" />;
 };
