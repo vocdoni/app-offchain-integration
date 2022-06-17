@@ -26,7 +26,7 @@ export const useDaoVault = (
     useDaoTransfers(daoAddress);
   const {data: tokensWithMetadata} = useTokenMetadata(balances);
   const {data} = usePollTokenPrices(tokensWithMetadata, options);
-  const {data: transfersData} = usePollTransfersPrices(transfers);
+  const {data: transferPrices} = usePollTransfersPrices(transfers);
   const [tokens, setTokens] = useState<VaultToken[]>([]);
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export const useDaoVault = (
     tokens,
     totalAssetValue: data.totalAssetValue,
     totalAssetChange: data.totalAssetChange,
-    transfers: showTransfers ? transfersData : [],
+    transfers: showTransfers ? transferPrices.transfers : [],
     refetch: useCallback(async () => {
       await refetchBalances();
       await refetchTransfers();
