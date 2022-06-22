@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo, useEffect, useState} from 'react';
 import {
   AlertInline,
   ButtonText,
@@ -9,7 +9,11 @@ import {
 import ModalBottomSheetSwitcher from 'components/modalBottomSheetSwitcher';
 import styled from 'styled-components';
 import {useTranslation} from 'react-i18next';
-import {TransactionState} from 'utils/constants/misc';
+import {CHAIN_METADATA, TransactionState} from 'utils/constants';
+import {useNetwork} from 'context/network';
+import {formatUnits} from 'utils/library';
+import {isNativeToken} from 'utils/tokens';
+import {modalParamsType} from 'context/deposit';
 
 type TransactionModalProps = {
   state: TransactionState;
@@ -20,6 +24,13 @@ type TransactionModalProps = {
   closeOnDrag: boolean;
   currentStep: number;
   includeApproval?: boolean;
+  maxFee: BigInt | undefined;
+  averageFee: BigInt | undefined;
+  ethPrice: number;
+  depositAmount: BigInt;
+  tokenAddress: string;
+  modalParams: modalParamsType;
+  handleOpenModal: () => void;
 };
 
 const icons = {
@@ -38,8 +49,17 @@ const DepositModal: React.FC<TransactionModalProps> = ({
   closeOnDrag,
   currentStep,
   includeApproval = false,
+  maxFee,
+  averageFee,
+  ethPrice,
+  depositAmount,
+  tokenAddress,
+  modalParams,
+  handleOpenModal,
 }) => {
   const {t} = useTranslation();
+  const {network} = useNetwork();
+  const [updateBlink, setUpdateBlink] = useState(false);
 
   const label = {
     [TransactionState.WAITING]: t('TransactionModal.signDeposit'),
@@ -47,6 +67,34 @@ const DepositModal: React.FC<TransactionModalProps> = ({
     [TransactionState.SUCCESS]: t('TransactionModal.dismiss'),
     [TransactionState.ERROR]: t('TransactionModal.tryAgain'),
   };
+
+  const nativeCurrency = CHAIN_METADATA[network].nativeCurrency;
+
+  const formattedAmount =
+    depositAmount === undefined
+      ? undefined
+      : Number(formatUnits(depositAmount.toString(), nativeCurrency.decimals));
+
+  const tokenPrice = isNativeToken(tokenAddress)
+    ? new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }).format(ethPrice * (formattedAmount as number))
+    : undefined;
+
+  const formattedMax =
+    maxFee === undefined
+      ? undefined
+      : `${Number(
+          formatUnits(maxFee.toString(), nativeCurrency.decimals)
+        ).toFixed(8)} ${nativeCurrency.symbol}`;
+
+  useEffect(() => {
+    setUpdateBlink(true);
+    setTimeout(() => {
+      setUpdateBlink(false);
+    }, 1000);
+  }, [averageFee]);
 
   const handleApproveClick = () => {
     handleApproval?.();
@@ -57,12 +105,58 @@ const DepositModal: React.FC<TransactionModalProps> = ({
       case TransactionState.SUCCESS:
         onClose();
         break;
+      case TransactionState.ERROR:
+        handleOpenModal();
+        break;
       case TransactionState.LOADING:
         break;
       default:
         handleDeposit();
     }
   };
+
+  // TODO: temporarily returning error when unable to estimate fees
+  // for chain on which contract not deployed
+  const [totalCost, totalAmount, formattedAverage] = useMemo(
+    () =>
+      averageFee === undefined
+        ? [
+            'Error calculating costs',
+            'Error calculating costs',
+            'Error estimating fees',
+          ]
+        : [
+            new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+            }).format(
+              (Number(
+                formatUnits(averageFee.toString(), nativeCurrency.decimals)
+              ) +
+                (isNativeToken(tokenAddress)
+                  ? (formattedAmount as number)
+                  : 0)) *
+                ethPrice
+            ),
+            `${(
+              Number(
+                formatUnits(averageFee.toString(), nativeCurrency.decimals)
+              ) +
+              (isNativeToken(tokenAddress) ? (formattedAmount as number) : 0)
+            ).toFixed(8)} ${nativeCurrency.symbol}`,
+            `${Number(
+              formatUnits(averageFee.toString(), nativeCurrency.decimals)
+            ).toFixed(8)} ${nativeCurrency.symbol}`,
+          ],
+    [
+      averageFee,
+      nativeCurrency.decimals,
+      nativeCurrency.symbol,
+      tokenAddress,
+      formattedAmount,
+      ethPrice,
+    ]
+  );
 
   return (
     <ModalBottomSheetSwitcher
@@ -75,26 +169,33 @@ const DepositModal: React.FC<TransactionModalProps> = ({
             <Label>{t('labels.deposit')}</Label>
           </VStack>
           <VStack>
-            <StrongText>{'0.0015 ETH'}</StrongText>
-            <p className="text-sm text-right text-ui-500">{'$6.00'}</p>
+            <StrongText>
+              {formattedAmount} {modalParams?.tokenSymbol || ''}
+            </StrongText>
+            <LightText>{tokenPrice}</LightText>
           </VStack>
         </DepositAmountContainer>
         <GasCostEthContainer>
           <VStack>
-            <Label>{t('TransactionModal.estimatedFees')}</Label>
-            <p className="text-sm text-ui-500">
-              {`${t('TransactionModal.synced', {time: 30})}`}
-            </p>
+            <VStack>
+              <Label>{t('TransactionModal.estimatedFees')}</Label>
+              <p className="text-sm text-ui-500">
+                {t('TransactionModal.maxFee')}
+              </p>
+            </VStack>
           </VStack>
           <VStack>
-            <StrongText>{'0.001ETH'}</StrongText>
-            <p className="text-sm text-right text-ui-500">{'127gwei'}</p>
+            <StrongText {...{updateBlink}}>{formattedAverage}</StrongText>
+            <LightText {...{updateBlink}}>{formattedMax}</LightText>
           </VStack>
         </GasCostEthContainer>
 
         <GasCostUSDContainer>
           <Label>{t('TransactionModal.totalCost')}</Label>
-          <StrongText>{'$16.28'}</StrongText>
+          <VStack>
+            <StrongText {...{updateBlink}}>{totalAmount}</StrongText>
+            <LightText {...{updateBlink}}>{totalCost}</LightText>
+          </VStack>
         </GasCostUSDContainer>
       </GasCostTableContainer>
       <ApproveTxContainer>
@@ -160,6 +261,10 @@ const DepositModal: React.FC<TransactionModalProps> = ({
 
 export default DepositModal;
 
+type StrongLightTextProps = {
+  updateBlink?: boolean;
+};
+
 const GasCostTableContainer = styled.div.attrs({
   className: 'm-3 bg-white rounded-xl border border-ui-100',
 })``;
@@ -200,7 +305,33 @@ const VStack = styled.div.attrs({
 
 const StrongText = styled.p.attrs({
   className: 'font-bold text-right text-ui-600',
-})``;
+})<StrongLightTextProps>`
+  ${props =>
+    props.updateBlink &&
+    `
+  animation: blinker 1s linear infinite;
+  @keyframes blinker {
+    50% {
+      opacity: 0;
+    }
+  }
+  `}
+`;
+
+const LightText = styled.p.attrs({
+  className: 'text-sm text-right text-ui-500',
+})<StrongLightTextProps>`
+  ${props =>
+    props.updateBlink &&
+    `
+  animation: blinker 1s linear infinite;
+  @keyframes blinker {
+    50% {
+      opacity: 0;
+    }
+  }
+  `}
+`;
 
 const Label = styled.p.attrs({
   className: 'text-ui-600',

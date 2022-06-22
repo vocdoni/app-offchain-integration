@@ -238,7 +238,6 @@ export function abbreviateTokenAmount(amount: string): string {
       return ` < 0.01${symbol && ' ' + symbol}`;
     }
 
-    console.log('[LOGGING] totalNumber ' + totalNumber);
     return `${totalNumber.toFixed(2)}${symbol && ' ' + symbol}`;
   }
 

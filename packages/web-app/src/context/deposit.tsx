@@ -18,13 +18,18 @@ import {useNetwork} from './network';
 import DepositModal from 'containers/transactionModals/DepositModal';
 import {DepositFormData} from 'pages/newDeposit';
 import {TransactionState} from 'utils/constants';
-import {useGlobalModalContext} from './globalModals';
-import {constants} from 'ethers';
+import {isNativeToken} from 'utils/tokens';
 import {useStepper} from 'hooks/useStepper';
+import {usePollGasFee} from 'hooks/usePollGasfee';
+import {useGlobalModalContext} from './globalModals';
 
 interface IDepositContextType {
   handleOpenModal: () => void;
 }
+
+export type modalParamsType = {
+  tokenSymbol?: string;
+};
 
 const DepositContext = createContext<IDepositContextType | null>(null);
 
@@ -41,20 +46,42 @@ const DepositProvider = ({children}: {children: ReactNode}) => {
   const {getValues} = useFormContext<DepositFormData>();
   const [depositState, setDepositState] = useState<TransactionState>();
   const [depositParams, setDepositParams] = useState<IDeposit>();
+  const [modalParams, setModalParams] = useState<modalParamsType>({});
 
   const {erc20: client} = useClient();
   const {setStep: setModalStep, currentStep} = useStepper(2);
+
+  const shouldPoll = useMemo(
+    () =>
+      depositParams !== undefined && depositState === TransactionState.WAITING,
+    [depositParams, depositState]
+  );
 
   const depositIterator = useMemo(() => {
     if (client && depositParams) return client.dao.deposit(depositParams);
   }, [client, depositParams]);
 
-  /*************************************************
-   *             Helpers and Handlers              *
-   *************************************************/
+  const estimateDepositFees = useCallback(async () => {
+    if (client && depositParams) {
+      if (currentStep === 2 || isNativeToken(depositParams.token as string)) {
+        return client?.estimate.deposit(depositParams as IDeposit);
+      } else
+        return client?.estimate.increaseAllowance(
+          depositParams.token as string,
+          depositParams.daoAddress,
+          depositParams.amount
+        );
+    }
+  }, [client, currentStep, depositParams]);
+
+  const {tokenPrice, maxFee, averageFee, stopPolling} = usePollGasFee(
+    estimateDepositFees,
+    shouldPoll
+  );
+
   const handleOpenModal = useCallback(() => {
-    // get deposit data from form
-    const {amount, tokenAddress, to, reference} = getValues();
+    // get deposit data from
+    const {amount, tokenAddress, to, reference, tokenSymbol} = getValues();
 
     // validate and set deposit data
     if (!to) {
@@ -69,8 +96,13 @@ const DepositProvider = ({children}: {children: ReactNode}) => {
       reference,
     });
 
+    //add more information that aren't in the form
+    setModalParams({
+      tokenSymbol,
+    });
+
     // determine whether to include approval step and show modal
-    if (tokenAddress === constants.AddressZero) {
+    if (isNativeToken(tokenAddress)) {
       setIncludeApproval(false);
       setModalStep(2);
     } else {
@@ -92,10 +124,13 @@ const DepositProvider = ({children}: {children: ReactNode}) => {
           state: {refetch: true},
         });
         break;
-      default:
+      default: {
         setShowModal(false);
+        stopPolling();
+        setDepositState(TransactionState.WAITING);
+      }
     }
-  }, [dao, depositState, navigate, network]);
+  }, [dao, depositState, navigate, network, stopPolling]);
 
   /*************************************************
    *               Lifecycle hooks                 *
@@ -201,14 +236,25 @@ const DepositProvider = ({children}: {children: ReactNode}) => {
     <DepositContext.Provider value={{handleOpenModal}}>
       {children}
       <DepositModal
-        currentStep={currentStep}
-        includeApproval={includeApproval}
+        {...{
+          currentStep,
+          includeApproval,
+          handleDeposit,
+          handleApproval,
+          maxFee,
+          averageFee,
+          modalParams,
+          handleOpenModal,
+        }}
         state={depositState || TransactionState.WAITING}
         isOpen={showModal}
         onClose={handleCloseModal}
         handleDeposit={handleDeposit}
         handleApproval={handleApproval}
         closeOnDrag={depositState !== TransactionState.LOADING}
+        depositAmount={depositParams?.amount as bigint}
+        tokenAddress={depositParams?.token as string}
+        ethPrice={tokenPrice}
       />
     </DepositContext.Provider>
   );
