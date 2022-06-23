@@ -43,6 +43,8 @@ const Dashboard: React.FC = () => {
       <HeaderWrapper>
         <HeaderDao
           daoName={dao?.name}
+          // Temporarily using address for dao instead of name
+          daoUrl={`app.aragon.org/#/daos/${network}/${daoId}`}
           description={
             'We are a community that loves trees and the planet. We track where forestation is increasing (or shrinking), fund people who are growing and protecting trees...'
           }

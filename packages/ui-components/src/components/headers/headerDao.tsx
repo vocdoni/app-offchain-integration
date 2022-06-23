@@ -18,6 +18,7 @@ import {ListItemLink} from '../listItem';
 export type HeaderDaoProps = {
   daoName: string;
   daoAvatar?: string;
+  daoUrl: string;
   description: string;
   created_at: string;
   daoChain: string;
@@ -39,6 +40,7 @@ type DescriptionProps = {
 export const HeaderDao: React.FC<HeaderDaoProps> = ({
   daoName,
   daoAvatar,
+  daoUrl,
   description,
   created_at,
   daoChain,
@@ -49,9 +51,7 @@ export const HeaderDao: React.FC<HeaderDaoProps> = ({
   const [fullDescription, setFullDescription] = useState<boolean>(false);
 
   async function handleClipboardActions() {
-    await navigator.clipboard.writeText(
-      `app.aragon.org/dao/${daoName?.toLowerCase()}`
-    );
+    await navigator.clipboard.writeText(daoUrl);
 
     // TODO: change to proper mechanism
     alert('Copied');
@@ -63,7 +63,7 @@ export const HeaderDao: React.FC<HeaderDaoProps> = ({
         <Content>
           <Title>{daoName}</Title>
           <Link
-            label={`app.aragon.org/dao/${daoName?.toLowerCase()}`}
+            label={daoUrl}
             iconRight={<IconCopy />}
             onClick={handleClipboardActions}
           />
@@ -157,7 +157,7 @@ export const HeaderDao: React.FC<HeaderDaoProps> = ({
 
 const Card = styled.div.attrs({
   className:
-    'w-full bg-white rounded-xl p-2 tablet:p-3 desktop:p-6 border border-ui-100 space-y-3',
+    'w-full bg-white tablet:rounded-xl p-2 tablet:p-3 desktop:p-6 border border-ui-100 space-y-3',
 })`
   box-shadow: 0px 4px 8px rgba(31, 41, 51, 0.04),
     0px 0px 2px rgba(31, 41, 51, 0.06), 0px 0px 1px rgba(31, 41, 51, 0.04);
@@ -193,7 +193,7 @@ const DetailsWrapper = styled.div.attrs({
 })``;
 
 const NetworkDetailsContainer = styled.div.attrs({
-  className: 'flex space-x-3',
+  className: 'flex space-x-3 w-full tablet:w-auto',
 })``;
 
 const NetworkDetails = styled.div.attrs({
