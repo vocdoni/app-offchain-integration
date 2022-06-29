@@ -154,7 +154,6 @@ module.exports = {
       '3xl': ['2.441rem', 1.2],
       '4xl': ['3.052rem', 1.2],
       '5xl': ['3.185rem', 1.2],
-      '6xl': ['3.75rem', 1.2],
     },
     fluidType: {
       settings: {
@@ -165,7 +164,7 @@ module.exports = {
         screenMin: 20, // 20rem === 320px
         screenMax: 96, // 96rem === 1536px
         unit: 'rem',
-        prefix: 'ft',
+        prefix: 'ft-',
       },
       // Creates the ft-text-xx classes. These are to be used for inline text
       // and headings.

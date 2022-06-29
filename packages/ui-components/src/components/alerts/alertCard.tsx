@@ -63,9 +63,9 @@ const TextContainer = styled.div.attrs(() => ({
 }))``;
 
 const Title = styled.div.attrs(({mode}: ContainerProps) => ({
-  className: `flex flex-col font-bold  ${styles[mode].color}`,
+  className: `flex flex-col font-bold ft-text-base  ${styles[mode].color}`,
 }))<ContainerProps>``;
 
 const HelpText = styled.div.attrs(() => ({
-  className: 'text-ui-600 text-sm',
+  className: 'text-ui-600 ft-text-sm',
 }))``;
