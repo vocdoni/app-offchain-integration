@@ -21,6 +21,7 @@ import ExploreNav from 'containers/navbar/exploreNav';
 import Footer from 'containers/exploreFooter';
 import NetworkErrorMenu from 'containers/networkErrorMenu';
 import TransferMenu from 'containers/transferMenu';
+import {useWallet} from 'hooks/useWallet';
 
 const ExplorePage = lazy(() => import('pages/explore'));
 const NotFoundPage = lazy(() => import('pages/notFound'));
@@ -45,6 +46,16 @@ function App() {
   // TODO this needs to be inside a Routes component. Will be moved there with
   // further refactoring of layout (see further below).
   const {pathname} = useLocation();
+  const {methods} = useWallet();
+
+  useEffect(() => {
+    // This check would prevent the wallet selection modal from opening up if the user hasn't logged in previously.
+    // But if the injected wallet like Metamask is locked and the user has logged in before using that wallet, there will be a prompt for password.
+    if (localStorage.getItem('WEB3_CONNECT_CACHED_PROVIDER')) {
+      methods.selectWallet();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     trackPage(pathname);
