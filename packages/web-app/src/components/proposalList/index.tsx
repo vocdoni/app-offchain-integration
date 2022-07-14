@@ -21,61 +21,57 @@ const ProposalList: React.FC<ProposalListProps> = ({proposals}) => {
 
   return (
     <div className="space-y-3" data-testid="proposalList">
-      {proposals.map(proposal => {
+      {proposals.map(p => {
+        const totalVoteCount = p.abstain + p.yea + p.nay;
+
         const AlertMessage = translateProposalDate(
-          proposal.type,
-          proposal.startDate,
-          proposal.endDate
+          p.type,
+          p.startDate,
+          p.endDate
         );
-        try {
-          const metadata = JSON.parse(proposal.metadata);
-
-          return (
-            <CardProposal
-              title={metadata.title}
-              description={metadata.summary}
-              onClick={() => {
-                navigate('proposals/' + proposal.id);
-              }}
-              process={proposal.type}
-              chainId={chainId}
-              voteTitle={t('governance.proposals.voteTitle') as string}
-              // Rakesh: Vote results seem to be aggregated in the subgraph. So after confirming that the
-              // below logic might change and also the function commented at the end of this file
-
-              // {...(categorizedProposal.type === 'active' && {
-              // voteProgress: getVoteResults(proposal.vote).toString(),
-              // voteLabel: proposal.yea.toString(),
-              // tokenAmount: proposal.total.toString(),
-              // tokenSymbol: proposal.vote.tokenSymbol,
-              // })}
-              publishLabel={t('governance.proposals.publishedBy') as string}
-              publisherAddress={proposal.creator}
-              stateLabel={[
-                t('governance.proposals.states.draft'),
-                t('governance.proposals.states.pending'),
-                t('governance.proposals.states.active'),
-                t('governance.proposals.states.executed'),
-                t('governance.proposals.states.succeeded'),
-                t('governance.proposals.states.defeated'),
-              ]}
-              {...(AlertMessage && {AlertMessage})}
-              key={proposal.id}
-            />
-          );
-        } catch {
-          return null;
-        }
+        return (
+          <CardProposal
+            title={'Title eventually coming from Metadata'}
+            description={'Summary eventually coming from Metadata'}
+            onClick={() => {
+              navigate('proposals/' + p.id);
+            }}
+            process={p.type}
+            chainId={chainId}
+            voteTitle={t('governance.proposals.voteTitle') as string}
+            {...(p.type === 'active' && {
+              voteProgress: relativeVoteCount(
+                p.yea || 0,
+                totalVoteCount
+              ).toString(),
+              voteLabel: p.yea?.toString(),
+              tokenAmount: totalVoteCount.toString(),
+              tokenSymbol: p.pkg.token?.symbol || undefined,
+            })}
+            publishLabel={t('governance.proposals.publishedBy') as string}
+            publisherAddress={p.creator}
+            stateLabel={[
+              t('governance.proposals.states.draft'),
+              t('governance.proposals.states.pending'),
+              t('governance.proposals.states.active'),
+              t('governance.proposals.states.executed'),
+              t('governance.proposals.states.succeeded'),
+              t('governance.proposals.states.defeated'),
+            ]}
+            {...(AlertMessage && {AlertMessage})}
+            key={p.id}
+          />
+        );
       })}
     </div>
   );
 };
 
-// function getVoteResults(votes: VotingData) {
-//   if (votes.results.total === 0) {
-//     return 0;
-//   }
-//   return Math.round((votes.results.yes / votes.total) * 100);
-// }
+function relativeVoteCount(optionCount: number, totalCount: number) {
+  if (totalCount === 0) {
+    return 0;
+  }
+  return Math.round((optionCount / totalCount) * 100);
+}
 
 export default ProposalList;
