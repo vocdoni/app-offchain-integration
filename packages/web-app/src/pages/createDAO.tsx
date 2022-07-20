@@ -207,7 +207,12 @@ const CreateDAO: React.FC = () => {
           <Step
             fullWidth
             hideWizard
-            customHeader={<OverviewDAOHeader />}
+            customHeader={
+              <OverviewDAOHeader
+                navLabel={t('createDAO.title')}
+                returnPath={Landing}
+              />
+            }
             customFooter={<></>}
           >
             <OverviewDAOStep />
