@@ -1,14 +1,15 @@
 import React, {ButtonHTMLAttributes, FC} from 'react';
 import styled from 'styled-components';
+import {constants} from 'ethers';
 
-import {shortenAddress} from '../../utils/addresses';
+import {IsAddress, shortenAddress} from '../../utils/addresses';
 import {AvatarWallet} from '../avatar';
 import {IconLinkExternal, IconPerson} from '../icons';
 
 type TokenInfo = {
   amount: number;
   symbol: string;
-  percentage: number;
+  percentage: number | string;
 };
 
 export type ListItemAddressProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -52,7 +53,7 @@ type AvatarProps = Pick<ListItemAddressProps, 'src'>;
 
 const Avatar: FC<AvatarProps> = ({src}) => {
   if (!src) return <IconPerson className="w-2.5 h-2.5" />;
-  return <AvatarWallet src={src} />;
+  return <AvatarWallet src={IsAddress(src) ? src : constants.AddressZero} />;
 };
 
 const Container = styled.button.attrs(() => {

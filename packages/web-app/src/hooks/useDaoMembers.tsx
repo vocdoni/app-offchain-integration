@@ -8,8 +8,13 @@ import {HookData} from 'utils/types';
 // clarity on how to fetch the token holder data, splitting the hook into two
 // parts seemed the simplest way to go.
 
-type DaoWhitelist = {
+export type DaoWhitelist = {
   id: string;
+}[];
+
+export type DaoTokenBased = {
+  address: string;
+  balance: number;
 }[];
 
 export function useDaoWhitelist(dao: string): HookData<DaoWhitelist> {
@@ -21,8 +26,14 @@ export function useDaoWhitelist(dao: string): HookData<DaoWhitelist> {
     fetchPolicy: 'no-cache',
   });
 
+  // TODO: need to remove later, the sort should be handled within the query
+  const sortWalletMembers = (
+    a: DaoWhitelist[number],
+    b: DaoWhitelist[number]
+  ) => a.id.localeCompare(b.id);
+
   return {
-    data: data?.dao.packages[0].pkg.users,
+    data: data?.dao.packages[0].pkg.users?.sort(sortWalletMembers),
     error,
     isLoading: loading,
   };
@@ -48,18 +59,27 @@ export function useDaoTokenHolders(dao: string): HookData<DaoTokenHolders> {
     fetchPolicy: 'no-cache',
   });
 
+  // TODO: need to remove later, the sort should be handled within the query
+  const sortTokenMembers = (
+    a: DaoTokenBased[number],
+    b: DaoTokenBased[number]
+  ) => b.balance - a.balance;
+
   // TODO: Fetch token holders addresses and the balance for each address
-  const daoMembers = MOCK_ADDRESSES.filter(() => Math.random() > 0.4).map(
-    member => {
+  const daoMembers = MOCK_ADDRESSES.filter(() => Math.random() > 0.4)
+    .map(member => {
       return {
         address: member,
         balance: Math.floor(Math.random() * 500 + 1),
       };
-    }
-  );
+    })
+    .sort(sortTokenMembers);
 
   return {
-    data: {daoMembers, token: data?.dao.token},
+    data: {
+      daoMembers: daoMembers,
+      token: data?.dao.token,
+    },
     error: error,
     isLoading: loading,
   };
