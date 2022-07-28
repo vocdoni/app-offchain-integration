@@ -20,9 +20,11 @@ import {useNetwork} from 'context/network';
 import {useDaoParam} from 'hooks/useDaoParam';
 import {Loading} from 'components/temporary';
 import {CreateProposalProvider} from 'context/createProposal';
+import {useDaoActions} from 'hooks/useDaoActions';
 
 const NewProposal: React.FC = () => {
   const {data: dao, loading} = useDaoParam();
+  const {data: actions} = useDaoActions(dao);
   const [showTxModal, setShowTxModal] = useState(false);
 
   const {t} = useTranslation();
@@ -86,7 +88,7 @@ const NewProposal: React.FC = () => {
             </Step>
           </FullScreenStepper>
 
-          <AddActionMenu />
+          <AddActionMenu actions={actions} />
         </ActionsProvider>
       </CreateProposalProvider>
     </FormProvider>

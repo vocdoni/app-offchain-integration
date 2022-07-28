@@ -3,7 +3,6 @@ import React from 'react';
 import {useActionsContext} from 'context/actions';
 import WithdrawAction from './withdraw/withdrawAction';
 import {ActionsTypes} from 'utils/types';
-import {AddActionItems} from '../addActionMenu';
 import TokenMenu from 'containers/tokenMenu';
 import {BaseTokenInfo, ActionItem} from 'utils/types';
 import {fetchTokenPrice} from 'services/prices';
@@ -22,21 +21,27 @@ import AddAddresses from './addAddresses';
  * @returns List of actions
  */
 
-type actionsComponentType = {
+type ActionsComponentProps = {
   name: ActionsTypes;
   index: number;
 };
 
-const Action: React.FC<actionsComponentType> = ({name, index}) => {
+const Action: React.FC<ActionsComponentProps> = ({name, index}) => {
   switch (name) {
-    case AddActionItems.WITHDRAW_ASSETS:
+    case 'withdraw_assets':
       return <WithdrawAction {...{index}} />;
-    case AddActionItems.MINT_TOKENS:
+    case 'mint_token':
       return <MintTokens {...{index}} />;
-    case AddActionItems.ADD_ADDRESS:
-      return <AddAddresses {...{index}} />;
-    default:
+    case 'external_contract':
       return null;
+    case 'modify_settings':
+      return null;
+    case 'add_address':
+      return <AddAddresses {...{index}} />;
+    case 'remove_address':
+      return null;
+    default:
+      throw Error('Action not found');
   }
 };
 
