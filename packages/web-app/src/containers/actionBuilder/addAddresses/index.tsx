@@ -13,6 +13,7 @@ import {useFieldArray, useFormContext, useWatch} from 'react-hook-form';
 
 import EmptyState from './emptyState';
 import {AddressRow} from './addressRow';
+import AccordionSummary from './accordionSummary';
 import {AccordionMethod} from 'components/accordionMethod';
 import {useActionsContext} from 'context/actions';
 
@@ -26,14 +27,15 @@ const AddAddresses: React.FC<Props> = ({index: actionIndex}) => {
 
   // form context
   const {control, trigger} = useFormContext();
+  const memberListKey = `actions.${actionIndex}.inputs.memberWallets`;
   const memberWallets = useWatch({
-    name: `actions.${actionIndex}.inputs.memberWallets`,
+    name: memberListKey,
     control,
   });
 
   const {fields, update, replace, append, remove} = useFieldArray({
     control,
-    name: `actions.${actionIndex}.inputs.memberWallets`,
+    name: memberListKey,
   });
 
   const controlledWallets = fields.map((field, ctrlledIndex) => {
@@ -72,7 +74,7 @@ const AddAddresses: React.FC<Props> = ({index: actionIndex}) => {
     // this is quite unfortunate, but now empty fields will all be validated
     // on row reset. Turn off required validation for row if that is not desired
     setTimeout(() => {
-      trigger(`actions.${actionIndex}.inputs.memberWallets`);
+      trigger(memberListKey);
     }, 50);
   };
 
@@ -85,7 +87,7 @@ const AddAddresses: React.FC<Props> = ({index: actionIndex}) => {
   const handleRowDelete = (index: number) => {
     remove(index);
     setTimeout(() => {
-      trigger(`actions.${actionIndex}.inputs.memberWallets`);
+      trigger(memberListKey);
     }, 50);
   };
 
@@ -94,6 +96,7 @@ const AddAddresses: React.FC<Props> = ({index: actionIndex}) => {
     append({address: ''});
   };
 
+  // TODO: extract actions out of component
   // separating this because rows sometimes don't have the same actions
   const rowActions = [
     {
@@ -156,7 +159,7 @@ const AddAddresses: React.FC<Props> = ({index: actionIndex}) => {
         />
       ) : (
         <>
-          <FormItem className="hidden desktop:block pb-0">
+          <FormItem className="hidden desktop:block py-1.5">
             <Label label={t('labels.whitelistWallets.address')} />
           </FormItem>
           {controlledWallets.map((field, fieldIndex) => {
@@ -175,7 +178,7 @@ const AddAddresses: React.FC<Props> = ({index: actionIndex}) => {
           })}
           <FormItem className="flex justify-between">
             <ButtonText
-              label="Add Wallet"
+              label={t('labels.addWallet')}
               mode="secondary"
               size="large"
               bgWhite
@@ -227,15 +230,9 @@ const AddAddresses: React.FC<Props> = ({index: actionIndex}) => {
               ]}
             />
           </FormItem>
-          <AccordionFooter>
-            <BoldedText>Summary</BoldedText>
-            <div className="flex justify-between">
-              <p className="text-ui-600 ft-text-base">Total Wallets</p>
-              <BoldedText>
-                {controlledWallets.filter(wallet => wallet.address).length}
-              </BoldedText>
-            </div>
-          </AccordionFooter>
+          <AccordionSummary
+            total={controlledWallets.filter(wallet => wallet.address).length}
+          />
         </>
       )}
     </AccordionMethod>
@@ -245,16 +242,7 @@ const AddAddresses: React.FC<Props> = ({index: actionIndex}) => {
 export default AddAddresses;
 
 export const FormItem = styled.div.attrs({
-  className: 'p-3 bg-ui-0 border border-ui-100 border-t-0' as
+  className: 'px-3 py-1.5 bg-ui-0 border border-ui-100 border-t-0' as
     | string
     | undefined,
-})``;
-
-const AccordionFooter = styled.div.attrs({
-  className:
-    'space-y-1.5 p-3 bg-ui-0 rounded-b-xl border border-t-0 border-ui-100 ',
-})``;
-
-const BoldedText = styled.span.attrs({
-  className: 'font-bold text-ui-800 ft-text-base',
 })``;
