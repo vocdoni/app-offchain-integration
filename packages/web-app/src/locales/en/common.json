@@ -98,7 +98,7 @@
     "duration": "Duration",
     "membership": "Who is eligible to participate in your DAO?",
     "communityToken": "Does your community have a token?",
-    "authorisedWallets": "Authorised Wallets / Adresses",
+    "authorisedWallets": "Authorised Wallets / Addresses",
     "addExistingToken": "Add existing Token",
     "tokenName": "Name",
     "tokenSymbol": "Symbol",
@@ -131,7 +131,7 @@
     },
     "review": {
       "blockchain": "Blockchain",
-      "daoMetadata": "DAO Metadata",
+      "daoMetadata": "DAO Details",
       "community": "Community",
       "governance": "Governance",
       "network": "Network",
