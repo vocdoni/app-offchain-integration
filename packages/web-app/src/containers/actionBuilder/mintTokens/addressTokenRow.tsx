@@ -1,20 +1,21 @@
-import React from 'react';
 import {
-  ButtonIcon,
-  IconMenuVertical,
-  ValueInput,
-  Label,
-  NumberInput,
-  ListItemAction,
-  Dropdown,
   AlertInline,
+  ButtonIcon,
+  Dropdown,
+  IconMenuVertical,
+  Label,
+  ListItemAction,
+  NumberInput,
   TextInput,
+  ValueInput,
 } from '@aragon/ui-components';
+import React from 'react';
+import {Controller, useWatch} from 'react-hook-form';
 import {useTranslation} from 'react-i18next';
-import {Controller} from 'react-hook-form';
-import {handleClipboardActions} from 'utils/library';
 import styled from 'styled-components';
+
 import useScreen from 'hooks/useScreen';
+import {handleClipboardActions} from 'utils/library';
 
 type IndexProps = {
   actionIndex: number;
@@ -22,6 +23,7 @@ type IndexProps = {
 };
 
 type AddressAndTokenRowProps = IndexProps & {
+  newTokenSupply: number;
   onDelete: (index: number) => void;
 };
 
@@ -92,10 +94,9 @@ const TokenField: React.FC<IndexProps> = ({actionIndex, fieldIndex}) => {
   );
 };
 
-const DropdownMenu: React.FC<AddressAndTokenRowProps> = ({
-  fieldIndex,
-  onDelete,
-}) => {
+const DropdownMenu: React.FC<
+  Omit<AddressAndTokenRowProps, 'newTokenSupply'>
+> = ({fieldIndex, onDelete}) => {
   const {t} = useTranslation();
 
   return (
@@ -118,17 +119,20 @@ const DropdownMenu: React.FC<AddressAndTokenRowProps> = ({
     />
   );
 };
+const PercentageDistribution: React.FC<
+  Omit<AddressAndTokenRowProps, 'onDelete'>
+> = ({actionIndex, fieldIndex, newTokenSupply}) => {
+  const newMintCount = useWatch({
+    name: `actions.${actionIndex}.inputs.mintTokensToWallets.${fieldIndex}.amount`,
+  });
+  const percentage = newTokenSupply ? (newMintCount / newTokenSupply) * 100 : 0;
 
-const PercentageDistribution: React.FC<IndexProps> = ({
-  actionIndex,
-  fieldIndex,
-}) => {
   return (
     <div style={{maxWidth: '12ch'}}>
       <TextInput
         className="text-right"
         name={`actions.${actionIndex}.inputs.mintTokensToWallets.${fieldIndex}.amount`}
-        value={'14.012%'}
+        value={percentage.toPrecision(3) + '%'}
         mode="default"
         disabled
       />
@@ -140,6 +144,7 @@ export const AddressAndTokenRow: React.FC<AddressAndTokenRowProps> = ({
   actionIndex,
   fieldIndex,
   onDelete,
+  newTokenSupply,
 }) => {
   const {isDesktop} = useScreen();
 
@@ -152,6 +157,7 @@ export const AddressAndTokenRow: React.FC<AddressAndTokenRowProps> = ({
           <PercentageDistribution
             actionIndex={actionIndex}
             fieldIndex={fieldIndex}
+            newTokenSupply={newTokenSupply}
           />
           <DropdownMenu
             actionIndex={actionIndex}
@@ -186,6 +192,7 @@ export const AddressAndTokenRow: React.FC<AddressAndTokenRowProps> = ({
           <PercentageDistribution
             actionIndex={actionIndex}
             fieldIndex={fieldIndex}
+            newTokenSupply={newTokenSupply}
           />
         </HStackWithPadding>
       </VStack>
