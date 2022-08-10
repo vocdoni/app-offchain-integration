@@ -8,7 +8,7 @@ import {useActionsContext} from 'context/actions';
 import {Action} from 'utils/types';
 import {ActionsFilter} from './actionsFilter';
 
-export const ReviewExecution: React.FC = () => {
+export const ExecutionWidget: React.FC = () => {
   const {t} = useTranslation();
   const {getValues} = useFormContext();
   const {actions} = getValues();
