@@ -16,11 +16,10 @@ import useScreen from 'hooks/useScreen';
 import {CHAIN_METADATA} from 'utils/constants';
 import {formatUnits} from 'utils/library';
 import {fetchBalance, getTokenInfo} from 'utils/tokens';
+import {ActionIndex} from 'utils/types';
 import {AddressAndTokenRow} from './addressTokenRow';
 
-type Props = {
-  index: number;
-};
+type MintTokensProps = ActionIndex;
 
 type MintInfo = {
   address: string;
@@ -32,21 +31,17 @@ type AddressBalance = {
   balance: BigNumber;
 };
 
-const MintTokens: React.FC<Props> = ({index}) => {
+const MintTokens: React.FC<MintTokensProps> = ({actionIndex}) => {
   const {t} = useTranslation();
 
-  const {removeAction, duplicateAction} = useActionsContext();
+  const {removeAction} = useActionsContext();
   const {setValue} = useFormContext();
 
   const handleReset = () => {
-    setValue(`actions.${index}.inputs.mintTokensToWallets`, []);
+    setValue(`actions.${actionIndex}.inputs.mintTokensToWallets`, []);
   };
 
   const methodActions = [
-    {
-      component: <ListItemAction title={t('labels.duplicateAction')} bgWhite />,
-      callback: () => duplicateAction(index),
-    },
     {
       component: <ListItemAction title={t('labels.resetAction')} bgWhite />,
       callback: handleReset,
@@ -56,7 +51,7 @@ const MintTokens: React.FC<Props> = ({index}) => {
         <ListItemAction title={t('labels.removeEntireAction')} bgWhite />
       ),
       callback: () => {
-        removeAction(index);
+        removeAction(actionIndex);
       },
     },
   ];
@@ -71,17 +66,21 @@ const MintTokens: React.FC<Props> = ({index}) => {
       additionalInfo={t('newProposal.mintTokens.additionalInfo')}
       dropdownItems={methodActions}
     >
-      <MintTokenForm actionIndex={index} />
+      <MintTokenForm actionIndex={actionIndex} />
     </AccordionMethod>
   );
 };
 
 export default MintTokens;
 
-export const MintTokenForm: React.FC<{
-  actionIndex: number;
+type MintTokenFormProps = {
   standAlone?: boolean;
-}> = ({actionIndex, standAlone = false}) => {
+} & ActionIndex;
+
+export const MintTokenForm: React.FC<MintTokenFormProps> = ({
+  actionIndex,
+  standAlone = false,
+}) => {
   const {t} = useTranslation();
   const {isDesktop} = useScreen();
   const {data: daoId} = useDaoParam();

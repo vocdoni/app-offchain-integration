@@ -16,9 +16,9 @@ import styled from 'styled-components';
 
 import useScreen from 'hooks/useScreen';
 import {handleClipboardActions} from 'utils/library';
+import {ActionIndex} from 'utils/types';
 
-type IndexProps = {
-  actionIndex: number;
+type IndexProps = ActionIndex & {
   fieldIndex: number;
 };
 
@@ -94,30 +94,31 @@ const TokenField: React.FC<IndexProps> = ({actionIndex, fieldIndex}) => {
   );
 };
 
-const DropdownMenu: React.FC<Omit<AddressAndTokenRowProps, 'newTokenSupply'>> =
-  ({fieldIndex, onDelete}) => {
-    const {t} = useTranslation();
+type DropdownProps = Omit<AddressAndTokenRowProps, 'newTokenSupply'>;
 
-    return (
-      <Dropdown
-        align="start"
-        trigger={
-          <ButtonIcon mode="ghost" size="large" icon={<IconMenuVertical />} />
-        }
-        sideOffset={8}
-        listItems={[
-          {
-            component: (
-              <ListItemAction title={t('labels.removeWallet')} bgWhite />
-            ),
-            callback: () => {
-              onDelete(fieldIndex);
-            },
+const DropdownMenu: React.FC<DropdownProps> = ({fieldIndex, onDelete}) => {
+  const {t} = useTranslation();
+
+  return (
+    <Dropdown
+      align="start"
+      trigger={
+        <ButtonIcon mode="ghost" size="large" icon={<IconMenuVertical />} />
+      }
+      sideOffset={8}
+      listItems={[
+        {
+          component: (
+            <ListItemAction title={t('labels.removeWallet')} bgWhite />
+          ),
+          callback: () => {
+            onDelete(fieldIndex);
           },
-        ]}
-      />
-    );
-  };
+        },
+      ]}
+    />
+  );
+};
 const PercentageDistribution: React.FC<
   Omit<AddressAndTokenRowProps, 'onDelete'>
 > = ({actionIndex, fieldIndex, newTokenSupply}) => {
