@@ -1,10 +1,11 @@
-import {ValidateResult} from 'react-hook-form';
+import {FieldErrors, ValidateResult} from 'react-hook-form';
 import {isAddress, parseUnits} from 'ethers/lib/utils';
 import {BigNumber, providers as EthersProviders} from 'ethers';
 
 import {i18n} from '../../i18n.config';
 import {isERC20Token} from './tokens';
 import {ALPHA_NUMERIC_PATTERN} from './constants';
+import {ActionItem, Action, ActionWithdraw, ActionMintToken} from './types';
 
 /**
  * Validate given token contract address
@@ -93,3 +94,49 @@ export const alphaNumericValidator = (
     ? true
     : (i18n.t('errors.onlyAlphaNumeric', {field}) as string);
 };
+
+/**
+ * Check if the screen is valid
+ * @param errors List of fields with errors
+ * @returns Whether the screen is valid
+ */
+export function actionsAreValid(
+  actionFormList: Action[],
+  actions: ActionItem[],
+  errors: FieldErrors
+) {
+  let result = false;
+  function isActionNotValid(index: number) {
+    if (errors.actions) return true;
+    switch (actions[index]?.name) {
+      case 'withdraw_assets':
+        return (
+          (actionFormList[index] as ActionWithdraw)?.to === '' ||
+          (actionFormList[index] as ActionWithdraw)?.amount?.toString() === ''
+        );
+      case 'mint_tokens':
+        if (
+          (actionFormList[index] as ActionMintToken)?.inputs
+            ?.mintTokensToWallets.length === 0
+        )
+          return true;
+        return (
+          actionFormList[index] as ActionMintToken
+        )?.inputs?.mintTokensToWallets?.some(wallet => wallet.address === '');
+      default:
+        return false;
+    }
+  }
+
+  for (let i = 0; i < actionFormList?.length; i++) {
+    if (isActionNotValid(i)) {
+      result = false;
+      break;
+    } else {
+      result = true;
+    }
+  }
+  if (actions?.length === 0) return true;
+  if (actions.length !== actionFormList.length) return false;
+  return result;
+}

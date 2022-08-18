@@ -196,9 +196,10 @@ export type ActionsTypes =
   | 'external_contract'
   | 'modify_settings';
 
+// TODO Refactor ActionWithdraw With the new input structure
 export type ActionWithdraw = {
   amount: number;
-  name: string;
+  name: 'withdraw_assets';
   to: Address;
   tokenAddress: Address;
   tokenBalance: number;
@@ -208,6 +209,7 @@ export type ActionWithdraw = {
   tokenSymbol: string;
 };
 
+// TODO: merge these types
 export type ActionAddAddress = {
   inputs: {
     memberWallets: {

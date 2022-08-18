@@ -35,10 +35,14 @@ const MintTokens: React.FC<MintTokensProps> = ({actionIndex}) => {
   const {t} = useTranslation();
 
   const {removeAction} = useActionsContext();
-  const {setValue} = useFormContext();
+  const {setValue, clearErrors, resetField} = useFormContext();
 
   const handleReset = () => {
-    setValue(`actions.${actionIndex}.inputs.mintTokensToWallets`, []);
+    clearErrors(`actions.${actionIndex}`);
+    resetField(`actions.${actionIndex}`);
+    setValue(`actions.${actionIndex}.inputs.mintTokensToWallets`, [
+      {address: '', amount: ''},
+    ]);
   };
 
   const methodActions = [
@@ -308,7 +312,7 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
           <HStack>
             <Label>{t('labels.newTokens')}</Label>
             <p>
-              +{newTokens} {daoToken.symbol}
+              +{newTokens || 0} {daoToken.symbol}
             </p>
           </HStack>
           <HStack>
@@ -319,7 +323,7 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
             <Label>{t('labels.totalTokens')}</Label>
             {tokenSupply ? (
               <p>
-                {(tokenSupply + newTokens).toString()} {daoToken.symbol}
+                {(tokenSupply + (newTokens || 0)).toString()} {daoToken.symbol}
               </p>
             ) : (
               <p>...</p>

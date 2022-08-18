@@ -59,8 +59,7 @@ const ActionBuilder: React.FC = () => {
   const {network} = useNetwork();
   const {selectedActionIndex: index, actions} = useActionsContext();
   const {data: tokens} = useDaoBalances(daoAddress);
-  const {setValue, resetField, clearErrors, formState, trigger} =
-    useFormContext();
+  const {setValue, resetField, clearErrors} = useFormContext();
 
   /*************************************************
    *             Callbacks and Handlers            *
@@ -91,10 +90,6 @@ const ActionBuilder: React.FC = () => {
       `actions.${index}.tokenBalance`,
       formatUnits(token.count, token.decimals)
     );
-
-    if (formState.dirtyFields.actions[index].amount) {
-      trigger(`actions.${index}.amount`);
-    }
 
     fetchTokenPrice(token.address, network).then(price => {
       setValue(`actions.${index}.tokenPrice`, price);
