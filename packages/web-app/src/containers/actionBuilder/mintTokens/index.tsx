@@ -115,6 +115,8 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
     if (fields.length === 0) {
       append({address: '', amount: '0'});
     }
+
+    setValue(`actions.${actionIndex}.name`, 'mint_tokens');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
