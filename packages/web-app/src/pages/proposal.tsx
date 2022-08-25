@@ -14,7 +14,7 @@ import {withTransaction} from '@elastic/apm-rum-react';
 import TipTapLink from '@tiptap/extension-link';
 import {useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {generatePath, useNavigate, useParams} from 'react-router-dom';
 import styled from 'styled-components';
@@ -23,28 +23,43 @@ import ResourceList from 'components/resourceList';
 import {Loading} from 'components/temporary';
 import {StyledEditorContent} from 'containers/reviewProposal';
 import {VotingTerminal} from 'containers/votingTerminal';
+import {useGlobalModalContext} from 'context/globalModals';
 import {useNetwork} from 'context/network';
 import {useCache} from 'hooks/useCache';
 import {useDaoParam} from 'hooks/useDaoParam';
-import {useDaoProposal} from 'hooks/useDaoProposal';
+import {DisplayedVoter, useDaoProposal} from 'hooks/useDaoProposal';
 import {useMappedBreadcrumbs} from 'hooks/useMappedBreadcrumbs';
 import useScreen from 'hooks/useScreen';
 import {useWallet} from 'hooks/useWallet';
+import {useWalletCanVote} from 'hooks/useWalletCanVote';
 import {CHAIN_METADATA} from 'utils/constants';
 import {NotFound} from 'utils/paths';
+import {formatDistance} from 'date-fns';
 
 const Proposal: React.FC = () => {
   const {t} = useTranslation();
   const {id} = useParams();
+  const {open} = useGlobalModalContext();
   const navigate = useNavigate();
-  const {address} = useWallet();
   const {network} = useNetwork();
   const {set, get} = useCache();
   const {isDesktop} = useScreen();
   const {data: daoId} = useDaoParam();
   const {breadcrumbs, tag} = useMappedBreadcrumbs();
 
+  const [votingInProcess, setVotingInProcess] = useState(false);
+  const {address, isConnected, isOnWrongNetwork} = useWallet();
+  const {data: canVote, isLoading: canVoteLoading} = useWalletCanVote(
+    daoId,
+    address!
+  );
+
   if (!id) navigate(NotFound);
+
+  // ref used to hold "memories" of previous "state"
+  // across renders in order to automate the following states:
+  // loggedOut -> login modal => switch network modal -> vote options selection;
+  const statusRef = useRef({wasNotLoggedIn: false, wasOnWrongNetwork: false});
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [metadata, setMetadata] = useState<Record<string, any> | undefined>();
@@ -58,7 +73,7 @@ const Proposal: React.FC = () => {
       proposalTags,
       proposalContent,
     },
-    isLoading,
+    isLoading: proposalIsLoading,
     error,
   } = useDaoProposal(id);
 
@@ -97,10 +112,148 @@ const Proposal: React.FC = () => {
       set('proposalStatus', mappedProposal.status);
   }, [get, mappedProposal, set]);
 
+  useEffect(() => {
+    // was not logged in but now logged in
+    if (statusRef.current.wasNotLoggedIn && isConnected) {
+      if (isOnWrongNetwork) {
+        open('network');
+      }
+
+      // logged out is technically on wrong network
+      statusRef.current.wasOnWrongNetwork = true;
+
+      // reset reference
+      statusRef.current.wasNotLoggedIn = false;
+    }
+  }, [isConnected, canVote, isOnWrongNetwork, open]);
+
+  useEffect(() => {
+    // wrong network, no wallet -> no options
+    if (isOnWrongNetwork || !address || !canVote) setVotingInProcess(false);
+
+    // was on wrong network but now on correct network
+    if (statusRef.current.wasOnWrongNetwork && !isOnWrongNetwork) {
+      if (canVote) setVotingInProcess(true);
+
+      // reset "state"
+      statusRef.current.wasOnWrongNetwork = false;
+    }
+  }, [address, canVote, isOnWrongNetwork]);
+
+  // Note: this can also be extracted into the useProposal hook granted we want to give
+  // it all the responsibility for data mapping, despite proposal not necessarily having
+  // much to do with whether vote button is enabled. Would probably be good clean up of the
+  // current component.
+
+  const [voteNowDisabled, statusLabel, alertMessage, handleVoteClicked] =
+    useMemo(() => {
+      let voteNowDisabled = true;
+      let onClick;
+      let statusLabel = '';
+      let alertMessage = '';
+
+      const voted = mappedProposal?.voters.some(
+        (voter: DisplayedVoter) => voter.wallet === address
+      );
+
+      switch (mappedProposal?.status) {
+        // not sure how we'll be handling draft proposals so until then, keeping this
+        case 'draft':
+          statusLabel = t('votingTerminal.status.draft');
+          break;
+
+        case 'pending':
+          statusLabel = t('votingTerminal.status.pending', {
+            startDate: formatDistance(
+              new Date(mappedProposal.startDate),
+              new Date()
+            ),
+          });
+          break;
+
+        case 'succeeded':
+          statusLabel = t('votingTerminal.status.closed');
+          break;
+
+        case 'executed':
+          statusLabel = t('votingTerminal.status.closed');
+          break;
+
+        case 'defeated':
+          statusLabel = t('votingTerminal.status.closed');
+          break;
+
+        case 'active': {
+          statusLabel = t('votingTerminal.status.active', {
+            endDate: formatDistance(
+              new Date(),
+              new Date(mappedProposal.endDate)
+            ),
+          });
+
+          // member not yet voted
+          if (address && !isOnWrongNetwork && canVote) {
+            voteNowDisabled = false;
+            onClick = () => {
+              setVotingInProcess(true);
+            };
+          }
+
+          // already voted
+          else if (canVote && voted) {
+            statusLabel = t('votingTerminal.status.voted') + statusLabel;
+          }
+
+          // not a member
+          else if (address && !isOnWrongNetwork && !canVote) {
+            alertMessage = mappedProposal.token
+              ? t('votingTerminal.status.ineligibleTokenBased', {
+                  token: mappedProposal.token.name,
+                })
+              : t('votingTerminal.status.ineligibleWhitelist');
+          }
+
+          // wrong network
+          else if (address && isOnWrongNetwork) {
+            voteNowDisabled = false;
+
+            onClick = () => {
+              open('network');
+              statusRef.current.wasOnWrongNetwork = true;
+            };
+          }
+
+          // not logged in
+          else {
+            voteNowDisabled = false;
+
+            onClick = () => {
+              open('wallet');
+              statusRef.current.wasNotLoggedIn = true;
+            };
+          }
+          break;
+        }
+      }
+
+      return [voteNowDisabled, statusLabel, alertMessage, onClick];
+    }, [
+      address,
+      canVote,
+      isOnWrongNetwork,
+      mappedProposal?.endDate,
+      mappedProposal?.startDate,
+      mappedProposal?.status,
+      mappedProposal?.token,
+      mappedProposal?.voters,
+      open,
+      t,
+    ]);
+
   /*************************************************
    *                    Render                    *
    *************************************************/
-  if (isLoading) {
+  if (proposalIsLoading) {
     return <Loading />;
   }
 
@@ -129,7 +282,7 @@ const Proposal: React.FC = () => {
         <ProposalTitle>{metadata?.title}</ProposalTitle>
         <ContentWrapper>
           <BadgeContainer>
-            {proposalTags.map(tag => (
+            {proposalTags.map((tag: string) => (
               <Badge label={tag} key={tag} />
             ))}
           </BadgeContainer>
@@ -176,7 +329,17 @@ const Proposal: React.FC = () => {
             </>
           )}
 
-          {mappedProposal && <VotingTerminal {...mappedProposal} />}
+          {mappedProposal && !canVoteLoading && (
+            <VotingTerminal
+              {...mappedProposal}
+              votingInProcess={votingInProcess}
+              onCancelClicked={() => setVotingInProcess(false)}
+              onVoteClicked={handleVoteClicked}
+              voteNowDisabled={voteNowDisabled}
+              statusLabel={statusLabel}
+              alertMessage={alertMessage}
+            />
+          )}
 
           <CardExecution
             title="Execution"
