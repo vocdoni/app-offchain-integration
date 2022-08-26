@@ -136,6 +136,7 @@ export const useDaoProposal = (proposalId?: string) => {
       proposalData.erc20VotingProposals[0]
     ).type;
 
+    // TODO: decode actions once available on SDK
     return {
       results,
       createdAt: `${format(

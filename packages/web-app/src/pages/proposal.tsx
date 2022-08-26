@@ -2,7 +2,6 @@ import {
   Badge,
   Breadcrumb,
   ButtonText,
-  CardExecution,
   IconChevronDown,
   IconChevronUp,
   IconGovernance,
@@ -35,19 +34,26 @@ import {useWalletCanVote} from 'hooks/useWalletCanVote';
 import {CHAIN_METADATA} from 'utils/constants';
 import {NotFound} from 'utils/paths';
 import {formatDistance} from 'date-fns';
+import {ExecutionWidget} from 'components/executionWidget';
+
+export type ExecutionStatus =
+  | 'defeated'
+  | 'executed'
+  | 'executable'
+  | 'executable-failed'
+  | 'default';
 
 const Proposal: React.FC = () => {
   const {t} = useTranslation();
   const {id} = useParams();
-  const {open} = useGlobalModalContext();
   const navigate = useNavigate();
   const {network} = useNetwork();
   const {set, get} = useCache();
   const {isDesktop} = useScreen();
+  const {open} = useGlobalModalContext();
   const {data: daoId} = useDaoParam();
   const {breadcrumbs, tag} = useMappedBreadcrumbs();
 
-  const [votingInProcess, setVotingInProcess] = useState(false);
   const {address, isConnected, isOnWrongNetwork} = useWallet();
   const {data: canVote, isLoading: canVoteLoading} = useWalletCanVote(
     daoId,
@@ -64,6 +70,9 @@ const Proposal: React.FC = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [metadata, setMetadata] = useState<Record<string, any> | undefined>();
   const [expandedProposal, setExpandedProposal] = useState(false);
+
+  // voting
+  const [votingInProcess, setVotingInProcess] = useState(false);
 
   const {
     data: {
@@ -145,110 +154,126 @@ const Proposal: React.FC = () => {
   // much to do with whether vote button is enabled. Would probably be good clean up of the
   // current component.
 
-  const [voteNowDisabled, statusLabel, alertMessage, handleVoteClicked] =
-    useMemo(() => {
-      let voteNowDisabled = true;
-      let onClick;
-      let statusLabel = '';
-      let alertMessage = '';
+  const [
+    voteNowDisabled,
+    statusLabel,
+    alertMessage,
+    executionStatus,
+    handleVoteClicked,
+  ] = useMemo(() => {
+    let voteNowDisabled = true;
+    let onClick;
+    let statusLabel = '';
+    let alertMessage = '';
+    let executionStatus: ExecutionStatus = 'default';
 
-      const voted = mappedProposal?.voters.some(
-        (voter: DisplayedVoter) => voter.wallet === address
-      );
+    const voted = mappedProposal?.voters.some(
+      (voter: DisplayedVoter) => voter.wallet === address
+    );
 
-      switch (mappedProposal?.status) {
-        // not sure how we'll be handling draft proposals so until then, keeping this
-        case 'draft':
-          statusLabel = t('votingTerminal.status.draft');
-          break;
+    switch (mappedProposal?.status) {
+      // not sure how we'll be handling draft proposals so until then, keeping this
+      case 'draft':
+        statusLabel = t('votingTerminal.status.draft');
+        break;
 
-        case 'pending':
-          statusLabel = t('votingTerminal.status.pending', {
-            startDate: formatDistance(
-              new Date(mappedProposal.startDate),
-              new Date()
-            ),
-          });
-          break;
+      case 'pending':
+        statusLabel = t('votingTerminal.status.pending', {
+          startDate: formatDistance(
+            new Date(mappedProposal.startDate),
+            new Date()
+          ),
+        });
+        break;
 
-        case 'succeeded':
-          statusLabel = t('votingTerminal.status.closed');
-          break;
+      case 'succeeded':
+        statusLabel = t('votingTerminal.status.succeeded');
+        executionStatus = 'executable';
+        break;
 
-        case 'executed':
-          statusLabel = t('votingTerminal.status.closed');
-          break;
+      case 'executed':
+        statusLabel = t('votingTerminal.status.succeeded');
 
-        case 'defeated':
-          statusLabel = t('votingTerminal.status.closed');
-          break;
+        // TODO: add cases for failed execution
+        // executionStatus = 'executable-failed';
 
-        case 'active': {
-          statusLabel = t('votingTerminal.status.active', {
-            endDate: formatDistance(
-              new Date(),
-              new Date(mappedProposal.endDate)
-            ),
-          });
+        executionStatus = 'executed';
+        break;
 
-          // member not yet voted
-          if (address && !isOnWrongNetwork && canVote) {
-            voteNowDisabled = false;
-            onClick = () => {
-              setVotingInProcess(true);
-            };
-          }
+      case 'defeated':
+        statusLabel = t('votingTerminal.status.defeated');
+        executionStatus = 'defeated';
+        break;
 
-          // already voted
-          else if (canVote && voted) {
-            statusLabel = t('votingTerminal.status.voted') + statusLabel;
-          }
+      case 'active': {
+        statusLabel = t('votingTerminal.status.active', {
+          endDate: formatDistance(new Date(), new Date(mappedProposal.endDate)),
+        });
 
-          // not a member
-          else if (address && !isOnWrongNetwork && !canVote) {
-            alertMessage = mappedProposal.token
-              ? t('votingTerminal.status.ineligibleTokenBased', {
-                  token: mappedProposal.token.name,
-                })
-              : t('votingTerminal.status.ineligibleWhitelist');
-          }
-
-          // wrong network
-          else if (address && isOnWrongNetwork) {
-            voteNowDisabled = false;
-
-            onClick = () => {
-              open('network');
-              statusRef.current.wasOnWrongNetwork = true;
-            };
-          }
-
-          // not logged in
-          else {
-            voteNowDisabled = false;
-
-            onClick = () => {
-              open('wallet');
-              statusRef.current.wasNotLoggedIn = true;
-            };
-          }
-          break;
+        // member not yet voted
+        if (address && !isOnWrongNetwork && canVote) {
+          voteNowDisabled = false;
+          onClick = () => {
+            setVotingInProcess(true);
+          };
         }
-      }
 
-      return [voteNowDisabled, statusLabel, alertMessage, onClick];
-    }, [
-      address,
-      canVote,
-      isOnWrongNetwork,
-      mappedProposal?.endDate,
-      mappedProposal?.startDate,
-      mappedProposal?.status,
-      mappedProposal?.token,
-      mappedProposal?.voters,
-      open,
-      t,
-    ]);
+        // already voted
+        else if (canVote && voted) {
+          statusLabel = t('votingTerminal.status.voted') + statusLabel;
+        }
+
+        // not a member
+        else if (address && !isOnWrongNetwork && !canVote) {
+          alertMessage = mappedProposal.token
+            ? t('votingTerminal.status.ineligibleTokenBased', {
+                token: mappedProposal.token.name,
+              })
+            : t('votingTerminal.status.ineligibleWhitelist');
+        }
+
+        // wrong network
+        else if (address && isOnWrongNetwork) {
+          voteNowDisabled = false;
+
+          onClick = () => {
+            open('network');
+            statusRef.current.wasOnWrongNetwork = true;
+          };
+        }
+
+        // not logged in
+        else {
+          voteNowDisabled = false;
+
+          onClick = () => {
+            open('wallet');
+            statusRef.current.wasNotLoggedIn = true;
+          };
+        }
+        break;
+      }
+    }
+
+    return [
+      voteNowDisabled,
+      statusLabel,
+      alertMessage,
+      executionStatus,
+      onClick,
+    ];
+  }, [
+    address,
+    canVote,
+    isOnWrongNetwork,
+    mappedProposal?.endDate,
+    mappedProposal?.startDate,
+    mappedProposal?.status,
+    mappedProposal?.token,
+    mappedProposal?.voters,
+    open,
+    t,
+  ]);
 
   /*************************************************
    *                    Render                    *
@@ -341,19 +366,7 @@ const Proposal: React.FC = () => {
             />
           )}
 
-          <CardExecution
-            title="Execution"
-            description="These smart actions are executed when the proposal reaches sufficient support. Find out which actions are executed."
-            to="0x3430008404144CD5000005A44B8ac3f4DB2a3434"
-            from="Patito DAO"
-            toLabel="To"
-            fromLabel="From"
-            tokenName="DAI"
-            tokenImageUrl="https://s2.coinmarketcap.com/static/img/coins/64x64/4943.png"
-            tokenSymbol="DAI"
-            tokenCount="15,000,230.2323"
-            treasuryShare="$1000.0"
-          />
+          <ExecutionWidget status={executionStatus} />
         </ProposalContainer>
 
         <AdditionalInfoContainer>
