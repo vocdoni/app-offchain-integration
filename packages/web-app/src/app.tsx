@@ -22,6 +22,7 @@ import Footer from 'containers/exploreFooter';
 import NetworkErrorMenu from 'containers/networkErrorMenu';
 import TransferMenu from 'containers/transferMenu';
 import {useWallet} from 'hooks/useWallet';
+import {useForm, FormProvider} from 'react-hook-form';
 
 const ExplorePage = lazy(() => import('pages/explore'));
 const NotFoundPage = lazy(() => import('pages/notFound'));
@@ -98,11 +99,13 @@ function App() {
               />
               <Route path="community" element={<CommunityPage />} />
               <Route path="settings" element={<SettingsPage />} />
-              <Route path="settings/edit" element={<EditSettingsPage />} />
-              <Route
-                path="settings/new-proposal"
-                element={<ProposeSettingsPage />}
-              />
+              <Route element={<NewSettingsWrapper />}>
+                <Route path="settings/edit" element={<EditSettingsPage />} />
+                <Route
+                  path="settings/new-proposal"
+                  element={<ProposeSettingsPage />}
+                />
+              </Route>
               <Route
                 path="community/mint-tokens"
                 element={<MintTokensProposalPage />}
@@ -125,6 +128,18 @@ function App() {
     </>
   );
 }
+
+const NewSettingsWrapper: React.FC = () => {
+  const formMethods = useForm({
+    mode: 'onChange',
+  });
+
+  return (
+    <FormProvider {...formMethods}>
+      <Outlet />
+    </FormProvider>
+  );
+};
 
 const NotFoundWrapper: React.FC = () => {
   const {pathname} = useLocation();
