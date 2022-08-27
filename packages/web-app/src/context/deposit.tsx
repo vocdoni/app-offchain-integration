@@ -1,4 +1,4 @@
-import {DaoDepositSteps, IDeposit} from '@aragon/sdk-client';
+import {DaoDepositSteps, IDepositParams} from '@aragon/sdk-client';
 import {useFormContext} from 'react-hook-form';
 import {generatePath, useNavigate, useParams} from 'react-router-dom';
 import React, {
@@ -45,10 +45,10 @@ const DepositProvider = ({children}: {children: ReactNode}) => {
 
   const {getValues} = useFormContext<DepositFormData>();
   const [depositState, setDepositState] = useState<TransactionState>();
-  const [depositParams, setDepositParams] = useState<IDeposit>();
+  const [depositParams, setDepositParams] = useState<IDepositParams>();
   const [modalParams, setModalParams] = useState<modalParamsType>({});
 
-  const {erc20: client} = useClient();
+  const {client} = useClient();
   const {setStep: setModalStep, currentStep} = useStepper(2);
 
   const shouldPoll = useMemo(
@@ -58,18 +58,19 @@ const DepositProvider = ({children}: {children: ReactNode}) => {
   );
 
   const depositIterator = useMemo(() => {
-    if (client && depositParams) return client.dao.deposit(depositParams);
+    if (client && depositParams) return client.methods.deposit(depositParams);
   }, [client, depositParams]);
 
   const estimateDepositFees = useCallback(async () => {
     if (client && depositParams) {
-      if (currentStep === 2 || isNativeToken(depositParams.token as string)) {
-        return client?.estimate.deposit(depositParams as IDeposit);
+      if (
+        currentStep === 2 ||
+        isNativeToken(depositParams.tokenAddress as string)
+      ) {
+        return client?.estimation.deposit(depositParams as IDepositParams);
       } else
-        return client?.estimate.increaseAllowance(
-          depositParams.token as string,
-          depositParams.daoAddress,
-          depositParams.amount
+        return client?.estimation.updateAllowance(
+          depositParams as IDepositParams
         );
     }
   }, [client, currentStep, depositParams]);
@@ -92,7 +93,7 @@ const DepositProvider = ({children}: {children: ReactNode}) => {
     setDepositParams({
       daoAddress: to,
       amount: BigInt(Number(amount) * Math.pow(10, 18)),
-      token: tokenAddress,
+      tokenAddress,
       reference,
     });
 
@@ -253,7 +254,7 @@ const DepositProvider = ({children}: {children: ReactNode}) => {
         handleApproval={handleApproval}
         closeOnDrag={depositState !== TransactionState.LOADING}
         depositAmount={depositParams?.amount as bigint}
-        tokenAddress={depositParams?.token as string}
+        tokenAddress={depositParams?.tokenAddress as string}
         ethPrice={tokenPrice}
       />
     </DepositContext.Provider>

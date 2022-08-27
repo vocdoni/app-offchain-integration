@@ -37,7 +37,7 @@ export type CreateDaoFormData = {
   tokenSymbol: string;
   tokenTotalSupply: number;
   isCustomToken: boolean;
-  links: {label: string; link: string}[];
+  links: {name: string; url: string}[];
   wallets: WalletField[];
   tokenAddress: string;
   durationMinutes: string;
@@ -55,7 +55,7 @@ const defaultValues = {
   tokenAddress: '',
   tokenSymbol: '',
   tokenTotalSupply: 0,
-  links: [{label: '', href: ''}],
+  links: [{name: '', url: ''}],
 
   // Uncomment when DAO Treasury minting is supported
   // wallets: [{address: constants.AddressZero, amount: '0'}],
