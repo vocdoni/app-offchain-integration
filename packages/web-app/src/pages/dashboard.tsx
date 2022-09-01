@@ -1,82 +1,78 @@
 import {ButtonText, HeaderDao} from '@aragon/ui-components';
+import {withTransaction} from '@elastic/apm-rum-react';
 import React, {useState} from 'react';
 import styled from 'styled-components';
-import {withTransaction} from '@elastic/apm-rum-react';
 
 import {Loading, TemporarySection} from 'components/temporary';
+import {MembershipSnapshot} from 'containers/membershipSnapshot';
 import ProposalSnapshot from 'containers/proposalSnapshot';
 import TreasurySnapshot from 'containers/treasurySnapshot';
-import {MembershipSnapshot} from 'containers/membershipSnapshot';
+import {useNetwork} from 'context/network';
+import {useDaoDetails} from 'hooks/useDaoDetails';
 import {useDaoParam} from 'hooks/useDaoParam';
-import {MockProposal, useDaoProposals} from 'hooks/useDaoProposals';
 import {useDaoVault} from 'hooks/useDaoVault';
-import {useDaoMetadata} from 'hooks/useDaoMetadata';
+import {PluginTypes} from 'hooks/usePluginClient';
+import {Proposal, useProposals} from 'hooks/useProposals';
 import useScreen from 'hooks/useScreen';
+import {useTranslation} from 'react-i18next';
 import {Transfer} from 'utils/types';
 import {formatDate} from 'utils/date';
-import {useNetwork} from 'context/network';
-import {useTranslation} from 'react-i18next';
 
 const Dashboard: React.FC = () => {
   const {t} = useTranslation();
   const {network} = useNetwork();
   const {isDesktop} = useScreen();
-  const {loading, data: daoId} = useDaoParam();
-
-  const {data: dao, loading: metadataLoading} = useDaoMetadata(daoId);
 
   //temporary helpers
-  const [showProposals, setShowProposals] = useState(true);
   const [showTransactions, setShowTransactions] = useState(true);
 
-  const {topTen} = useDaoProposals(showProposals);
-  const {transfers, totalAssetValue} = useDaoVault(daoId, showTransactions);
+  const {data: daoId, loading: daoParamLoading} = useDaoParam();
 
-  if (loading || metadataLoading) {
+  const {transfers, totalAssetValue} = useDaoVault(daoId!, showTransactions);
+  const {data: dao, isLoading: detailsAreLoading} = useDaoDetails(daoId!);
+
+  const {data: topTen, isLoading: proposalsAreLoading} = useProposals(
+    dao?.plugins[0].instanceAddress || '',
+    dao?.plugins[0].id as PluginTypes
+  );
+
+  if (proposalsAreLoading || detailsAreLoading || daoParamLoading) {
     return <Loading />;
   }
 
-  const isWalletBased = dao?.packages[0].pkg.__typename === 'WhitelistPackage';
+  if (!dao) return null;
+
+  const isAddressList =
+    (dao.plugins[0].id as PluginTypes) === 'addresslistvoting.dao.eth';
 
   return (
     <>
       <HeaderWrapper>
         <HeaderDao
-          daoName={dao?.name}
-          // Temporarily using address for dao instead of name
+          daoName={dao.metadata.name}
+          daoAvatar={dao.metadata.avatar}
           daoUrl={`app.aragon.org/#/daos/${network}/${daoId}`}
-          description={
-            'We are a community that loves trees and the planet. We track where forestation is increasing (or shrinking), fund people who are growing and protecting trees...'
-          }
-          created_at={formatDate(dao?.createdAt, 'MMMM yyyy').toString()}
+          description={dao.metadata.description}
+          created_at={formatDate(
+            dao.creationDate.getTime() / 1000,
+            'MMMM yyyy'
+          ).toString()}
           daoChain={network}
           daoType={
-            isWalletBased
+            isAddressList
               ? t('explore.explorer.walletBased')
               : t('explore.explorer.tokenBased')
           }
-          links={[
-            {
-              label: 'Website',
-              href: 'https://google.com',
-            },
-            {
-              label: 'Discord',
-              href: 'https://google.com',
-            },
-            {
-              label: 'Forum',
-              href: 'https://google.com',
-            },
-          ]}
+          links={
+            dao?.metadata.links.map(link => ({
+              label: link.name,
+              href: link.url,
+            })) || []
+          }
         />
       </HeaderWrapper>
       <div className="col-span-full">
         <TemporarySection purpose="It allows to toggle the presence of data and see the corresponding layouts.">
-          <ButtonText
-            label={showProposals ? 'Show No Proposals' : 'Show Proposals'}
-            onClick={() => setShowProposals(prev => !prev)}
-          />
           <ButtonText
             label={showTransactions ? 'Show No Transfers' : 'Show Transfers'}
             onClick={() => setShowTransactions(prev => !prev)}
@@ -89,7 +85,7 @@ const Dashboard: React.FC = () => {
           proposals={topTen}
           transfers={transfers}
           totalAssetValue={totalAssetValue}
-          walletBased={isWalletBased}
+          walletBased={isAddressList}
         />
       ) : (
         <MobileDashboardContent
@@ -97,7 +93,7 @@ const Dashboard: React.FC = () => {
           proposals={topTen}
           transfers={transfers}
           totalAssetValue={totalAssetValue}
-          walletBased={isWalletBased}
+          walletBased={isAddressList}
         />
       )}
     </>
@@ -113,7 +109,7 @@ const HeaderWrapper = styled.div.attrs({
 
 type DashboardContentProps = {
   dao: string;
-  proposals: MockProposal[];
+  proposals: Proposal[];
   transfers: Transfer[];
   totalAssetValue: number;
   walletBased: boolean;
@@ -187,7 +183,7 @@ const LeftWideContent = styled.div.attrs({
 })``;
 
 const RightNarrowContent = styled.div.attrs({
-  className: 'dektop:col-start-8 desktop:col-span-4 desktop:space-y-3',
+  className: 'desktop:col-start-8 desktop:col-span-4 desktop:space-y-3',
 })``;
 
 const EqualDivide = styled.div.attrs({
