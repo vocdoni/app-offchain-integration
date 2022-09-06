@@ -24,19 +24,32 @@ import {useDaoParam} from 'hooks/useDaoParam';
 import {Loading} from 'components/temporary';
 import {EditSettings} from 'utils/paths';
 import {useNetwork} from 'context/network';
+import {useDaoDetails} from 'hooks/useDaoDetails';
+import {usePluginSettings} from 'hooks/usePluginSettings';
+import {PluginTypes} from 'hooks/usePluginClient';
+import {getDHMFromSeconds} from 'utils/date';
 
 const Settings: React.FC = () => {
-  const {loading} = useDaoParam();
+  const {data: daoId, loading} = useDaoParam();
   const {t} = useTranslation();
   const {open} = useGlobalModalContext();
   const {isMobile} = useScreen();
   const {network} = useNetwork();
   const {dao} = useParams();
   const navigate = useNavigate();
+  const {data: daoDetails, isLoading: detailsAreLoading} = useDaoDetails(
+    daoId!
+  );
+  const {data: daoSettings, isLoading: settingsAreLoading} = usePluginSettings(
+    daoDetails?.plugins[1].instanceAddress as string,
+    daoDetails?.plugins[1].id as PluginTypes
+  );
 
-  if (loading) {
+  if (loading || detailsAreLoading || settingsAreLoading) {
     return <Loading />;
   }
+
+  const {days, hours, minutes} = getDHMFromSeconds(daoSettings.minDuration);
 
   return (
     <PageWrapper
@@ -47,14 +60,17 @@ const Settings: React.FC = () => {
       onClick={() => navigate(generatePath(EditSettings, {network, dao}))}
     >
       <div className="mt-3 desktop:mt-8 space-y-5">
-        <DescriptionListContainer title={t('labels.review.blockchain')}>
+        <DescriptionListContainer
+          title={t('labels.review.blockchain')}
+          notChangeableBadge
+        >
           <Dl>
             <Dt>{t('labels.review.network')}</Dt>
             <Dd>{t('createDAO.review.network', {network: 'Main'})}</Dd>
           </Dl>
           <Dl>
             <Dt>{t('labels.review.blockchain')}</Dt>
-            <Dd>Arbitrum</Dd>
+            <Dd>{network}</Dd>
           </Dl>
         </DescriptionListContainer>
 
@@ -62,32 +78,36 @@ const Settings: React.FC = () => {
           <Dl>
             <Dt>{t('labels.logo')}</Dt>
             <Dd>
-              <AvatarDao daoName="Aragon" />
+              <AvatarDao
+                daoName={daoDetails?.ensDomain || ''}
+                src={daoDetails?.metadata.avatar}
+              />
             </Dd>
           </Dl>
           <Dl>
             <Dt>{t('labels.daoName')}</Dt>
-            <Dd>Aragon DAO</Dd>
+            <Dd>{daoDetails?.ensDomain}</Dd>
           </Dl>
           <Dl>
             <Dt>{t('labels.summary')}</Dt>
-            <Dd>
-              This is a short description of your DAO, so please look that
-              it&apos;s not that long as wished. 👀
-            </Dd>
+            <Dd>{daoDetails?.metadata.description}</Dd>
           </Dl>
           <Dl>
             <Dt>{t('labels.links')}</Dt>
             <Dd>
               <div className="space-y-1.5">
-                <ListItemLink label="Forum" href="https://forum.aragon.org" />
-                <ListItemLink label="Discord" href="https://discord.com" />
+                {daoDetails?.metadata.links.map(({name, url}) => (
+                  <ListItemLink label={name} href={url} key={url} />
+                ))}
               </div>
             </Dd>
           </Dl>
         </DescriptionListContainer>
 
-        <DescriptionListContainer title={t('labels.review.community')}>
+        <DescriptionListContainer
+          title={t('labels.review.community')}
+          notChangeableBadge
+        >
           <Dl>
             <Dt>{t('labels.review.eligibleMembers')}</Dt>
             <Dd>{t('createDAO.step3.tokenMembership')}</Dd>
@@ -127,15 +147,21 @@ const Settings: React.FC = () => {
         <DescriptionListContainer title={t('labels.review.governance')}>
           <Dl>
             <Dt>{t('labels.minimumApproval')}</Dt>
-            <Dd>15% (150 TKN)</Dd>
+            <Dd>{Math.round(daoSettings.minTurnout * 100)}% (150 TKN)</Dd>
           </Dl>
           <Dl>
             <Dt>{t('labels.minimumSupport')}</Dt>
-            <Dd>50%</Dd>
+            <Dd>{Math.round(daoSettings?.minSupport * 100)}%</Dd>
           </Dl>
           <Dl>
             <Dt>{t('labels.minimumDuration')}</Dt>
-            <Dd>5 Days 12 Hours 30 Minutes</Dd>
+            <Dd>
+              {t('governance.settings.preview', {
+                days,
+                hours,
+                minutes,
+              })}
+            </Dd>
           </Dl>
         </DescriptionListContainer>
 

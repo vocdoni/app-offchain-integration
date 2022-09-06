@@ -1,5 +1,5 @@
-import {AlertInline, Label, NumberInput} from '@aragon/ui-components';
 import React, {useCallback, useMemo} from 'react';
+import {AlertInline, Label, NumberInput} from '@aragon/ui-components';
 import styled from 'styled-components';
 import {useTranslation} from 'react-i18next';
 import {Controller, useFormContext, useWatch} from 'react-hook-form';
@@ -8,6 +8,7 @@ import {HOURS_IN_DAY, MINS_IN_DAY, MINS_IN_HOUR} from 'utils/constants';
 const ConfigureCommunity: React.FC = () => {
   const {t} = useTranslation();
   const {control, setValue, getValues} = useFormContext();
+
   const defaultMinimumParticipation = 51;
   const [
     tokenTotalSupply,
