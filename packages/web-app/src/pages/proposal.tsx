@@ -44,6 +44,11 @@ import {
   getWhitelistVoterParticipation,
 } from 'utils/proposals';
 import {i18n} from '../../i18n.config';
+import {ExecutionWidget} from 'components/executionWidget';
+import {useClient} from 'hooks/useClient';
+import {useApolloClient} from '@apollo/client';
+import {ActionWithdraw} from 'utils/types';
+import {decodeWithdrawToAction} from 'utils/library';
 
 // TODO: @Sepehr Please assign proper tags on action decoding
 const PROPOSAL_TAGS = ['Finance', 'Withdraw'];
@@ -54,9 +59,14 @@ const Proposal: React.FC = () => {
   const {id} = useParams();
   const {open} = useGlobalModalContext();
   const navigate = useNavigate();
-  const {set, get} = useCache();
   const {isDesktop} = useScreen();
   const {breadcrumbs, tag} = useMappedBreadcrumbs();
+  const apolloClient = useApolloClient();
+  const [decodedActions, setDecodedActions] =
+    useState<(ActionWithdraw | undefined)[]>();
+  const {client} = useClient();
+
+  const {set, get} = useCache();
 
   const {network} = useNetwork();
   const {address, isConnected, isOnWrongNetwork} = useWallet();
@@ -101,6 +111,45 @@ const Proposal: React.FC = () => {
       editor.commands.setContent(proposal.metadata.description, true);
     }
   }, [editor, proposal]);
+
+  useEffect(() => {
+    if (proposal) {
+      const actionPromises = proposal.actions.map(action => {
+        const functionParams = client?.decoding.findInterface(action.data);
+        switch (functionParams?.functionName) {
+          case 'withdraw':
+            return decodeWithdrawToAction(
+              action.data,
+              client,
+              apolloClient,
+              network
+            );
+          default:
+            return Promise.resolve({} as ActionWithdraw);
+        }
+      });
+      Promise.all(actionPromises).then(value => {
+        setDecodedActions(value);
+      });
+    }
+  }, [apolloClient, client, network, proposal]);
+
+  const executionStatus = useMemo(() => {
+    switch (proposal?.status) {
+      case 'Succeeded':
+        return 'executable';
+      case 'Executed':
+        // TODO: add cases for failed execution
+        // executionStatus = 'executable-failed';
+        return 'executed';
+      case 'Defeated':
+        return 'defeated';
+      case 'Active':
+      case 'Pending':
+      default:
+        return 'default';
+    }
+  }, [proposal?.status]);
 
   // caches the status for breadcrumb
   useEffect(() => {
@@ -324,8 +373,7 @@ const Proposal: React.FC = () => {
             />
           )}
 
-          {/* TODO: Fill out voting terminal props*/}
-          {/* <ExecutionWidget /> */}
+          <ExecutionWidget actions={decodedActions} status={executionStatus} />
         </ProposalContainer>
         <AdditionalInfoContainer>
           <ResourceList links={proposal?.metadata.resources} />
