@@ -1,6 +1,9 @@
-import {useQuery} from '@apollo/client';
-import {ICreateProposalParams} from '@aragon/sdk-client';
-import React, {useCallback, useMemo, useState} from 'react';
+import {
+  ICreateProposalParams,
+  InstalledPluginListItem,
+  ProposalCreationSteps,
+} from '@aragon/sdk-client';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useFormContext} from 'react-hook-form';
 import {useTranslation} from 'react-i18next';
 import {generatePath, useNavigate} from 'react-router-dom';
@@ -11,12 +14,16 @@ import {useDaoParam} from 'hooks/useDaoParam';
 import {PluginTypes, usePluginClient} from 'hooks/usePluginClient';
 import {usePollGasFee} from 'hooks/usePollGasfee';
 import {useWallet} from 'hooks/useWallet';
-import {DAO_BY_ADDRESS} from 'queries/dao';
 import {TransactionState} from 'utils/constants';
 import {Governance} from 'utils/paths';
-import {client} from './apolloClient';
 import {useGlobalModalContext} from './globalModals';
 import {useNetwork} from './network';
+import {useDaoDetails} from 'hooks/useDaoDetails';
+import {getCanonicalUtcOffset} from 'utils/date';
+import {useClient} from 'hooks/useClient';
+import {useActionsContext} from './actions';
+import {ActionItem} from 'utils/types';
+import {DaoAction} from '@aragon/sdk-client/dist/internal/interfaces/common';
 
 type Props = {
   showTxModal: boolean;
@@ -34,54 +41,110 @@ const CreateProposalProvider: React.FC<Props> = ({
   const {t} = useTranslation();
   const {isOnWrongNetwork} = useWallet();
   const {open} = useGlobalModalContext();
+  const {data: dao, isLoading} = useDaoParam();
+  const {data: daoDetails, isLoading: daoDetailsLoading} = useDaoDetails(dao);
+  const {client} = useClient();
+  const {actions} = useActionsContext();
+  const [proposalCreationData, setProposalCreationData] =
+    useState<ICreateProposalParams>();
 
-  const {data: dao, loading} = useDaoParam();
+  const {id: pluginType, instanceAddress: pluginAddress} =
+    daoDetails?.plugins[0] || ({} as InstalledPluginListItem);
 
-  const {data, loading: daoDetailsLoading} = useQuery(DAO_BY_ADDRESS, {
-    variables: {id: dao},
-    client: client[network],
-  });
-
-  const {__typename: type, id: pluginAddress} = data?.dao.packages[0].pkg;
-
-  const pluginType: PluginTypes = useMemo(
-    () =>
-      type === 'WhitelistPackage'
-        ? 'addresslistvoting.dao.eth'
-        : 'erc20voting.dao.eth',
-    [type]
+  const pluginClient = usePluginClient(
+    pluginAddress,
+    pluginType as PluginTypes
   );
-
-  const pluginClient = usePluginClient(pluginAddress, pluginType);
 
   const [creationProcessState, setCreationProcessState] =
     useState<TransactionState>(TransactionState.WAITING);
 
   const shouldPoll = useMemo(
-    () => creationProcessState === TransactionState.WAITING,
-    [creationProcessState]
+    () =>
+      creationProcessState === TransactionState.WAITING &&
+      proposalCreationData !== undefined,
+    [creationProcessState, proposalCreationData]
   );
+
+  const encodeActions = useCallback(() => {
+    const actionsForm = getValues().actions;
+    // return an empty array for undefined clients
+    if (!client) return Promise.resolve([] as DaoAction[]);
+
+    const promises = actions?.map((action: ActionItem, index: number) => {
+      switch (action.name) {
+        case 'withdraw_assets':
+          return client.encoding.withdrawAction(dao, {
+            recipientAddress: actionsForm[index].to,
+            amount: BigInt(
+              Number(actionsForm[index].amount) * Math.pow(10, 18)
+            ),
+            tokenAddress: actionsForm[index].tokenAddress,
+          });
+        default:
+          return Promise.resolve({} as DaoAction);
+      }
+    });
+    return Promise.all(promises);
+  }, [actions, client, dao, getValues]);
 
   // Because getValues does NOT get updated on each render, leaving this as
   // a function to be called when data is needed instead of a memoized value
-  const getProposalCreationParams = useCallback((): ICreateProposalParams => {
-    const [title, summary, description, resources] = getValues([
-      'proposalTitle',
-      'proposalSummary',
-      'proposal',
-      'links',
-    ]);
-
-    return {
-      pluginAddress,
-      metadata: {
+  const getProposalCreationParams =
+    useCallback(async (): Promise<ICreateProposalParams> => {
+      const [
         title,
         summary,
         description,
         resources,
-      },
-    };
-  }, [getValues, pluginAddress]);
+        startDate,
+        startTime,
+        startUtc,
+        endDate,
+        endTime,
+        endUtc,
+      ] = getValues([
+        'proposalTitle',
+        'proposalSummary',
+        'proposal',
+        'links',
+        'startDate',
+        'startTime',
+        'startUtc',
+        'endDate',
+        'endTime',
+        'endUtc',
+      ]);
+
+      const actions = await encodeActions();
+
+      // Ignore encoding if the proposal had no actions
+      return {
+        pluginAddress,
+        metadata: {
+          title,
+          summary,
+          description,
+          resources,
+        },
+        startDate: new Date(
+          `${startDate}T${startTime}:00${getCanonicalUtcOffset(startUtc)}`
+        ),
+        endDate: new Date(
+          `${endDate}T${endTime}:00${getCanonicalUtcOffset(endUtc)}`
+        ),
+        actions,
+      };
+    }, [encodeActions, getValues, pluginAddress]);
+
+  useEffect(() => {
+    async function setProposalData() {
+      if (showTxModal && creationProcessState === TransactionState.WAITING)
+        setProposalCreationData(await getProposalCreationParams());
+    }
+
+    setProposalData();
+  }, [creationProcessState, getProposalCreationParams, showTxModal]);
 
   const estimateCreationFees = useCallback(async () => {
     if (!pluginClient) {
@@ -89,9 +152,10 @@ const CreateProposalProvider: React.FC<Props> = ({
         new Error('ERC20 SDK client is not initialized correctly')
       );
     }
+    if (!proposalCreationData) return;
 
-    return pluginClient?.estimation.createProposal(getProposalCreationParams());
-  }, [getProposalCreationParams, pluginClient]);
+    return pluginClient?.estimation.createProposal(proposalCreationData);
+  }, [pluginClient, proposalCreationData]);
 
   const {tokenPrice, maxFee, averageFee, stopPolling} = usePollGasFee(
     estimateCreationFees,
@@ -113,38 +177,23 @@ const CreateProposalProvider: React.FC<Props> = ({
     }
   };
 
-  const createVotingProposal = async () => {
+  const handlePublishProposal = async () => {
     if (!pluginClient) {
-      return Promise.reject(
-        new Error('ERC20 SDK client is not initialized correctly')
-      );
+      return new Error('ERC20 SDK client is not initialized correctly');
     }
 
-    return pluginClient.methods.createProposal(getProposalCreationParams());
-  };
+    // if no creation data is set, or transaction already running, do nothing.
+    if (
+      !proposalCreationData ||
+      creationProcessState === TransactionState.LOADING
+    ) {
+      console.log('Transaction is running');
+      return;
+    }
 
-  // TODO: add action encoding with new version of sdk
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const encodeActions = () => {
-    const actions = getValues().actions;
-    return actions.map((action: Record<string, string>) => {
-      if (action.name === 'withdraw_assets') {
-        // doesn't matter which client we use to encode actions, both are the same
-        // return pluginClient?.encode.actions.withdraw(
-        //   action.to,
-        //   BigInt(parseUnits(action.amount, 18).toBigInt()),
-        //   {
-        //     to: action.to,
-        //     token: action.tokenAddress,
-        //     amount: BigInt(parseUnits(action.amount, 18).toBigInt()),
-        //     reference: action.reference,
-        //   }
-        // );
-      }
-    });
-  };
+    const proposalIterator =
+      pluginClient.methods.createProposal(proposalCreationData);
 
-  const handlePublishProposal = async () => {
     if (creationProcessState === TransactionState.SUCCESS) {
       handleCloseModal();
       return;
@@ -157,13 +206,21 @@ const CreateProposalProvider: React.FC<Props> = ({
     }
 
     setCreationProcessState(TransactionState.LOADING);
-
-    try {
-      await createVotingProposal();
-      setCreationProcessState(TransactionState.SUCCESS);
-    } catch (error) {
-      console.error(error);
-      setCreationProcessState(TransactionState.ERROR);
+    for await (const step of proposalIterator) {
+      try {
+        switch (step.key) {
+          case ProposalCreationSteps.CREATING:
+            console.log(step.txHash);
+            break;
+          case ProposalCreationSteps.DONE:
+            console.log('proposal id', step.proposalId);
+            setCreationProcessState(TransactionState.SUCCESS);
+            break;
+        }
+      } catch (error) {
+        console.error(error);
+        setCreationProcessState(TransactionState.ERROR);
+      }
     }
   };
 
@@ -171,7 +228,7 @@ const CreateProposalProvider: React.FC<Props> = ({
    *                    Render                     *
    *************************************************/
 
-  if (loading || daoDetailsLoading) {
+  if (isLoading || daoDetailsLoading) {
     return <Loading />;
   }
 

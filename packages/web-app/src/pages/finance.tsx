@@ -22,7 +22,7 @@ import {useParams} from 'react-router-dom';
 const Finance: React.FC = () => {
   const {t} = useTranslation();
   const {open} = useGlobalModalContext();
-  const {data: daoId, loading} = useDaoParam();
+  const {data: daoId, isLoading} = useDaoParam();
   const {handleTransferClicked} = useTransactionDetailContext();
   const {tokens, totalAssetChange, totalAssetValue, transfers} =
     useDaoVault(daoId);
@@ -33,7 +33,7 @@ const Finance: React.FC = () => {
   /*************************************************
    *                    Render                     *
    *************************************************/
-  if (loading) {
+  if (isLoading) {
     return <Loading />;
   }
 

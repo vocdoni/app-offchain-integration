@@ -53,7 +53,7 @@ const EditSettings: React.FC = () => {
   });
   const {errors} = useFormState({control});
 
-  const {data: daoId, loading: paramAreLoading} = useDaoParam();
+  const {data: daoId, isLoading: paramAreLoading} = useDaoParam();
   const {data: daoDetails, isLoading: detailsAreLoading} = useDaoDetails(
     daoId!
   );

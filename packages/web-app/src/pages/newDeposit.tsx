@@ -45,7 +45,7 @@ const defaultValues = {
 const NewDeposit: React.FC = () => {
   const {t} = useTranslation();
   const {network} = useNetwork();
-  const {data: dao, loading} = useDaoParam();
+  const {data: dao, isLoading} = useDaoParam();
 
   const {address} = useWallet();
   const {data: walletTokens} = useWalletTokens();
@@ -101,7 +101,7 @@ const NewDeposit: React.FC = () => {
    *                    Render                     *
    *************************************************/
 
-  if (loading) {
+  if (isLoading) {
     return <Loading />;
   }
 
