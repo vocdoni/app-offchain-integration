@@ -1,4 +1,5 @@
 import {
+  ClientAddressList,
   ClientErc20,
   ICreateProposalParams,
   InstalledPluginListItem,
@@ -98,11 +99,39 @@ const CreateProposalProvider: React.FC<Props> = ({
             );
           });
           break;
+        case 'add_address': {
+          const wallets = action.inputs.memberWallets.map(
+            wallet => wallet.address
+          );
+          actions.push(
+            Promise.resolve(
+              (pluginClient as ClientAddressList).encoding.addMembersAction(
+                pluginAddress,
+                wallets
+              )
+            )
+          );
+          break;
+        }
+        case 'remove_address': {
+          const wallets = action.inputs.memberWallets.map(
+            wallet => wallet.address
+          );
+          actions.push(
+            Promise.resolve(
+              (pluginClient as ClientAddressList).encoding.removeMembersAction(
+                pluginAddress,
+                wallets
+              )
+            )
+          );
+          break;
+        }
       }
     });
 
     return Promise.all(actions);
-  }, [client, dao, getValues, pluginClient]);
+  }, [client, dao, getValues, pluginAddress, pluginClient]);
 
   // Because getValues does NOT get updated on each render, leaving this as
   // a function to be called when data is needed instead of a memoized value
