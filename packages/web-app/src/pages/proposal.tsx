@@ -34,13 +34,17 @@ import {useDaoDetails} from 'hooks/useDaoDetails';
 import {useDaoParam} from 'hooks/useDaoParam';
 import {DetailedProposal, useDaoProposal} from 'hooks/useDaoProposal';
 import {useMappedBreadcrumbs} from 'hooks/useMappedBreadcrumbs';
-import {PluginTypes} from 'hooks/usePluginClient';
+import {PluginTypes, usePluginClient} from 'hooks/usePluginClient';
 import useScreen from 'hooks/useScreen';
 import {useWallet} from 'hooks/useWallet';
 import {useWalletCanVote} from 'hooks/useWalletCanVote';
 import {CHAIN_METADATA} from 'utils/constants';
 import {getFormattedUtcOffset, KNOWN_FORMATS} from 'utils/date';
-import {decodeWithdrawToAction} from 'utils/library';
+import {
+  decodeWithdrawToAction,
+  decodeAddMembersToAction,
+  decodeRemoveMembersToAction,
+} from 'utils/library';
 import {
   getErc20MinimumApproval,
   getErc20Results,
@@ -51,8 +55,9 @@ import {
   getWhitelistVoterParticipation,
   isTokenBasedProposal,
 } from 'utils/proposals';
-import {ActionWithdraw} from 'utils/types';
+import {Action} from 'utils/types';
 import {i18n} from '../../i18n.config';
+import {ClientAddressList, InstalledPluginListItem} from '@aragon/sdk-client';
 
 // TODO: @Sepehr Please assign proper tags on action decoding
 const PROPOSAL_TAGS = ['Finance', 'Withdraw'];
@@ -66,7 +71,7 @@ const Proposal: React.FC = () => {
   const {breadcrumbs, tag} = useMappedBreadcrumbs();
   const apolloClient = useApolloClient();
   const [decodedActions, setDecodedActions] =
-    useState<(ActionWithdraw | undefined)[]>();
+    useState<(Action | undefined)[]>();
   const {client} = useClient();
 
   const {set, get} = useCache();
@@ -89,6 +94,14 @@ const Proposal: React.FC = () => {
     id || '',
     daoDetails?.plugins[0].instanceAddress || '',
     daoDetails?.plugins[0].id as PluginTypes
+  );
+
+  const {id: pluginType, instanceAddress: pluginAddress} =
+    daoDetails?.plugins[0] || ({} as InstalledPluginListItem);
+
+  const pluginClient = usePluginClient(
+    pluginAddress,
+    pluginType as PluginTypes
   );
 
   // ref used to hold "memories" of previous "state"
@@ -121,25 +134,84 @@ const Proposal: React.FC = () => {
 
   useEffect(() => {
     if (proposal) {
-      const actionPromises = proposal.actions.map(action => {
-        const functionParams = client?.decoding.findInterface(action.data);
-        switch (functionParams?.functionName) {
-          case 'withdraw':
-            return decodeWithdrawToAction(
-              action.data,
-              client,
-              apolloClient,
-              network
-            );
-          default:
-            return Promise.resolve({} as ActionWithdraw);
-        }
-      });
+      const actionPromises: Promise<Action | undefined>[] =
+        proposal.actions.map(action => {
+          const functionParams =
+            client?.decoding.findInterface(action.data) ||
+            pluginClient?.decoding.findInterface(action.data);
+
+          switch (functionParams?.functionName) {
+            case 'withdraw':
+              return decodeWithdrawToAction(
+                action.data,
+                client,
+                apolloClient,
+                network
+              );
+            case 'mint':
+            case 'addWhitelistedUsers':
+              return decodeAddMembersToAction(
+                action.data,
+                pluginClient as ClientAddressList
+              );
+            case 'removeWhitelistedUsers':
+              return decodeRemoveMembersToAction(
+                action.data,
+                pluginClient as ClientAddressList
+              );
+            default:
+              return Promise.resolve({} as Action);
+          }
+        });
+
       Promise.all(actionPromises).then(value => {
         setDecodedActions(value);
       });
     }
-  }, [apolloClient, client, network, proposal]);
+  }, [apolloClient, client, network, pluginClient, proposal]);
+
+  // caches the status for breadcrumb
+  useEffect(() => {
+    if (proposal && proposal.status !== get('proposalStatus'))
+      set('proposalStatus', proposal.status);
+  }, [get, proposal, set]);
+
+  useEffect(() => {
+    // was not logged in but now logged in
+    if (statusRef.current.wasNotLoggedIn && isConnected) {
+      // reset ref
+      statusRef.current.wasNotLoggedIn = false;
+
+      // logged out technically wrong network
+      statusRef.current.wasOnWrongNetwork = true;
+
+      // throw network modal
+      if (isOnWrongNetwork) {
+        open('network');
+      }
+    }
+  }, [isConnected, isOnWrongNetwork, open]);
+
+  useEffect(() => {
+    // all conditions unmet close voting in process
+    if (isOnWrongNetwork || !isConnected || !canVote) {
+      setVotingInProcess(false);
+    }
+
+    // was on the wrong network but now on the right one
+    if (statusRef.current.wasOnWrongNetwork && !isOnWrongNetwork) {
+      // reset ref
+      statusRef.current.wasOnWrongNetwork = false;
+
+      // show voting in process
+      if (canVote) setVotingInProcess(true);
+    }
+  }, [
+    canVote,
+    isConnected,
+    isOnWrongNetwork,
+    statusRef.current.wasOnWrongNetwork,
+  ]);
 
   // caches the status for breadcrumb
   useEffect(() => {
