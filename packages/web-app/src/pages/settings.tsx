@@ -94,7 +94,7 @@ const Settings: React.FC = () => {
       <div className="mt-3 desktop:mt-8 space-y-5">
         <DescriptionListContainer
           title={t('labels.review.blockchain')}
-          notChangeableBadge
+          badgeLabel={t('labels.notChangeable')}
         >
           <Dl>
             <Dt>{t('labels.review.network')}</Dt>
@@ -106,7 +106,10 @@ const Settings: React.FC = () => {
           </Dl>
         </DescriptionListContainer>
 
-        <DescriptionListContainer title={t('labels.review.daoMetadata')}>
+        <DescriptionListContainer
+          title={t('labels.review.daoMetadata')}
+          badgeLabel={t('labels.changeableVote')}
+        >
           <Dl>
             <Dt>{t('labels.logo')}</Dt>
             <Dd>
@@ -136,9 +139,16 @@ const Settings: React.FC = () => {
           </Dl>
         </DescriptionListContainer>
 
-        <DescriptionListContainer title={t('labels.review.community')}>
+        <DescriptionListContainer
+          title={t('labels.review.voters')}
+          badgeLabel={t('labels.notChangeable')}
+        >
           <Dl>
-            <Dt>{t('labels.review.eligibleMembers')}</Dt>
+            <Dt>{t('labels.review.eligibleVoters')}</Dt>
+            <Dd>{t('createDAO.step3.tokenMembership')}</Dd>
+          </Dl>
+          <Dl>
+            <Dt>{t('votingTerminal.token')}</Dt>
             <Dd>
               {isErc20Plugin
                 ? t('createDAO.step3.tokenMembership')
@@ -184,7 +194,10 @@ const Settings: React.FC = () => {
           </Dl>
         </DescriptionListContainer>
 
-        <DescriptionListContainer title={t('labels.review.governance')}>
+        <DescriptionListContainer
+          title={t('labels.review.governance')}
+          badgeLabel={t('labels.changeable')}
+        >
           <Dl>
             <Dt>{t('labels.minimumApproval')}</Dt>
             {isErc20Plugin ? (

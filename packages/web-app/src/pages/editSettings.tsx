@@ -343,7 +343,7 @@ const EditSettings: React.FC = () => {
         <HStack>
           <ButtonText
             className="w-full tablet:w-max"
-            label={t('settings.proposeSettings')}
+            label={t('settings.reviewProposal')}
             iconLeft={<IconGovernance />}
             size={isMobile ? 'large' : 'medium'}
             disabled={!isGovernanceChanged && !isMetadataChanged}

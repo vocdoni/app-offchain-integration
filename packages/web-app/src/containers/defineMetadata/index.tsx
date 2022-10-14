@@ -131,7 +131,7 @@ const DefineMetadata: React.FC<{bgWhite?: boolean}> = ({bgWhite = false}) => {
       {/* Summary */}
       <FormItem>
         <Label
-          label={t('labels.summary')}
+          label={t('labels.description')}
           helpText={t('createDAO.step2.descriptionSubtitle')}
         />
         <Controller
