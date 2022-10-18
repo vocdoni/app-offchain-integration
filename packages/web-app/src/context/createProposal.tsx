@@ -1,3 +1,4 @@
+import {useReactiveVar} from '@apollo/client';
 import {
   ClientAddressList,
   ClientErc20,
@@ -5,6 +6,8 @@ import {
   InstalledPluginListItem,
   ProposalCreationSteps,
 } from '@aragon/sdk-client';
+import {DaoAction} from '@aragon/sdk-client/dist/internal/interfaces/common';
+import {differenceInSeconds} from 'date-fns';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useFormContext} from 'react-hook-form';
 import {useTranslation} from 'react-i18next';
@@ -12,20 +15,31 @@ import {generatePath, useNavigate} from 'react-router-dom';
 
 import {Loading} from 'components/temporary';
 import PublishModal from 'containers/transactionModals/publishModal';
+import {useClient} from 'hooks/useClient';
+import {useDaoDetails} from 'hooks/useDaoDetails';
 import {useDaoParam} from 'hooks/useDaoParam';
 import {PluginTypes, usePluginClient} from 'hooks/usePluginClient';
+import {usePluginSettings} from 'hooks/usePluginSettings';
 import {usePollGasFee} from 'hooks/usePollGasfee';
 import {useWallet} from 'hooks/useWallet';
-import {TransactionState} from 'utils/constants';
-import {Governance} from 'utils/paths';
+import {trackEvent} from 'services/analytics';
+import {
+  CHAIN_METADATA,
+  PENDING_PROPOSALS_KEY,
+  TransactionState,
+} from 'utils/constants';
+import {getCanonicalUtcOffset} from 'utils/date';
+import {customJSONReplacer} from 'utils/library';
+import {Proposal} from 'utils/paths';
+import {Action, DetailedProposal} from 'utils/types';
+import {pendingProposalsVar} from './apolloClient';
 import {useGlobalModalContext} from './globalModals';
 import {useNetwork} from './network';
-import {useDaoDetails} from 'hooks/useDaoDetails';
-import {getCanonicalUtcOffset} from 'utils/date';
-import {useClient} from 'hooks/useClient';
-import {Action} from 'utils/types';
-import {DaoAction} from '@aragon/sdk-client/dist/internal/interfaces/common';
-import {trackEvent} from 'services/analytics';
+import {usePrivacyContext} from './privacyContext';
+import {useDaoToken} from 'hooks/useDaoToken';
+import {useDaoMembers} from 'hooks/useDaoMembers';
+import {getTokenInfo} from 'utils/tokens';
+import {useProviders} from './providers';
 
 type Props = {
   showTxModal: boolean;
@@ -41,7 +55,8 @@ const CreateProposalProvider: React.FC<Props> = ({
   const {network} = useNetwork();
   const {getValues} = useFormContext();
   const {t} = useTranslation();
-  const {isOnWrongNetwork, provider} = useWallet();
+  const {isOnWrongNetwork, provider, address} = useWallet();
+  const {infura} = useProviders();
   const {open} = useGlobalModalContext();
   const {data: dao, isLoading} = useDaoParam();
   const {data: daoDetails, isLoading: daoDetailsLoading} = useDaoDetails(dao);
@@ -52,10 +67,29 @@ const CreateProposalProvider: React.FC<Props> = ({
   const {id: pluginType, instanceAddress: pluginAddress} =
     daoDetails?.plugins[0] || ({} as InstalledPluginListItem);
 
+  const {data: pluginSettings, isLoading: pluginSettingsLoading} =
+    usePluginSettings(pluginAddress, pluginType as PluginTypes);
+
   const pluginClient = usePluginClient(pluginType as PluginTypes);
+
+  const {
+    data: {members},
+  } = useDaoMembers(pluginAddress, pluginType as PluginTypes);
+  const {data: daoToken} = useDaoToken(pluginAddress);
 
   const [creationProcessState, setCreationProcessState] =
     useState<TransactionState>(TransactionState.WAITING);
+
+  // TODO: set proposal ID when sdk returns proper id for now dummy id
+  const [proposalId] = useState<string>(
+    '0xd7e937b8d779de644c691857e58e3342ab322345_0x0'
+  );
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [tokenSupply, setTokenSupply] = useState<bigint>();
+
+  const {preferences} = usePrivacyContext();
+  const cachedProposals = useReactiveVar(pendingProposalsVar);
 
   const shouldPoll = useMemo(
     () =>
@@ -63,6 +97,26 @@ const CreateProposalProvider: React.FC<Props> = ({
       proposalCreationData !== undefined,
     [creationProcessState, proposalCreationData]
   );
+
+  useEffect(() => {
+    // Fetching necessary info about the token.
+    async function fetchTotalSupply() {
+      if (daoToken?.address)
+        try {
+          const {totalSupply} = await getTokenInfo(
+            daoToken?.address,
+            infura,
+            CHAIN_METADATA[network].nativeCurrency
+          );
+
+          setTokenSupply(totalSupply);
+        } catch (error) {
+          console.error('Error fetching token information: ', error);
+        }
+    }
+
+    fetchTotalSupply();
+  }, [daoToken?.address, infura, network]);
 
   const encodeActions = useCallback(async () => {
     const actionsFromForm = getValues('actions');
@@ -205,12 +259,65 @@ const CreateProposalProvider: React.FC<Props> = ({
     shouldPoll
   );
 
+  const mapDataToCachedProposal = useCallback(() => {
+    if (proposalCreationData && !pluginSettingsLoading && pluginSettings)
+      return {
+        actions: proposalCreationData.actions || [],
+        creationDate: new Date(),
+        creatorAddress: address,
+        dao: {address: daoDetails?.address, name: daoDetails?.metadata.name},
+        endDate: proposalCreationData.endDate,
+        id: proposalId,
+        metadata: proposalCreationData.metadata,
+        settings: {
+          minSupport: pluginSettings.minSupport,
+          minTurnout: pluginSettings.minTurnout,
+          duration: differenceInSeconds(
+            proposalCreationData.startDate!,
+            proposalCreationData.endDate!
+          ),
+        },
+        startDate: proposalCreationData.startDate,
+        status: 'Pending',
+        votes: [],
+        ...(pluginType === 'erc20voting.dao.eth'
+          ? {
+              token: {
+                address: daoToken?.address,
+                decimals: daoToken?.decimals,
+                name: daoToken?.name,
+                symbol: daoToken?.symbol,
+              },
+              //TODO: tokenSupply, when rpc issue is fixed
+              totalVotingWeight: BigInt('500000000000000000000000000'),
+              usedVotingWeight: BigInt(0),
+              result: {yes: BigInt(0), no: BigInt(0), abstain: BigInt(0)},
+            }
+          : {
+              totalVotingWeight: members.length,
+              usedVotingWeight: 0,
+              result: {yes: 0, no: 0, abstain: 0},
+            }),
+      } as DetailedProposal;
+  }, [
+    address,
+    daoDetails?.address,
+    daoDetails?.metadata.name,
+    daoToken,
+    members.length,
+    pluginSettings,
+    pluginSettingsLoading,
+    pluginType,
+    proposalCreationData,
+    proposalId,
+  ]);
+
   const handleCloseModal = () => {
     switch (creationProcessState) {
       case TransactionState.LOADING:
         break;
       case TransactionState.SUCCESS:
-        navigate(generatePath(Governance, {network, dao}));
+        navigate(generatePath(Proposal, {network, dao, id: proposalId}));
         break;
       default: {
         setCreationProcessState(TransactionState.WAITING);
@@ -268,14 +375,36 @@ const CreateProposalProvider: React.FC<Props> = ({
             console.log(step.txHash);
             break;
           case ProposalCreationSteps.DONE:
-            console.log('proposal id', step.proposalId);
-            setCreationProcessState(TransactionState.SUCCESS);
-            trackEvent('newProposal_transaction_success', {
-              dao_address: dao,
-              network: network,
-              wallet_provider: provider?.connection.url,
-              proposalId: step.proposalId,
-            });
+            {
+              // TODO: uncomment when sdk returns proper id setProposalId(step.proposalId);
+              setCreationProcessState(TransactionState.SUCCESS);
+              trackEvent('newProposal_transaction_success', {
+                dao_address: dao,
+                network: network,
+                wallet_provider: provider?.connection.url,
+                proposalId: step.proposalId,
+              });
+
+              // cache proposal
+              const cachedProposal =
+                mapDataToCachedProposal() as DetailedProposal;
+
+              const newCache = {
+                ...cachedProposals,
+                // TODO: use step.proposalId when sdk returns proper id
+                [proposalId]: {...cachedProposal},
+              };
+
+              pendingProposalsVar(newCache);
+
+              // persist new cache if functional cookies enabled
+              if (preferences?.functional) {
+                localStorage.setItem(
+                  PENDING_PROPOSALS_KEY,
+                  JSON.stringify(newCache, customJSONReplacer)
+                );
+              }
+            }
             break;
         }
       } catch (error) {
