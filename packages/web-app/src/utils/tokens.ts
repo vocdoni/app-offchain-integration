@@ -112,8 +112,8 @@ export async function getTokenInfo(
       totalSupply,
     };
   }
-
   const contract = new ethers.Contract(address, erc20TokenABI, provider);
+
   try {
     const values = await Promise.all([
       contract.decimals(),

@@ -1,5 +1,9 @@
 import {useApolloClient} from '@apollo/client';
-import {ClientAddressList, Erc20Proposal} from '@aragon/sdk-client';
+import {
+  ClientAddressList,
+  ClientErc20,
+  Erc20Proposal,
+} from '@aragon/sdk-client';
 import {
   Badge,
   Breadcrumb,
@@ -41,6 +45,7 @@ import {useWalletCanVote} from 'hooks/useWalletCanVote';
 import {CHAIN_METADATA} from 'utils/constants';
 import {
   decodeAddMembersToAction,
+  decodeMintTokensToAction,
   decodeRemoveMembersToAction,
   decodeWithdrawToAction,
 } from 'utils/library';
@@ -51,6 +56,9 @@ import {
   isTokenBasedProposal,
 } from 'utils/proposals';
 import {Action} from 'utils/types';
+import {DaoAction} from '@aragon/sdk-client/dist/internal/interfaces/common';
+import {useDaoDetails} from 'hooks/useDaoDetails';
+import {useDaoToken} from 'hooks/useDaoToken';
 
 // TODO: @Sepehr Please assign proper tags on action decoding
 const PROPOSAL_TAGS = ['Finance', 'Withdraw'];
@@ -63,14 +71,20 @@ const Proposal: React.FC = () => {
 
   const navigate = useNavigate();
   const {dao, id: proposalId} = useParams();
+  const {data: daoDetails, isLoading: detailsAreLoading} = useDaoDetails(
+    dao as string
+  );
+  const {data: daoToken, isLoading: daoTokenLoading} = useDaoToken(
+    daoDetails?.plugins[0].instanceAddress as string
+  );
 
   const {client} = useClient();
   const {set, get} = useCache();
   const apolloClient = useApolloClient();
 
   const {network} = useNetwork();
-  const {address, isConnected, isOnWrongNetwork} = useWallet();
   const provider = useSpecificProvider(CHAIN_METADATA[network].id);
+  const {address, isConnected, isOnWrongNetwork} = useWallet();
 
   const [decodedActions, setDecodedActions] =
     useState<(Action | undefined)[]>();
@@ -130,8 +144,13 @@ const Proposal: React.FC = () => {
 
   useEffect(() => {
     if (proposal) {
+      const mintTokenActions: {
+        actions: Uint8Array[];
+        index: number;
+      } = {actions: [], index: 0};
+
       const actionPromises: Promise<Action | undefined>[] =
-        proposal.actions.map(action => {
+        proposal.actions.map((action: DaoAction, index) => {
           const functionParams =
             client?.decoding.findInterface(action.data) ||
             pluginClient?.decoding.findInterface(action.data);
@@ -146,6 +165,10 @@ const Proposal: React.FC = () => {
                 network
               );
             case 'mint':
+              mintTokenActions.actions.push(action.data);
+              if (mintTokenActions.actions.length === 0)
+                mintTokenActions.index = index;
+              return Promise.resolve({} as Action);
             case 'addWhitelistedUsers':
               return decodeAddMembersToAction(
                 action.data,
@@ -161,11 +184,37 @@ const Proposal: React.FC = () => {
           }
         });
 
-      Promise.all(actionPromises).then(value => {
-        setDecodedActions(value);
-      });
+      if (daoToken?.address) {
+        // Decode all the mint actions into one action with several addresses
+        const decodedMintToken = decodeMintTokensToAction(
+          mintTokenActions.actions,
+          pluginClient as ClientErc20,
+          daoToken.address,
+          provider,
+          network
+        );
+
+        // splice them back to the actions array with all the other actions
+        actionPromises.splice(
+          mintTokenActions.index,
+          mintTokenActions.actions.length,
+          decodedMintToken
+        );
+
+        Promise.all(actionPromises).then(value => {
+          setDecodedActions(value);
+        });
+      }
     }
-  }, [apolloClient, client, network, pluginClient, proposal, provider]);
+  }, [
+    apolloClient,
+    client,
+    daoToken?.address,
+    network,
+    pluginClient,
+    proposal,
+    provider,
+  ]);
 
   // caches the status for breadcrumb
   useEffect(() => {
@@ -420,7 +469,13 @@ const Proposal: React.FC = () => {
   /*************************************************
    *                     Render                    *
    *************************************************/
-  if (paramsAreLoading || proposalIsLoading || !proposal) {
+  if (
+    paramsAreLoading ||
+    detailsAreLoading ||
+    daoTokenLoading ||
+    proposalIsLoading ||
+    !proposal
+  ) {
     return <Loading />;
   }
 

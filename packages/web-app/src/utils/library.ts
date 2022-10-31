@@ -1,8 +1,13 @@
 // Library utils / Ethers for now
 import {ApolloClient} from '@apollo/client';
-import {Client, ClientAddressList} from '@aragon/sdk-client';
+import {
+  Client,
+  ClientAddressList,
+  ClientErc20,
+  IMintTokenParams,
+} from '@aragon/sdk-client';
 import {Address} from '@aragon/ui-components/dist/utils/addresses';
-import {BigNumberish, constants, ethers, providers} from 'ethers';
+import {BigNumber, BigNumberish, constants, ethers, providers} from 'ethers';
 import {TFunction} from 'react-i18next';
 
 import {fetchTokenData} from 'services/prices';
@@ -14,6 +19,7 @@ import {
 } from 'utils/constants';
 import {
   ActionAddAddress,
+  ActionMintToken,
   ActionRemoveAddress,
   ActionWithdraw,
 } from 'utils/types';
@@ -130,6 +136,64 @@ export async function decodeWithdrawToAction(
     };
   } catch (error) {
     console.error('Error fetching token data', error);
+  }
+}
+
+/**
+ * decodeAddMembersToAction
+ * @param data Uint8Array action data
+ * @param client SDK AddressListClient, Fetched using usePluginClient
+ * @returns Return Decoded AddMembers action
+ */
+export async function decodeMintTokensToAction(
+  data: Uint8Array[] | undefined,
+  client: ClientErc20 | undefined,
+  daoTokenAddress: Address,
+  provider: providers.Provider,
+  network: SupportedNetworks
+): Promise<ActionMintToken | undefined> {
+  if (!client || !data) {
+    console.error('SDK client is not initialized correctly');
+    return;
+  }
+
+  try {
+    // get token info
+    const {totalSupply, symbol, decimals} = await getTokenInfo(
+      daoTokenAddress,
+      provider,
+      CHAIN_METADATA[network].nativeCurrency
+    );
+
+    // decode and calculate new tokens count
+    let newTokens = BigNumber.from(0);
+
+    const decoded = data.map(action => {
+      // decode action
+      const {amount, address}: IMintTokenParams =
+        client.decoding.mintTokenAction(action);
+
+      // update new tokens count
+      newTokens = newTokens.add(amount);
+      return {address, amount: Number(formatUnits(amount, decimals))};
+    });
+
+    //TODO: That's technically not correct. The minting could go to addresses who already hold that token.
+    return Promise.resolve({
+      name: 'mint_tokens',
+      inputs: {
+        mintTokensToWallets: decoded,
+      },
+      summary: {
+        newTokens: Number(formatUnits(newTokens, decimals)),
+        tokenSupply: parseFloat(formatUnits(totalSupply, decimals)),
+        newHoldersCount: decoded.length,
+        daoTokenSymbol: symbol,
+        daoTokenAddress: daoTokenAddress,
+      },
+    });
+  } catch (error) {
+    console.error('Error decoding mint token action', error);
   }
 }
 

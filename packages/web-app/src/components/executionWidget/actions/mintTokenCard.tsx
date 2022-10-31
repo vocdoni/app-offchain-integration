@@ -1,5 +1,5 @@
-import {IconLinkExternal, Link, ListItemAddress} from '@aragon/ui-components';
 import React from 'react';
+import {IconLinkExternal, Link, ListItemAddress} from '@aragon/ui-components';
 import {useTranslation} from 'react-i18next';
 import styled from 'styled-components';
 
@@ -15,14 +15,7 @@ export const MintTokenCard: React.FC<{
   const {t} = useTranslation();
   const {network} = useNetwork();
 
-  // NOTE: Temporarily mocking token information, as SDK does not yet expose this.
-  const token = {
-    id: '0x35f7A3379B8D0613c3F753863edc85997D8D0968',
-    symbol: 'DTT',
-  };
-
-  const {newTokens, newHoldersCount, tokenSupply, daoTokenSymbol} =
-    action.summary;
+  const newTotalSupply = action.summary.newTokens + action.summary.tokenSupply;
 
   return (
     <AccordionMethod
@@ -36,12 +29,7 @@ export const MintTokenCard: React.FC<{
       <Container>
         <div className="p-2 tablet:p-3 space-y-2 bg-ui-50">
           {action.inputs.mintTokensToWallets.map((wallet, index) => {
-            const newTokenSupply = newTokens + tokenSupply;
-            const amount = Number(wallet.amount);
-
-            const percentage = newTokenSupply
-              ? (amount / newTokenSupply) * 100
-              : 0;
+            const percentage = (Number(wallet.amount) / newTotalSupply) * 100;
 
             return wallet.address ? (
               <ListItemAddress
@@ -55,9 +43,9 @@ export const MintTokenCard: React.FC<{
                   )
                 }
                 tokenInfo={{
-                  amount,
-                  symbol: daoTokenSymbol,
-                  percentage: percentage.toPrecision(3),
+                  amount: parseFloat(Number(wallet.amount).toFixed(2)),
+                  symbol: action.summary.daoTokenSymbol || '',
+                  percentage: parseFloat(percentage.toFixed(2)),
                 }}
               />
             ) : null;
@@ -69,27 +57,23 @@ export const MintTokenCard: React.FC<{
           <HStack>
             <Label>{t('labels.newTokens')}</Label>
             <p>
-              +{newTokens} {daoTokenSymbol}
+              +{action.summary.newTokens} {action.summary.daoTokenSymbol}
             </p>
           </HStack>
           <HStack>
             <Label>{t('labels.newHolders')}</Label>
-            <p>+{newHoldersCount}</p>
+            <p>+{action.summary.newHoldersCount}</p>
           </HStack>
           <HStack>
             <Label>{t('labels.totalTokens')}</Label>
-            {tokenSupply ? (
-              <p>
-                {(tokenSupply + newTokens).toString()} {daoTokenSymbol}
-              </p>
-            ) : (
-              <p>...</p>
-            )}
+            <p>
+              {newTotalSupply} {action.summary.daoTokenSymbol}
+            </p>
           </HStack>
           {/* TODO add total amount of token holders here. */}
           <Link
             label={t('labels.seeCommunity')}
-            href={`${CHAIN_METADATA[network].explorer}/token/tokenholderchart/${token?.id}`}
+            href={`${CHAIN_METADATA[network].explorer}/token/tokenholderchart/${action.summary.daoTokenAddress}`}
             iconRight={<IconLinkExternal />}
           />
         </SummaryContainer>

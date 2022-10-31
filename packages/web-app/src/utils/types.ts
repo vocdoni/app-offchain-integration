@@ -249,7 +249,10 @@ export type ActionRemoveAddress = {
 export type ActionMintToken = {
   name: 'mint_tokens';
   inputs: {
-    mintTokensToWallets: Array<{address: string; amount: string}>;
+    mintTokensToWallets: {
+      address: string;
+      amount: string | number;
+    }[];
   };
   summary: {
     newTokens: number;
