@@ -90,8 +90,6 @@ type MappedError = {
   address?: FieldError;
 };
 
-type WatchedFields = [mints: MintInfo[], actionName: string];
-
 export const MintTokenForm: React.FC<MintTokenFormProps> = ({
   actionIndex,
   standAlone = false,
@@ -99,7 +97,6 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
   const {t} = useTranslation();
   const {data: dao} = useDaoParam();
   const {isDesktop} = useScreen();
-
   const {network} = useNetwork();
   const {infura} = useProviders();
   const nativeCurrency = CHAIN_METADATA[network].nativeCurrency;
@@ -110,15 +107,18 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
   );
 
   const {setValue, trigger, formState, control} = useFormContext();
-
   const {fields, append, remove, update} = useFieldArray({
     name: `actions.${actionIndex}.inputs.mintTokensToWallets`,
   });
-  const [mints, actionName]: WatchedFields = useWatch({
-    name: [
-      `actions.${actionIndex}.inputs.mintTokensToWallets`,
-      `actions.${actionIndex}.name`,
-    ],
+
+  // NOTE: DO NOT MERGE THESE. Apparently, when returned as a touple, the
+  // useEffects that depend on `mints` do not recognize changes to the `mints`
+  // array...
+  const mints: MintInfo[] = useWatch({
+    name: `actions.${actionIndex}.inputs.mintTokensToWallets`,
+  });
+  const actionName = useWatch({
+    name: `actions.${actionIndex}.name`,
     control,
   });
 
@@ -133,9 +133,11 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
   const [newHoldersCount, setNewHoldersCount] = useState(0);
 
   /*************************************************
-   *                    Hooks                     *
+   *                    Effects                    *
    *************************************************/
+
   useEffect(() => {
+    // set-up form on first load/reset
     if (fields.length === 0) {
       append({address: '', amount: '0'});
     }
@@ -146,6 +148,7 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
   }, [actionIndex, actionName, append, fields.length, setValue]);
 
   useEffect(() => {
+    // check for empty address fields on blur.
     if (!mints) return;
 
     const actionErrors =
@@ -210,7 +213,9 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
         setValue(`actions.${actionIndex}.summary.newHoldersCount`, 0);
       } else if (uncheckedAddresses.length === 0) {
         // No unchecked address. Simply compare inputs with cached addresses
-        const count = mints.filter(m => newTokenHolders.has(m.address)).length;
+        const count = validInputs.filter(m =>
+          newTokenHolders.has(m.address)
+        ).length;
         setNewHoldersCount(count);
         setValue(`actions.${actionIndex}.summary.newHoldersCount`, count);
       } else {
@@ -259,12 +264,20 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
           );
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mints, daoToken?.address]);
+  }, [
+    mints,
+    daoToken?.address,
+    actionIndex,
+    checkedAddresses,
+    infura,
+    nativeCurrency,
+    newTokenHolders,
+    setValue,
+  ]);
 
   useEffect(() => {
     // Collecting token amounts that are to be minted
-    if (mints && daoToken) {
+    if (mints) {
       let newTokensCount: Big = Big(0);
       mints.forEach(m => {
         // NOTE: If `m.amount` is not a valid input for `Big` to parse, an error
@@ -284,11 +297,11 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
         setNewTokens(newTokensCount);
         setValue(
           `actions.${actionIndex}.summary.newTokens`,
-          '' + newTokensCount
+          newTokensCount.toNumber()
         );
       }
     }
-  }, [actionIndex, daoToken, mints, newTokens, setValue]);
+  }, [actionIndex, mints, newTokens, setValue]);
 
   /*************************************************
    *             Callbacks and Handlers            *
