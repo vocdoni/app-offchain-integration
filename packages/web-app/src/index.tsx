@@ -7,6 +7,7 @@ import 'tailwindcss/tailwind.css';
 import {UseSignerProvider} from 'use-signer';
 import {IProviderOptions} from 'web3modal';
 
+import {AlertProvider} from 'context/alert';
 import {client, goerliClient} from 'context/apolloClient';
 import {WalletProvider} from 'context/augmentedWallet';
 import {APMProvider} from 'context/elasticAPM';
@@ -18,15 +19,14 @@ import {TransactionDetailProvider} from 'context/transactionDetail';
 import {WalletMenuProvider} from 'context/walletMenu';
 import {UseCacheProvider} from 'hooks/useCache';
 import {UseClientProvider} from 'hooks/useClient';
-import {AlertProvider} from 'context/alert';
+import {ARAGON_RPC} from 'utils/constants';
 import App from './app';
 
 const providerOptions: IProviderOptions = {
   walletconnect: {
     package: WalletConnectProvider,
     options: {
-      infuraId:
-        import.meta.env.VITE_REACT_APP_RPC || 'mainnet.eth.aragon.network',
+      infuraId: ARAGON_RPC,
     },
   },
 };
