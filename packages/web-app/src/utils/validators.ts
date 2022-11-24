@@ -5,7 +5,11 @@ import {InfuraProvider} from '@ethersproject/providers';
 
 import {i18n} from '../../i18n.config';
 import {isERC20Token} from './tokens';
-import {ALPHA_NUMERIC_PATTERN} from './constants';
+import {
+  ALPHA_NUMERIC_PATTERN,
+  CHAIN_METADATA,
+  SupportedNetworks,
+} from './constants';
 import {
   ActionItem,
   Action,
@@ -187,5 +191,27 @@ export async function isDaoNameValid(value: string, provider: InfuraProvider) {
     else return true;
   } catch (err) {
     return i18n.t('errors.ensNetworkIssue');
+  }
+}
+
+// FIXME: For some chains like polygon we might need different api key
+export async function validateContract(
+  address: string,
+  networks: SupportedNetworks
+) {
+  const apiKey = import.meta.env.VITE_ETHERSCAN_API_KEY;
+  const url = `${CHAIN_METADATA[networks].etherscanApi}?module=contract&action=getsourcecode&address=${address}&apikey=${apiKey}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    // status 1 means that the etherscan response was successful
+    if (data.status === '1')
+      if (data.result[0].ABI !== 'Contract source code not verified')
+        // The API works with no api key as well but this condition will check
+        // the abi and api key existence with the same condition
+        return data.result[0];
+  } catch (error) {
+    console.log(error);
   }
 }

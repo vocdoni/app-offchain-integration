@@ -129,6 +129,7 @@
     "notChangeable": "Not Changeable",
     "changeableVote": "Changeable with a vote",
     "changeable": "Changeable",
+    "etherscan": "Etherscan",
     "whitelistWallets": {
       "address": "Address",
       "addresses": "{{count}} Addresses",
@@ -290,6 +291,7 @@
     "onlyAlphaNumeric": "{{field}} can only contain alphanumeric characters",
     "ensDuplication": "This DAO name is already taken. Try another one.",
     "ensNetworkIssue": "Failed to resolve ens name",
+    "notValidContractAddress": "Smart Contract address not valid",
     "required": {
       "tokenAddress": "Token address is required",
       "tokenName": "Token name is required",
@@ -734,6 +736,15 @@
       "title": "No Smart Contract",
       "description": "Add a smart contract to interact with its actions",
       "primaryBtnLabel": "Connect Smart Contract"
+    },
+    "addressValidation": {
+      "modalTitle": "Connect Smart Contract",
+      "title": "Smart Contract Address",
+      "description": "Enter the desired smart contract address. It is best to copy this address directly from",
+      "actionLabelWaiting": "Validate Smart Contract",
+      "actionLabelLoading": "Validating Smart Contract ...",
+      "actionLabelSuccess": "Compose Actions",
+      "successLabel": "Smart Contract validated -> {{contractName}}"
     }
   }
 }

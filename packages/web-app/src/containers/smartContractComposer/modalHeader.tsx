@@ -6,6 +6,8 @@ type Props = {
   title: string;
   onBackButtonClicked: () => void;
   onClose?: () => void;
+  showBackButton?: boolean;
+  showCloseButton?: boolean;
 };
 
 // NOTE: While this header is technically a ui-component,
@@ -15,23 +17,30 @@ type Props = {
 const Header: React.FC<Props> = props => {
   return (
     <ModalHeader>
-      <ButtonIcon
-        mode="secondary"
-        size="small"
-        icon={<IconChevronLeft />}
-        onClick={props.onBackButtonClicked}
-        bgWhite
-      />
+      <ButtonWrapper className="w-4 h-4">
+        {props.showBackButton && (
+          <ButtonIcon
+            mode="secondary"
+            size="small"
+            icon={<IconChevronLeft />}
+            onClick={props.onBackButtonClicked}
+            bgWhite
+            {...props}
+          />
+        )}
+      </ButtonWrapper>
       <Title>{props.title}</Title>
       <ButtonWrapper className="w-4 h-4">
-        <ButtonIcon
-          mode="secondary"
-          size="small"
-          icon={<IconClose />}
-          onClick={props.onClose}
-          bgWhite
-          className="hidden desktop:block"
-        />
+        {props.showCloseButton && (
+          <ButtonIcon
+            mode="secondary"
+            size="small"
+            icon={<IconClose />}
+            onClick={props.onClose}
+            bgWhite
+            className="hidden desktop:block"
+          />
+        )}
       </ButtonWrapper>
     </ModalHeader>
   );
