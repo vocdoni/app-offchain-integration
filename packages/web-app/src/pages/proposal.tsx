@@ -104,7 +104,7 @@ const Proposal: React.FC = () => {
     data: proposal,
     error: proposalError,
     isLoading: proposalIsLoading,
-  } = useDaoProposal(proposalId!, pluginAddress, pluginType);
+  } = useDaoProposal(proposalId!, pluginType);
 
   const {data: canVote} = useWalletCanVote(
     address,
@@ -171,12 +171,12 @@ const Proposal: React.FC = () => {
               if (mintTokenActions.actions.length === 0)
                 mintTokenActions.index = index;
               return Promise.resolve({} as Action);
-            case 'addWhitelistedUsers':
+            case 'addAllowedUsers':
               return decodeAddMembersToAction(
                 action.data,
                 pluginClient as ClientAddressList
               );
-            case 'removeWhitelistedUsers':
+            case 'removeAllowedUsers':
               return decodeRemoveMembersToAction(
                 action.data,
                 pluginClient as ClientAddressList
@@ -337,7 +337,10 @@ const Proposal: React.FC = () => {
 
   // whether current user has voted
   const voted = useMemo(() => {
-    return address && proposal?.votes.some(voter => voter.address === address)
+    return address &&
+      proposal?.votes.some(
+        voter => voter.address.toLowerCase() === address.toLowerCase()
+      )
       ? true
       : false;
   }, [address, proposal?.votes]);
