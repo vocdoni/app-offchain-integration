@@ -1,6 +1,4 @@
 import {
-  ClientAddressList,
-  ClientErc20,
   DaoCreationSteps,
   IAddressListPluginInstall,
   ICreateParams,
@@ -8,7 +6,7 @@ import {
   IPluginInstallItem,
   IPluginSettings,
 } from '@aragon/sdk-client';
-import {parseUnits} from 'ethers/lib/utils';
+import {defaultAbiCoder, parseUnits, toUtf8Bytes} from 'ethers/lib/utils';
 import React, {
   createContext,
   ReactNode,
@@ -30,6 +28,17 @@ import {TransactionState} from 'utils/constants';
 import {getSecondsFromDHM} from 'utils/date';
 import {Landing} from 'utils/paths';
 import {useGlobalModalContext} from './globalModals';
+import {BigNumber, constants} from 'ethers';
+
+// TODO: Copied from SDK. To be removed once SDK supports encoders for DAO creation
+function encodeRatio(ratio: number, digits: number): number {
+  if (ratio < 0 || ratio > 1) {
+    throw new Error('The ratio value should range between 0 and 1');
+  } else if (!Number.isInteger(digits) || digits < 1 || digits > 15) {
+    throw new Error('The number of digits should range between 1 and 15');
+  }
+  return Math.round(ratio * 10 ** digits);
+}
 
 type CreateDaoContextType = {
   /** Prepares the creation data and awaits user confirmation to start process */
@@ -75,8 +84,10 @@ const CreateDaoProvider: React.FC<Props> = ({children}) => {
       network: getValues('blockchain')?.network,
       wallet_provider: provider?.connection.url,
       governance_type: getValues('membership'),
-      estimated_gwei_fee: averageFee,
-      total_usd_cost: averageFee ? tokenPrice * Number(averageFee) : 0,
+      estimated_gwei_fee: averageFee?.toString(),
+      total_usd_cost: averageFee
+        ? (tokenPrice * Number(averageFee)).toString()
+        : '0',
     });
 
     if (creationProcessState === TransactionState.SUCCESS) {
@@ -166,24 +177,53 @@ const CreateDaoProvider: React.FC<Props> = ({children}) => {
     switch (membership) {
       case 'token': {
         const erc20Params = getErc20PluginParams();
-        const pluginInstallParams: IErc20PluginInstall = {
-          settings: pluginSettings,
-          newToken: erc20Params,
-        };
-        plugins.push(
-          ClientErc20?.encoding?.getPluginInstallItem(pluginInstallParams)
+        const mintingConfig = erc20Params?.balances.reduce(
+          (acc, wallet) => {
+            acc[0].push(wallet.address);
+            acc[1].push(wallet.balance);
+            return acc;
+          },
+          [[], []] as [string[], BigInt[]]
         );
+
+        plugins.push({
+          id: '0xa76b0ed4cdefd43ac6b213e957d5be6526498fdf',
+          data: toUtf8Bytes(
+            defaultAbiCoder.encode(
+              [
+                'uint64',
+                'uint64',
+                'uint64',
+                'tuple(address,string,string)',
+                'tuple(address[],uint256[])',
+              ],
+              [
+                BigNumber.from(encodeRatio(pluginSettings.minTurnout, 2)),
+                BigNumber.from(encodeRatio(pluginSettings.minSupport, 2)),
+                BigNumber.from(pluginSettings.minDuration),
+                [constants.AddressZero, erc20Params?.name, erc20Params?.symbol],
+                mintingConfig,
+              ]
+            )
+          ),
+        });
         break;
       }
       case 'wallet': {
-        const addressListParams = getAddresslistPluginParams();
-        const pluginInstallParams: IAddressListPluginInstall = {
-          settings: pluginSettings,
-          addresses: addressListParams,
-        };
-        plugins.push(
-          ClientAddressList?.encoding?.getPluginInstallItem(pluginInstallParams)
-        );
+        plugins.push({
+          id: '0xc0180304d365de704b6dc67a216213621eb2f44d',
+          data: toUtf8Bytes(
+            defaultAbiCoder.encode(
+              ['uint64', 'uint64', 'uint64', 'address[]'],
+              [
+                BigNumber.from(encodeRatio(pluginSettings.minTurnout, 2)),
+                BigNumber.from(encodeRatio(pluginSettings.minSupport, 2)),
+                BigNumber.from(pluginSettings.minDuration),
+                getAddresslistPluginParams(),
+              ]
+            )
+          ),
+        });
         break;
       }
       default:
@@ -234,8 +274,8 @@ const CreateDaoProvider: React.FC<Props> = ({children}) => {
       throw new Error('deposit function is not initialized correctly');
     }
 
-    for await (const step of createDaoIterator) {
-      try {
+    try {
+      for await (const step of createDaoIterator) {
         switch (step.key) {
           case DaoCreationSteps.CREATING:
             console.log(step.txHash);
@@ -251,17 +291,17 @@ const CreateDaoProvider: React.FC<Props> = ({children}) => {
             setCreationProcessState(TransactionState.SUCCESS);
             break;
         }
-      } catch (err) {
-        // unsuccessful execution, keep creation data for retry
-        console.log(err);
-        trackEvent('daoCreation_transaction_failed', {
-          network: getValues('blockchain')?.network,
-          wallet_provider: provider?.connection.url,
-          governance_type: getValues('membership'),
-          err,
-        });
-        setCreationProcessState(TransactionState.ERROR);
       }
+    } catch (err) {
+      // unsuccessful execution, keep creation data for retry
+      console.log(err);
+      trackEvent('daoCreation_transaction_failed', {
+        network: getValues('blockchain')?.network,
+        wallet_provider: provider?.connection.url,
+        governance_type: getValues('membership'),
+        err,
+      });
+      setCreationProcessState(TransactionState.ERROR);
     }
   };
 
