@@ -4,6 +4,7 @@ import {
   TransferType,
 } from '@aragon/sdk-client';
 import {useFormContext} from 'react-hook-form';
+import {Web3Provider} from '@ethersproject/providers';
 import {generatePath, useNavigate, useParams} from 'react-router-dom';
 import React, {
   createContext,
@@ -21,14 +22,19 @@ import {useWallet} from 'hooks/useWallet';
 import {useNetwork} from './network';
 import DepositModal from 'containers/transactionModals/DepositModal';
 import {DepositFormData} from 'pages/newDeposit';
-import {PENDING_DEPOSITS_KEY, TransactionState} from 'utils/constants';
-import {isNativeToken} from 'utils/tokens';
+import {
+  CHAIN_METADATA,
+  PENDING_DEPOSITS_KEY,
+  TransactionState,
+} from 'utils/constants';
+import {getTokenInfo, isNativeToken} from 'utils/tokens';
 import {useStepper} from 'hooks/useStepper';
 import {usePollGasFee} from 'hooks/usePollGasfee';
 import {useGlobalModalContext} from './globalModals';
 import {useReactiveVar} from '@apollo/client';
 import {pendingDeposits} from './apolloClient';
 import {trackEvent} from 'services/analytics';
+import {customJSONReplacer} from 'utils/library';
 
 interface IDepositContextType {
   handleOpenModal: () => void;
@@ -203,8 +209,12 @@ const DepositProvider = ({children}: {children: ReactNode}) => {
   };
 
   const handleDeposit = async () => {
-    const {amount, from, reference, tokenAddress, tokenName, tokenSymbol} =
-      getValues();
+    const {from, reference, tokenAddress, tokenName, tokenSymbol} = getValues();
+    const {decimals} = await getTokenInfo(
+      tokenAddress,
+      provider as Web3Provider,
+      CHAIN_METADATA[network].nativeCurrency
+    );
 
     let transactionHash = '';
 
@@ -226,19 +236,33 @@ const DepositProvider = ({children}: {children: ReactNode}) => {
           transactionHash = step.txHash;
           const depositTxs = [
             ...pendingDepositsTxs,
-            {
-              transactionId: transactionHash,
-              from,
-              amount: BigInt(amount),
-              reference,
-              type: TransferType.DEPOSIT,
-              tokenType: isNativeToken(tokenAddress) ? 'native' : 'erc20',
-              address: tokenAddress,
-              name: tokenName,
-              symbol: tokenSymbol,
-              // TODO: Fix the decimals value
-              decimals: '18',
-            },
+            isNativeToken(tokenAddress)
+              ? {
+                  transactionId: transactionHash,
+                  from,
+                  amount: depositParams?.amount,
+                  reference,
+                  type: TransferType.DEPOSIT,
+                  tokenType: 'native',
+                  address: tokenAddress,
+                  name: tokenName,
+                  symbol: tokenSymbol,
+                  decimals: '18',
+                }
+              : {
+                  transactionId: transactionHash,
+                  from,
+                  amount: depositParams?.amount,
+                  reference,
+                  type: TransferType.DEPOSIT,
+                  tokenType: 'erc20',
+                  token: {
+                    name: tokenName,
+                    address: tokenAddress,
+                    symbol: tokenSymbol,
+                    decimals: decimals,
+                  },
+                },
           ];
 
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -246,7 +270,7 @@ const DepositProvider = ({children}: {children: ReactNode}) => {
           pendingDeposits(depositTxs);
           localStorage.setItem(
             PENDING_DEPOSITS_KEY,
-            JSON.stringify(depositTxs)
+            JSON.stringify(depositTxs, customJSONReplacer)
           );
           trackEvent('newDeposit_transaction_signed', {
             network,
