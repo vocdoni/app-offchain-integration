@@ -268,10 +268,13 @@ const CreateDaoProvider: React.FC = ({children}) => {
     if (daoCreationData) return client?.estimation.create(daoCreationData);
   }, [client?.estimation, daoCreationData]);
 
-  const {tokenPrice, maxFee, averageFee, stopPolling} = usePollGasFee(
-    estimateCreationFees,
-    shouldPoll
-  );
+  const {
+    tokenPrice,
+    maxFee,
+    averageFee,
+    stopPolling,
+    error: gasEstimationError,
+  } = usePollGasFee(estimateCreationFees, shouldPoll);
 
   // run dao creation transaction
   const createDao = async () => {
@@ -366,6 +369,7 @@ const CreateDaoProvider: React.FC = ({children}) => {
         closeOnDrag={creationProcessState !== TransactionState.LOADING}
         maxFee={maxFee}
         averageFee={averageFee}
+        gasEstimationError={gasEstimationError}
         tokenPrice={tokenPrice}
       />
     </CreateDaoContext.Provider>
