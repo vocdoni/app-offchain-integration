@@ -50,8 +50,8 @@ const MintToken: React.FC = () => {
     control: formMethods.control,
   });
 
-  const [durationSwitch, formActions] = useWatch({
-    name: ['durationSwitch', 'actions'],
+  const [formActions] = useWatch({
+    name: ['actions'],
     control: formMethods.control,
   });
 
@@ -96,7 +96,7 @@ const MintToken: React.FC = () => {
             <Step
               wizardTitle={t('newWithdraw.setupVoting.title')}
               wizardDescription={t('newWithdraw.setupVoting.description')}
-              isNextButtonDisabled={!setupVotingIsValid(errors, durationSwitch)}
+              isNextButtonDisabled={!setupVotingIsValid(errors)}
             >
               <SetupVotingForm />
             </Step>

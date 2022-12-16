@@ -8,19 +8,19 @@ import {
   NumberInput,
 } from '@aragon/ui-components';
 import {toDate} from 'date-fns-tz';
-import {
-  Controller,
-  FieldError,
-  useFormContext,
-  useWatch,
-} from 'react-hook-form';
-import styled from 'styled-components';
+import React, {useCallback, useEffect, useState} from 'react';
+import {Controller, useFormContext, useWatch} from 'react-hook-form';
 import {useTranslation} from 'react-i18next';
-import React, {useEffect, useState} from 'react';
+import styled from 'styled-components';
 
-import {DateModeSwitch} from './dateModeSwitch';
+import {SimplifiedTimeInput} from 'components/inputTime/inputTime';
 import UtcMenu from 'containers/utcMenu';
 import {timezones} from 'containers/utcMenu/utcData';
+import {useGlobalModalContext} from 'context/globalModals';
+import {useDaoDetails} from 'hooks/useDaoDetails';
+import {useDaoParam} from 'hooks/useDaoParam';
+import {PluginTypes} from 'hooks/usePluginClient';
+import {usePluginSettings} from 'hooks/usePluginSettings';
 import {
   daysToMills,
   getCanonicalDate,
@@ -31,14 +31,9 @@ import {
   hoursToMills,
   minutesToMills,
 } from 'utils/date';
-import {DateTimeErrors} from './dateTimeErrors';
-import {useGlobalModalContext} from 'context/globalModals';
 import {StringIndexed} from 'utils/types';
-import {SimplifiedTimeInput} from 'components/inputTime/inputTime';
-import {usePluginSettings} from 'hooks/usePluginSettings';
-import {useDaoDetails} from 'hooks/useDaoDetails';
-import {PluginTypes} from 'hooks/usePluginClient';
-import {useDaoParam} from 'hooks/useDaoParam';
+import {DateModeSwitch} from './dateModeSwitch';
+import {DateTimeErrors} from './dateTimeErrors';
 
 type UtcInstance = 'first' | 'second';
 
@@ -54,14 +49,13 @@ const SetupVotingForm: React.FC = () => {
     clearErrors,
     resetField,
   } = useFormContext();
+  const endDateType = useWatch({
+    name: 'durationSwitch',
+  });
 
   /*************************************************
    *                    STATE & EFFECT             *
    *************************************************/
-
-  const endDateType = useWatch({
-    name: 'durationSwitch',
-  });
   const [utcInstance, setUtcInstance] = useState<UtcInstance>('first');
   const [utcStart, setUtcStart] = useState('');
   const [utcEnd, setUtcEnd] = useState('');
@@ -78,15 +72,6 @@ const SetupVotingForm: React.FC = () => {
   // This is done here rather than in the defaulValues object as time can
   // ellapse between the creation of the form context and this stage of the form.
   useEffect(() => {
-    // if (!getValues('startTime'))
-    //   setValue('startTime', getCanonicalTime({minutes: 10}));
-    // if (!getValues('startDate'))
-    //   setValue('startDate', getCanonicalDate({minutes: 10}));
-    // // if (!getValues('endTime'))
-    // //   setValue('endTime', getCanonicalTime({days: 5, minutes: 10}));
-    // // if (!getValues('endDate'))
-    // //   setValue('endDate', getCanonicalDate({days: 5, minutes: 10}));
-
     const currTimezone = timezones.find(tz => tz === getFormattedUtcOffset());
     if (!currTimezone) {
       setUtcStart(timezones[13]);
@@ -101,49 +86,15 @@ const SetupVotingForm: React.FC = () => {
     }
   }, []); //eslint-disable-line
 
-  // validate start time on UTC changes
-  // (Doing this in a separate hook is necessary since the UTC selector is
-  // currently not controllable using the the form conroller)
-  useEffect(() => {
-    const fieldErrors: FieldError[] = Object.values(formState.errors);
-    const hasEmptyFields = fieldErrors.some(
-      e =>
-        e.type === 'validate' &&
-        (e.ref?.name === 'startDate' || e.ref?.name === 'startTime')
-    );
-
-    if (!hasEmptyFields) {
-      dateTimeValidator();
-    }
-  }, [utcStart]); //eslint-disable-line
-
-  // validate end time on UTC changes
-  // (Doing this in a separate hook is necessary since the UTC selector is
-  // currently not controllable using the the form controller)
-  useEffect(() => {
-    const fieldErrors: FieldError[] = Object.values(formState.errors);
-    const hasEmptyFields = fieldErrors.some(
-      e =>
-        e.type === 'validate' &&
-        (e.ref?.name === 'endDate' || e.ref?.name === 'endTime')
-    );
-
-    if (!hasEmptyFields) {
-      dateTimeValidator();
-    }
-  }, [utcEnd]); //eslint-disable-line
-
-  /*************************************************
-   *                Field Validators               *
-   *************************************************/
-
-  // validates both start time and date. This validator checks all constraints
-  // on the start and end date/time at once. This is necessary, as time date and
-  // times validity are tied to each other. If any constraint is violated, an
-  // error is constructed and passed to the form state.
-  //
-  // Note: does not take and argument, as it is not tied to any individual input.
-  const dateTimeValidator = () => {
+  // Validates all fields (date, time and UTC) for both start and end
+  // simultaneously. This is necessary, as all the fields are related to one
+  // another. The validation gathers information from all start and end fields
+  // and constructs two date (start and end). The validation leads to an error
+  // if the dates violate any of the following constraints:
+  //   - The start date is in the past
+  //   - The end date is before the start date
+  // If the form is invalid, errors are set for the repsective group of fields.
+  const dateTimeValidator = useCallback(() => {
     //build start date/time in utc mills
     const sDate = getValues('startDate');
     const sTime = getValues('startTime');
@@ -160,6 +111,7 @@ const SetupVotingForm: React.FC = () => {
     const eDate = getValues('endDate');
     const eTime = getValues('endTime');
     const eUtc = getValues('endUtc');
+
     const canonicalEUtc = getCanonicalUtcOffset(eUtc);
     const endDateTime = toDate(eDate + 'T' + eTime + canonicalEUtc);
     const endMills = endDateTime.valueOf();
@@ -169,6 +121,8 @@ const SetupVotingForm: React.FC = () => {
       daysToMills(days || 0) +
       hoursToMills(hours || 0) +
       minutesToMills(minutes || 0);
+
+    let returnValue = '';
 
     // check start constraints
     if (startMills < currMills) {
@@ -180,7 +134,7 @@ const SetupVotingForm: React.FC = () => {
         type: 'validate',
         message: t('errors.startPast'),
       });
-      return t('errors.endPast');
+      returnValue = t('errors.endPast');
     }
     if (startMills >= currMills) {
       clearErrors('startDate');
@@ -197,15 +151,26 @@ const SetupVotingForm: React.FC = () => {
         type: 'validate',
         message: t('errors.endPast'),
       });
-      return t('errors.endPast');
+      returnValue = t('errors.endPast');
     }
+
     if (endMills >= minEndDateTimeMills) {
       clearErrors('endDate');
       clearErrors('endTime');
     }
 
-    return true;
-  };
+    return !returnValue ? true : returnValue;
+  }, [clearErrors, days, getValues, hours, minutes, setError, t]);
+
+  // These effects trigger validation when UTC fields are changed.
+
+  useEffect(() => {
+    dateTimeValidator();
+  }, [utcStart, dateTimeValidator]);
+
+  useEffect(() => {
+    dateTimeValidator();
+  }, [utcEnd, dateTimeValidator]); //eslint-disable-line
 
   // sets the UTC values for the start and end date/time
   const tzSelector = (tz: string) => {
@@ -275,8 +240,6 @@ const SetupVotingForm: React.FC = () => {
             defaultValue={getCanonicalTime({minutes: 10})}
             rules={{
               required: t('errors.required.time'),
-              // FIXME this triggers the validators, but for some reason they do
-              // not assign the error to the correct field
               validate: dateTimeValidator,
             }}
             render={({field: {name, value, onChange, onBlur}}) => (
@@ -342,7 +305,7 @@ const SetupVotingForm: React.FC = () => {
                       <NumberInput
                         name={name}
                         value={value}
-                        min={days}
+                        min={days + 1}
                         onChange={onChange}
                         width={144}
                       />
@@ -468,13 +431,13 @@ export default SetupVotingForm;
  * @param durationSwitch Duration switch value
  * @returns Whether the screen is valid
  */
-export function isValid(errors: StringIndexed, durationSwitch: string) {
-  if (durationSwitch === 'date') {
-    return errors.startDate || errors.startTime || errors.endDate
-      ? false
-      : true;
-  }
-  return errors.startDate || errors.startTime || errors.duration ? false : true;
+export function isValid(errors: StringIndexed) {
+  return !(
+    errors.startDate ||
+    errors.startTime ||
+    errors.endDate ||
+    errors.ednTime
+  );
 }
 
 const FormSection = styled.div.attrs({
