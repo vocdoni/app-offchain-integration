@@ -1,4 +1,4 @@
-import {FieldErrors, ValidateResult} from 'react-hook-form';
+import {FieldError, FieldErrors, ValidateResult} from 'react-hook-form';
 import {isAddress, parseUnits} from 'ethers/lib/utils';
 import {BigNumber, providers as EthersProviders} from 'ethers';
 import {InfuraProvider} from '@ethersproject/providers';
@@ -172,9 +172,15 @@ export function actionsAreValid(
   return isValid;
 }
 
-export async function isDaoNameValid(value: string, provider: InfuraProvider) {
+export function isDaoNameValid(
+  value: string,
+  provider: InfuraProvider,
+  setError: (name: string, error: FieldError) => void,
+  clearError: (name?: string | string[]) => void,
+  getValues: (payload?: string | string[]) => Object
+) {
   if (isOnlyWhitespace(value)) return i18n.t('errors.required.name');
-
+  if (value.length > 128) return i18n.t('errors.ensNameLength');
   // some networks like Arbitrum Goerli and other L2s do not support ENS domains as of now
   // don't check and allow name collision failure to happen when trying to run transaction
   if (!provider.network.ensAddress) {
@@ -184,13 +190,29 @@ export async function isDaoNameValid(value: string, provider: InfuraProvider) {
     return true;
   }
 
+  // We might need to combine the method with setTimeout (Similar to useDebouncedState)
+  // for better performance
   try {
-    const ensAddress = await provider?.resolveName(value.replaceAll(' ', '_'));
+    provider
+      ?.resolveName(`${value.toLocaleLowerCase().replaceAll(' ', '_')}.dao.eth`)
+      .then(result => {
+        const inputValue = getValues('daoName');
+        // Check to see if the response belongs to current value
+        if (value === inputValue) {
+          if (result)
+            setError('daoName', {
+              type: 'validate',
+              message: i18n.t('errors.ensDuplication'),
+            });
+          else clearError();
+        }
+      });
 
-    if (ensAddress) return i18n.t('errors.ensDuplication');
-    else return true;
+    return i18n.t('infos.checkingEns');
+
+    // clear errors will show the available message and enable the next button
   } catch (err) {
-    return i18n.t('errors.ensNetworkIssue');
+    return i18n.t('errors.ensNetworkIssue') as string;
   }
 }
 

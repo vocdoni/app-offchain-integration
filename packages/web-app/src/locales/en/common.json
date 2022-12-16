@@ -264,7 +264,9 @@
     "voteDHDuration": "The minimum duration of {{days}} days and {{hours}} hours is defined by DAO Governance Settings. To change the minimum duration a vote is required",
     "voteDHMDuration": "The minimum duration of {{days}} days, {{hours}} hours, and {{minutes}} minutes is defined by DAO Governance Settings. To change the minimum duration a vote is required",
     "newVotingTypes": "New voting types soon",
-    "newTypesHelpText": "The Aragon App will provide further voting types like single/multiple choice, or others in the near future."
+    "newTypesHelpText": "The Aragon App will provide further voting types like single/multiple choice, or others in the near future.",
+    "ensAvailable": "DAO Name available",
+    "checkingEns": "checking dao name..."
   },
   "errors": {
     "amountWithInvalidToken": "Cannot validate amount with invalid token address",
@@ -295,8 +297,9 @@
     "percentage": "Percentage amount should be between 0 and 100",
     "totalSupplyZero": "Total token supply can not be 0",
     "onlyAlphaNumeric": "{{field}} can only contain alphanumeric characters",
-    "ensDuplication": "This DAO name is already taken. Try another one.",
+    "ensDuplication": "DAO name is already taken. Please Try a different one.",
     "ensNetworkIssue": "Failed to resolve ens name",
+    "ensNameLength": "DAO name must be less than 128 characters",
     "notValidContractAddress": "Smart Contract address not valid",
     "duplicateContractAddress": "Contract has already been added",
     "required": {

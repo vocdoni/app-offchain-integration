@@ -24,7 +24,7 @@ const DAO_LOGO = {
 
 const DefineMetadata: React.FC<{bgWhite?: boolean}> = ({bgWhite = false}) => {
   const {t} = useTranslation();
-  const {control, setError} = useFormContext();
+  const {control, setError, clearErrors, getValues} = useFormContext();
   const {infura: provider} = useProviders();
 
   const handleImageError = useCallback(
@@ -55,6 +55,30 @@ const DefineMetadata: React.FC<{bgWhite?: boolean}> = ({bgWhite = false}) => {
     [setError, t]
   );
 
+  function ErrorHandler({value, error}: {value: string; error?: FieldError}) {
+    if (error?.message) {
+      if (error.message === t('infos.checkingEns')) {
+        return (
+          <AlertInline
+            label={t('infos.checkingEns') as string}
+            mode="neutral"
+          />
+        );
+      } else {
+        return <AlertInline label={error.message as string} mode="critical" />;
+      }
+    } else {
+      if (value) {
+        return (
+          <AlertInline
+            label={t('infos.ensAvailable') as string}
+            mode="success"
+          />
+        );
+      } else return null;
+    }
+  }
+
   return (
     <>
       {/* Name */}
@@ -70,7 +94,8 @@ const DefineMetadata: React.FC<{bgWhite?: boolean}> = ({bgWhite = false}) => {
           defaultValue=""
           rules={{
             required: t('errors.required.name'),
-            validate: async value => await isDaoNameValid(value, provider),
+            validate: value =>
+              isDaoNameValid(value, provider, setError, clearErrors, getValues),
           }}
           render={({
             field: {onBlur, onChange, value, name},
@@ -81,9 +106,8 @@ const DefineMetadata: React.FC<{bgWhite?: boolean}> = ({bgWhite = false}) => {
                 {...{name, value, onBlur, onChange}}
                 placeholder={t('placeHolders.daoName')}
               />
-              {error?.message && (
-                <AlertInline label={error.message} mode="critical" />
-              )}
+              <InputCount>{`${value.length}/128`}</InputCount>
+              <ErrorHandler {...{value, error}} />
             </>
           )}
         />
@@ -176,6 +200,10 @@ const DefineMetadata: React.FC<{bgWhite?: boolean}> = ({bgWhite = false}) => {
 };
 
 export default DefineMetadata;
+
+const InputCount = styled.div.attrs({
+  className: 'ft-text-sm mt-1',
+})``;
 
 const FormItem = styled.div.attrs({
   className: 'space-y-1.5',
