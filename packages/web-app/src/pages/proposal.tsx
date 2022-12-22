@@ -169,9 +169,10 @@ const Proposal: React.FC = () => {
                 network
               );
             case 'mint':
-              mintTokenActions.actions.push(action.data);
-              if (mintTokenActions.actions.length === 0)
+              if (mintTokenActions.actions.length === 0) {
                 mintTokenActions.index = index;
+              }
+              mintTokenActions.actions.push(action.data);
               return Promise.resolve({} as Action);
             case 'addAllowedUsers':
               return decodeAddMembersToAction(
