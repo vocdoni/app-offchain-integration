@@ -4,10 +4,12 @@ import styled from 'styled-components';
 
 import {selectedDaoVar} from 'context/apolloClient';
 import {useGlobalModalContext} from 'context/globalModals';
+import {useNetwork} from 'context/network';
 import {usePrivacyContext} from 'context/privacyContext';
 import {useDaoDetails} from 'hooks/useDaoDetails';
 import useScreen from 'hooks/useScreen';
 import {useWallet} from 'hooks/useWallet';
+import {CHAIN_METADATA} from 'utils/constants';
 import {
   Community,
   CreateDAO,
@@ -70,6 +72,7 @@ const Navbar: React.FC = () => {
   const {open} = useGlobalModalContext();
   const {pathname} = useLocation();
   const {isDesktop} = useScreen();
+  const {network} = useNetwork();
   const {methods, isConnected} = useWallet();
   const {handleWithFunctionalPreferenceMenu} = usePrivacyContext();
 
@@ -80,13 +83,17 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     if (daoDetails) {
       selectedDaoVar({
-        daoAddress: daoDetails.address,
-        daoEns: daoDetails.ensDomain,
-        daoLogo: daoDetails.metadata.avatar,
-        daoName: daoDetails.metadata.name,
+        address: daoDetails.address,
+        ensDomain: daoDetails.ensDomain,
+        metadata: {
+          name: daoDetails.metadata.name,
+          avatar: daoDetails.metadata.avatar,
+        },
+        chain: CHAIN_METADATA[network].id,
+        plugins: daoDetails.plugins,
       });
     }
-  }, [daoDetails]);
+  }, [daoDetails, network]);
 
   const processName = useMemo(() => {
     const results = matchRoutes(processPaths, pathname);

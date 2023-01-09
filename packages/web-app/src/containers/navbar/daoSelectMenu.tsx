@@ -12,10 +12,9 @@ import styled from 'styled-components';
 
 import {useReactiveVar} from '@apollo/client';
 import ModalBottomSheetSwitcher from 'components/modalBottomSheetSwitcher';
-import {selectedDaoVar} from 'context/apolloClient';
+import {NavigationDao, selectedDaoVar} from 'context/apolloClient';
 import {useGlobalModalContext} from 'context/globalModals';
 import useScreen from 'hooks/useScreen';
-import {NavigationDao} from 'utils/types';
 
 // NOTE: the state setting is temporary until backend integration
 const DaoSelectMenu: React.FC = () => {
@@ -57,9 +56,9 @@ const DaoSelectMenu: React.FC = () => {
         <ListGroup>
           <ListItemDao
             selected
-            daoAddress={currentDao?.daoEns}
-            daoName={currentDao?.daoName}
-            daoLogo={currentDao?.daoLogo}
+            daoAddress={currentDao?.ensDomain}
+            daoName={currentDao?.metadata.name}
+            daoLogo={currentDao?.metadata.avatar}
             onClick={() => handleDaoSelect(currentDao)}
           />
         </ListGroup>

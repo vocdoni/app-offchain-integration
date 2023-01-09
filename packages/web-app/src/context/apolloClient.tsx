@@ -7,6 +7,7 @@ import {
 } from '@apollo/client';
 import {
   AddressListProposal,
+  DaoListItem,
   Deposit,
   Erc20Proposal,
   ICreateParams,
@@ -17,15 +18,17 @@ import {CachePersistor, LocalStorageWrapper} from 'apollo3-cache-persist';
 
 import {
   BASE_URL,
+  FAVORITE_DAOS_KEY,
   PENDING_DAOS_KEY,
   PENDING_DEPOSITS_KEY,
   PENDING_PROPOSALS_KEY,
   PENDING_VOTES_KEY,
   SUBGRAPH_API_URL,
+  SupportedChainID,
   SupportedNetworks,
 } from 'utils/constants';
 import {customJSONReviver} from 'utils/library';
-import {AddressListVote, Erc20ProposalVote, NavigationDao} from 'utils/types';
+import {AddressListVote, Erc20ProposalVote} from 'utils/types';
 import {PRIVACY_KEY} from './privacyContext';
 
 const restLink = new RestLink({
@@ -121,15 +124,34 @@ const client: Record<
   'arbitrum-test': arbitrumTestClient,
 };
 
+// FAVORITE & SELECTED DAOS
+// including description, type, and chain in anticipation for
+// showing these daos on explorer page
+export type NavigationDao = Omit<DaoListItem, 'metadata'> & {
+  chain: SupportedChainID;
+  metadata: {
+    name: string;
+    avatar?: string;
+    description?: string;
+  };
+};
+const favoriteDaos = JSON.parse(
+  localStorage.getItem(FAVORITE_DAOS_KEY) || '[]'
+);
+const favoriteDaosVar = makeVar<Array<NavigationDao>>(favoriteDaos);
+
 const selectedDaoVar = makeVar<NavigationDao>({
-  daoAddress: '',
-  daoEns: '',
-  daoLogo: '',
-  daoName: '',
+  address: '',
+  ensDomain: '',
+  metadata: {
+    name: '',
+    avatar: '',
+  },
+  chain: 5,
+  plugins: [],
 });
 
-const favoriteDAOs = makeVar<Array<NavigationDao>>([]);
-
+// PENDING DEPOSITS
 const depositTxs = JSON.parse(
   localStorage.getItem(PENDING_DEPOSITS_KEY) || '[]',
   customJSONReviver
@@ -179,7 +201,7 @@ const pendingDaoCreationVar = makeVar<PendingDaoCreation>(pendingDaoCreation);
 
 export {
   client,
-  favoriteDAOs,
+  favoriteDaosVar,
   selectedDaoVar,
   pendingDeposits,
   pendingProposalsVar,

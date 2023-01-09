@@ -282,13 +282,6 @@ export type Dao = {
   address: string;
 };
 
-export type NavigationDao = {
-  daoAddress: string; // including because we can only navigate by address for now
-  daoEns: string;
-  daoLogo?: string;
-  daoName: string;
-};
-
 /* UTILITY TYPES ============================================================ */
 
 /** Return type for data hooks */
