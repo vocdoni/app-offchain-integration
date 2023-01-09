@@ -52,16 +52,17 @@ const SetupCommunityForm: React.FC = () => {
                 {...(value === 'token' ? {type: 'active'} : {})}
               />
 
-              <CheckboxListItem
-                label={t('createDAO.step3.walletMemberShip')}
-                helptext={t('createDAO.step3.walletMemberShipSubtitle')}
-                onClick={() => {
-                  resetTokenFields();
-                  onChange('wallet');
-                }}
-                multiSelect={false}
-                {...(value === 'wallet' ? {type: 'active'} : {})}
-              />
+              {/* Address List Dao has been disabled */}
+              {/* <CheckboxListItem
+                  label={t('createDAO.step3.walletMemberShip')}
+                  helptext={t('createDAO.step3.walletMemberShipSubtitle')}
+                  onClick={() => {
+                    resetTokenFields();
+                    onChange('wallet');
+                  }}
+                  multiSelect={false}
+                  {...(value === 'wallet' ? {type: 'active'} : {})}
+                /> */}
             </>
           )}
         />
