@@ -8,6 +8,7 @@ import {
   IconCopy,
   IconFlag,
   IconFavoriteSelected,
+  IconFavoriteDefault,
 } from '../icons';
 import {AvatarDao} from '../avatar';
 import {Link} from '../link';
@@ -23,6 +24,7 @@ export type HeaderDaoProps = {
   created_at: string;
   daoChain: string;
   daoType: string;
+  favorited?: boolean;
   links: Array<{
     label: string;
     href: string;
@@ -32,6 +34,7 @@ export type HeaderDaoProps = {
     readLess: string;
   };
   copiedOnClick?: () => void;
+  onFavoriteClick?: () => void;
 };
 
 type DescriptionProps = {
@@ -46,9 +49,11 @@ export const HeaderDao: React.FC<HeaderDaoProps> = ({
   created_at,
   daoChain,
   daoType,
+  favorited = false,
   links,
   translation,
   copiedOnClick,
+  onFavoriteClick,
 }) => {
   const [fullDescription, setFullDescription] = useState<boolean>(false);
 
@@ -119,8 +124,9 @@ export const HeaderDao: React.FC<HeaderDaoProps> = ({
                 <ButtonText
                   iconRight={<IconChevronDown />}
                   label={'All Links'}
-                  mode="ghost"
+                  mode="secondary"
                   size="large"
+                  bgWhite
                 />
               }
               sideOffset={8}
@@ -139,9 +145,13 @@ export const HeaderDao: React.FC<HeaderDaoProps> = ({
               )}
             />
             <ButtonIcon
-              icon={<StyledIconFavoriteSelected />}
-              mode="ghost"
+              icon={
+                favorited ? <IconFavoriteSelected /> : <IconFavoriteDefault />
+              }
+              onClick={onFavoriteClick}
+              mode="secondary"
               size="large"
+              bgWhite
             />
           </ActionContainer>
         </ActionWrapper>
@@ -210,8 +220,4 @@ const ActionContainer = styled.div.attrs({
 const ActionWrapper = styled.div.attrs({
   className:
     'flex items-center tablet:space-x-3 justify-between tablet:justify-start w-full tablet:w-max space-y-3 tablet:space-y-0',
-})``;
-
-const StyledIconFavoriteSelected = styled(IconFavoriteSelected).attrs({
-  className: 'text-ui-600',
 })``;
