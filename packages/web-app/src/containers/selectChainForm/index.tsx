@@ -2,7 +2,6 @@ import {
   ButtonText,
   Dropdown,
   IconChevronDown,
-  Label,
   ListItemAction,
   ListItemBlockchain,
 } from '@aragon/ui-components';
@@ -23,13 +22,11 @@ const SelectChainForm: React.FC = () => {
   const {t} = useTranslation();
   const {isMobile} = useScreen();
   const {setNetwork} = useNetwork();
-  const {control, getValues} = useFormContext();
+  const {control} = useFormContext();
 
   const [isOpen, setIsOpen] = useState(false);
   const [sortFilter, setFilter] = useState<SortFilter>('cost');
-  const [networkType, setNetworkType] = useState<NetworkType>(
-    () => getValues('blockchain')?.network || 'main'
-  );
+  const [networkType, setNetworkType] = useState<NetworkType>('test');
 
   // moving this up so state change triggers translation changes
   const labels = {
@@ -66,14 +63,17 @@ const SelectChainForm: React.FC = () => {
       <Header>
         <NetworkTypeSwitcher>
           <ButtonText
-            mode="secondary"
+            mode="ghost"
+            bgWhite
+            disabled
             size={isMobile ? 'small' : 'medium'}
             label={t('labels.mainNet')}
             isActive={networkType === 'main'}
             onClick={() => setNetworkType('main')}
           />
           <ButtonText
-            mode="secondary"
+            mode="ghost"
+            bgWhite
             size={isMobile ? 'small' : 'medium'}
             label={t('labels.testNet')}
             isActive={networkType === 'test'}
@@ -81,7 +81,6 @@ const SelectChainForm: React.FC = () => {
           />
         </NetworkTypeSwitcher>
         <SortFilter>
-          {!isMobile && <Label label={t('labels.sortBy')} />}
           <Dropdown
             align="end"
             sideOffset={8}
