@@ -1,4 +1,4 @@
-import React, {HTMLAttributes, useMemo, useState} from 'react';
+import React, {HTMLAttributes, useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 export interface AvatarDaoProps extends HTMLAttributes<HTMLElement> {
@@ -16,6 +16,10 @@ export const AvatarDao: React.FC<AvatarDaoProps> = ({
   ...props
 }) => {
   const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setError(false);
+  }, [src]);
 
   const daoInitials = useMemo(() => {
     const arr = daoName.trim().split(' ');
