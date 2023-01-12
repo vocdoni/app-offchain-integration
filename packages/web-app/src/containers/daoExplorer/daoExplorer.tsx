@@ -3,18 +3,21 @@ import {
   ButtonText,
   IconChevronDown,
   Option,
+  Spinner,
 } from '@aragon/ui-components';
 import React, {useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import styled from 'styled-components';
 import {generatePath, useNavigate} from 'react-router-dom';
+import styled from 'styled-components';
 
 import {DaoCard} from 'components/daoCard';
 import {useDaos} from 'hooks/useDaos';
 import {PluginTypes} from 'hooks/usePluginClient';
+import {useWallet} from 'hooks/useWallet';
+import {CHAIN_METADATA, getSupportedNetworkByChainId} from 'utils/constants';
 import {Dashboard} from 'utils/paths';
 
-const EXPLORE_FILTER = ['newest', 'popular'] as const;
+const EXPLORE_FILTER = ['favorite', 'newest', 'popular'] as const;
 
 export type ExploreFilter = typeof EXPLORE_FILTER[number];
 
@@ -29,15 +32,20 @@ const PAGE_SIZE = 4;
 export const DaoExplorer = () => {
   const {t} = useTranslation();
   const [showCount, setShowCount] = useState(PAGE_SIZE);
-  const [filterValue, setFilterValue] = useState<ExploreFilter>('newest');
-  const {data} = useDaos(filterValue, showCount);
   const navigate = useNavigate();
+  const {address} = useWallet();
+
+  const [filterValue, setFilterValue] = useState<ExploreFilter>(() =>
+    address ? 'favorite' : 'newest'
+  );
+
+  const {data, isLoading} = useDaos(filterValue, showCount);
 
   const handleShowMoreClick = () => {
     setShowCount(prev => prev + PAGE_SIZE);
   };
 
-  const handleFliterChange = (filterValue: string) => {
+  const handleFilterChange = (filterValue: string) => {
     if (isExploreFilter(filterValue)) {
       setFilterValue(filterValue);
       setShowCount(PAGE_SIZE);
@@ -53,48 +61,49 @@ export const DaoExplorer = () => {
           <ButtonGroupContainer>
             <ButtonGroup
               defaultValue={filterValue}
-              onChange={v => handleFliterChange(v)}
+              onChange={v => handleFilterChange(v)}
               bgWhite={false}
             >
-              {/*  // TODO: uncomment when favouriting is being implemented
-               {isConnected ? (
-                <Option
-                  label={t('explore.explorer.myDaos')}
-                  value="favourite"
-                />
+              {address ? (
+                <Option label={t('explore.explorer.myDaos')} value="favorite" />
               ) : (
                 <></>
-              )} */}
+              )}
               <Option label={t('explore.explorer.popular')} value="popular" />
               <Option label={t('explore.explorer.newest')} value="newest" />
             </ButtonGroup>
           </ButtonGroupContainer>
         </HeaderWrapper>
         <CardsWrapper>
-          {data.slice(0, showCount).map((dao, index) => (
-            <DaoCard
-              name={dao.metadata.name}
-              logo={dao.metadata.avatar}
-              // TODO: replace with -> description={dao.metadata.description}
-              description="This is a DAO."
-              chainId={4}
-              daoType={
-                (dao?.plugins[0].id as PluginTypes) === 'erc20voting.dao.eth'
-                  ? 'token-based'
-                  : 'wallet-based'
-              }
-              key={index}
-              onClick={() =>
-                navigate(
-                  generatePath(Dashboard, {
-                    // TODO: Remove the hardcoded network param
-                    network: 'goerli',
-                    dao: dao.address,
-                  })
-                )
-              }
-            />
-          ))}
+          {isLoading ? (
+            <Spinner size="default" />
+          ) : (
+            data.slice(0, showCount).map((dao, index) => (
+              <DaoCard
+                name={dao.metadata.name}
+                logo={dao.metadata.avatar}
+                // TODO: replace with -> description={dao.metadata.description}
+                description="This is a DAO."
+                chainId={dao.chain || CHAIN_METADATA.goerli.id} // Default to Goerli
+                daoType={
+                  (dao?.plugins[0].id as PluginTypes) === 'erc20voting.dao.eth'
+                    ? 'token-based'
+                    : 'wallet-based'
+                }
+                key={index}
+                onClick={() =>
+                  navigate(
+                    generatePath(Dashboard, {
+                      network: getSupportedNetworkByChainId(
+                        dao.chain || CHAIN_METADATA.goerli.id
+                      ),
+                      dao: dao.address,
+                    })
+                  )
+                }
+              />
+            ))
+          )}
         </CardsWrapper>
       </MainContainer>
       {data.length > PAGE_SIZE && (
