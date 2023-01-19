@@ -334,11 +334,13 @@
     }
   },
   "alert": {
-    "durationAlert": "We recommend a minimum duration of at least one day.",
+    "durationAlert": "We recommend a minimum duration of 1 day so members have the time to review and vote.",
+    "maxDurationAlert": "365 days is the maximum duration in Majority Voting Systems.",
+    "minDurationAlert": "1 hour is the minimum duration in Majority Voting Systems.",
     "wrongWalletNetwork": "Wrong Wallet Network",
     "wrongNetwork": {
       "title": "Wrong Network",
-      "description": "The action can’t be executed because you are in the wrong network. Change to the <1>{{network}}</1> on your wallet and try again.",
+      "description": "The action can't be executed because you are in the wrong network. Change to the <1>{{network}}</1> on your wallet and try again.",
       "buttonLabel": "Switch to {{network}}"
     },
     "loginRequired": {
