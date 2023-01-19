@@ -649,12 +649,20 @@ export function prefixProposalIdWithPlgnAdr(
   proposalId: string,
   pluginAddress: string
 ) {
-  const parts = proposalId.split('_');
+  let parts = proposalId.split('_');
 
   // address already prefixed
   if (parts.length === 2) return proposalId;
 
-  // get last five characters from proposal, remove leading zeros, and prefix with
-  // plugin address
-  return `${pluginAddress}_0${proposalId.slice(-5).replace(/^0+/, '') || 0}`;
+  // get proposal number "0x00" => "00"
+  parts = proposalId.split('0x');
+
+  if (parts[1] === '00') {
+    // first proposal => 0x00
+    return `${pluginAddress}_0x0`;
+  } else {
+    // other proposals => 0x3; removes leading zeros from contract proposal id
+    // NOTE: Be very careful before modifying; in fact, leave it alone ;)
+    return `${pluginAddress}_0x${parts[1].replace(/^0+/, '')}`;
+  }
 }
