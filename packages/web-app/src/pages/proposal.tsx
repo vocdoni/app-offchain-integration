@@ -65,6 +65,8 @@ import {Action} from 'utils/types';
 // TODO: @Sepehr Please assign proper tags on action decoding
 const PROPOSAL_TAGS = ['Finance', 'Withdraw'];
 
+const NumberFormatter = new Intl.NumberFormat('en-US');
+
 const Proposal: React.FC = () => {
   const {t, i18n} = useTranslation();
   const {open} = useGlobalModalContext();
@@ -482,16 +484,19 @@ const Proposal: React.FC = () => {
         proposal.startDate,
         proposal.endDate,
         proposal.creationDate,
-        '123,123,123', // TODO: Add block numbers from sdk
+        NumberFormatter.format(proposal.creationBlockNumber),
         executionFailed,
-        '456,456,456',
-        new Date() // TODO: change to proposal.executionDate from sdk
+        NumberFormatter.format(proposal.executionBlockNumber),
+        proposal.executionDate
       );
   }, [
     proposal?.creationDate,
     proposal?.endDate,
     proposal?.startDate,
     proposal?.status,
+    proposal?.creationBlockNumber,
+    proposal?.executionBlockNumber,
+    proposal?.executionDate,
     executionFailed,
   ]);
 
