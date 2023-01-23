@@ -53,7 +53,7 @@ export function isTokenBasedProposal(
 }
 
 export function isErc20Token(
-  token?: TokenVotingProposal['token']
+  token: TokenVotingProposal['token'] | undefined
 ): token is Erc20TokenDetails {
   if (!token) return false;
   return 'decimals' in token;
@@ -161,7 +161,6 @@ export function getErc20Voters(
 ): Array<VoterType> {
   let votingPower;
   let tokenAmount;
-
   // map to voters structure
   return votes.flatMap(vote => {
     if (vote.vote === undefined) return [];

@@ -22,6 +22,8 @@ import TipTapLink from '@tiptap/extension-link';
 import {useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Big from 'big.js';
+import {formatDistanceToNow, Locale} from 'date-fns';
+import * as Locales from 'date-fns/locale';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {generatePath, useNavigate, useParams} from 'react-router-dom';
@@ -40,14 +42,11 @@ import {useGlobalModalContext} from 'context/globalModals';
 import {useNetwork} from 'context/network';
 import {useProposalTransactionContext} from 'context/proposalTransaction';
 import {useSpecificProvider} from 'context/providers';
-import {formatDistanceToNow, Locale} from 'date-fns';
-import * as Locales from 'date-fns/locale';
 import {useCache} from 'hooks/useCache';
 import {useClient} from 'hooks/useClient';
 import {useDaoDetails} from 'hooks/useDaoDetails';
 import {useDaoParam} from 'hooks/useDaoParam';
 import {useDaoProposal} from 'hooks/useDaoProposal';
-import {useDaoToken} from 'hooks/useDaoToken';
 import {useMappedBreadcrumbs} from 'hooks/useMappedBreadcrumbs';
 import {PluginTypes, usePluginClient} from 'hooks/usePluginClient';
 import {usePluginSettings} from 'hooks/usePluginSettings';
@@ -57,7 +56,9 @@ import {useWalletCanVote} from 'hooks/useWalletCanVote';
 import {CHAIN_METADATA} from 'utils/constants';
 import {
   decodeAddMembersToAction,
+  decodeMetadataToAction,
   decodeMintTokensToAction,
+  decodePluginSettingsToAction,
   decodeRemoveMembersToAction,
   decodeWithdrawToAction,
   formatUnits,
@@ -86,9 +87,7 @@ const Proposal: React.FC = () => {
 
   const {data: dao} = useDaoParam();
   const {data: daoDetails, isLoading: detailsAreLoading} = useDaoDetails(dao);
-  const {data: daoToken, isLoading: daoTokenLoading} = useDaoToken(
-    daoDetails?.plugins[0].instanceAddress as string
-  );
+
   const {data: daoSettings} = usePluginSettings(
     daoDetails?.plugins[0].instanceAddress as string,
     daoDetails?.plugins[0].id as PluginTypes
@@ -154,6 +153,7 @@ const Proposal: React.FC = () => {
   /*************************************************
    *                     Hooks                     *
    *************************************************/
+
   useEffect(() => {
     if (proposal && editor) {
       editor.commands.setContent(proposal.metadata.description, true);
@@ -166,6 +166,10 @@ const Proposal: React.FC = () => {
         actions: Uint8Array[];
         index: number;
       } = {actions: [], index: 0};
+
+      const proposalErc20Token = isErc20VotingProposal(proposal)
+        ? proposal.token
+        : undefined;
 
       const actionPromises: Promise<Action | undefined>[] =
         proposal.actions.map((action: DaoAction, index) => {
@@ -198,17 +202,26 @@ const Proposal: React.FC = () => {
                 action.data,
                 pluginClient as ClientAddressList
               );
+            case 'updateVotingSettings':
+              return decodePluginSettingsToAction(
+                action.data,
+                pluginClient as TokenVotingClient,
+                proposal.totalVotingWeight as bigint,
+                proposalErc20Token
+              );
+            case 'setMetadata':
+              return decodeMetadataToAction(action.data, client);
             default:
               return Promise.resolve({} as Action);
           }
         });
 
-      if (daoToken?.address && mintTokenActions.actions.length !== 0) {
+      if (proposalErc20Token && mintTokenActions.actions.length !== 0) {
         // Decode all the mint actions into one action with several addresses
         const decodedMintToken = decodeMintTokensToAction(
           mintTokenActions.actions,
           pluginClient as TokenVotingClient,
-          daoToken.address,
+          proposalErc20Token.address,
           provider,
           network
         );
@@ -225,15 +238,7 @@ const Proposal: React.FC = () => {
         setDecodedActions(value);
       });
     }
-  }, [
-    apolloClient,
-    client,
-    daoToken?.address,
-    network,
-    pluginClient,
-    proposal,
-    provider,
-  ]);
+  }, [apolloClient, client, network, pluginClient, proposal, provider]);
 
   // caches the status for breadcrumb
   useEffect(() => {
@@ -567,21 +572,11 @@ const Proposal: React.FC = () => {
   /*************************************************
    *                     Render                    *
    *************************************************/
-  if (
-    paramsAreLoading ||
-    detailsAreLoading ||
-    daoTokenLoading ||
-    proposalIsLoading ||
-    !proposal
-  ) {
-    return <Loading />;
-  }
-
   if (proposalError) {
     navigate(NotFound, {replace: true, state: {invalidProposal: proposalId}});
   }
 
-  if (paramsAreLoading || proposalIsLoading || !proposal) {
+  if (paramsAreLoading || proposalIsLoading || detailsAreLoading || !proposal) {
     return <Loading />;
   }
 
