@@ -45,6 +45,8 @@ export type CreateDaoFormData = {
   durationDays: string;
   minimumApproval: string;
   minimumParticipation: string;
+  eligibilityType: 'token' | 'anyone';
+  eligibilityTokenAmount: number | string;
   support: string;
   membership: string;
   earlyExecution: boolean;
@@ -64,6 +66,8 @@ const defaultValues = {
   earlyExecution: true,
   voteReplacement: false,
   membership: 'token',
+  eligibilityType: 'token' as CreateDaoFormData['eligibilityType'],
+  eligibilityTokenAmount: 0,
   isCustomToken: true,
   durationDays: '1',
   durationHours: '0',
@@ -85,6 +89,7 @@ const CreateDAO: React.FC = () => {
     tokenTotalSupply,
     membership,
     daoName,
+    eligibilityTokenAmount,
   ] = useWatch({
     control: formMethods.control,
     name: [
@@ -93,6 +98,7 @@ const CreateDAO: React.FC = () => {
       'tokenTotalSupply',
       'membership',
       'daoName',
+      'eligibilityTokenAmount',
     ],
   });
 
@@ -157,8 +163,13 @@ const CreateDAO: React.FC = () => {
           !dirtyFields.tokenName ||
           !dirtyFields.wallets ||
           !dirtyFields.tokenSymbol ||
+          !(
+            dirtyFields.eligibilityType || dirtyFields.eligibilityTokenAmount
+          ) ||
           errors.wallets ||
-          tokenTotalSupply === 0
+          errors.eligibilityTokenAmount ||
+          tokenTotalSupply === 0 ||
+          !(eligibilityTokenAmount !== 0)
         )
           return false;
         return errors.tokenName || errors.tokenSymbol || errors.wallets
@@ -171,18 +182,22 @@ const CreateDAO: React.FC = () => {
     }
   }, [
     membership,
+    whitelistWallets,
     errors.whitelistWallets,
     errors.wallets,
+    errors.eligibilityTokenAmount,
     errors.tokenName,
     errors.tokenSymbol,
     errors.tokenAddress,
-    whitelistWallets,
     isCustomToken,
     dirtyFields.tokenName,
     dirtyFields.wallets,
     dirtyFields.tokenSymbol,
+    dirtyFields.eligibilityType,
+    dirtyFields.eligibilityTokenAmount,
     dirtyFields.tokenAddress,
     tokenTotalSupply,
+    eligibilityTokenAmount,
   ]);
 
   const daoConfigureCommunity = useMemo(() => {

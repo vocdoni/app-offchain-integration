@@ -164,6 +164,8 @@ const CreateDaoProvider: React.FC = ({children}) => {
       durationDays,
       durationHours,
       durationMinutes,
+      eligibilityType,
+      eligibilityTokenAmount,
       voteReplacement,
       earlyExecution,
     } = getValues();
@@ -184,6 +186,10 @@ const CreateDaoProvider: React.FC = ({children}) => {
       ),
       minParticipation: parseInt(minimumParticipation) / 100,
       supportThreshold: parseInt(minimumApproval) / 100,
+      minProposerVotingPower:
+        eligibilityType === 'token'
+          ? BigInt(Number(eligibilityTokenAmount))
+          : BigInt(0),
       votingMode,
     };
   }, [getValues]);
