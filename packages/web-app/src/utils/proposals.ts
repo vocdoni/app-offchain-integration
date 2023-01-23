@@ -24,14 +24,15 @@ import Big from 'big.js';
 import {format} from 'date-fns';
 import differenceInSeconds from 'date-fns/fp/differenceInSeconds';
 import {BigNumber} from 'ethers';
+import {TFunction} from 'react-i18next';
 
 import {ProposalVoteResults} from 'containers/votingTerminal';
+import {CachedProposal} from 'context/apolloClient';
 import {i18n} from '../../i18n.config';
 import {getFormattedUtcOffset, KNOWN_FORMATS} from './date';
 import {formatUnits} from './library';
 import {abbreviateTokenAmount} from './tokens';
 import {AddressListVote, DetailedProposal, Erc20ProposalVote} from './types';
-import {CachedProposal} from 'context/apolloClient';
 
 export const MappedVotes: {[key in VoteValues]: VoterType['option']} = {
   1: 'abstain',
@@ -65,69 +66,101 @@ export function isErc20VotingProposal(
   return isTokenBasedProposal(proposal) && isErc20Token(proposal.token);
 }
 
-//TODO Will be renamed and/or deprecated
-export function isAddressListVotingProposal(
-  proposal: DetailedProposal
-): proposal is AddressListProposal {
-  return !('token' in proposal);
-}
-
 /**
- * Get minimum approval summary for ERC20 voting proposal
- * @param minSupport Minimum support for vote to pass
- * @param totalVotingWeight number of eligible voting tokens at proposal creation snapshot
- * @param token token associated with proposal
- * @returns minimum approval summary for voting terminal
+ * Get formatted minimum participation for an ERC20 proposal
+ * @param minParticipation minimum number of tokens needed to participate in vote
+ * @param totalVotingWeight total number of tokens able to vote
+ * @param tokenDecimals proposal token decimals
+ * @returns
  */
-export function getErc20MinimumApproval(
-  minSupport: number,
+export function getErc20MinParticipation(
+  minParticipation: number,
   totalVotingWeight: bigint,
-  token: Erc20TokenDetails
-): string {
-  const percentage = Math.trunc(minSupport * 100);
-  const tokenValue = abbreviateTokenAmount(
+  tokenDecimals: number
+) {
+  return abbreviateTokenAmount(
     parseFloat(
-      Big(formatUnits(totalVotingWeight, token.decimals))
-        .mul(minSupport)
+      Big(formatUnits(totalVotingWeight, tokenDecimals))
+        .mul(minParticipation)
         .toFixed(2)
     ).toString()
   );
-
-  return `${tokenValue} ${token.symbol} (${percentage}%)`;
 }
 
-/**
- *  Get minimum approval summary for whitelist voting proposal
- * @param minSupport Minimum support for vote to pass
- * @param totalVotingWeight number of eligible wallets/members at proposal creation snapshot
- * @returns minimum approval summary for voting terminal
- */
-export function getWhitelistMinimumApproval(
-  minSupport: number,
-  totalVotingWeight: number
-): string {
-  const members = Math.ceil(totalVotingWeight * minSupport);
-  return `${members} ${i18n.t('labels.members')} (${minSupport * 100}%)`;
-}
-
-/**
- * Get mapped voters and voting participation summary for ERC20 Voting proposal
- * @param votes list of votes on proposal
- * @param token token associated with proposal
- * @param totalVotingWeight number of eligible voting tokens at proposal creation snapshot
- * @returns mapped voters and participation summary
- */
-export function getErc20VotersAndParticipation(
-  votes: TokenVotingProposal['votes'],
-  token: Erc20TokenDetails,
+export function getErc20VotingParticipation(
+  minParticipation: number,
+  usedVotingWeight: bigint,
   totalVotingWeight: bigint,
-  usedVotingWeight: bigint
-): {voters: Array<VoterType>; summary: string} {
+  tokenDecimals: number
+) {
+  // calculate participation summary
+  const totalWeight = abbreviateTokenAmount(
+    parseFloat(
+      Number(formatUnits(totalVotingWeight, tokenDecimals)).toFixed(2)
+    ).toString()
+  );
+
+  // current participation
+  const currentPart = abbreviateTokenAmount(
+    parseFloat(
+      Number(formatUnits(usedVotingWeight, tokenDecimals)).toFixed(2)
+    ).toString()
+  );
+
+  const currentPercentage = parseFloat(
+    Big(usedVotingWeight.toString())
+      .mul(100)
+      .div(totalVotingWeight.toString())
+      .toFixed(2)
+  );
+
+  // minimum participation
+  const minPart = getErc20MinParticipation(
+    minParticipation,
+    totalVotingWeight,
+    tokenDecimals
+  );
+
+  // missing participation (used - minimum part)
+  const missingRaw = Number(
+    formatUnits(
+      Big(usedVotingWeight.toString())
+        .minus(Big(totalVotingWeight.toString()).mul(minParticipation))
+        .toString(),
+      tokenDecimals
+    )
+  );
+
+  let missingPart;
+
+  if (Math.sign(missingRaw) === 1) {
+    // number of votes greater than required minimum participation
+    missingPart = 0;
+  } else missingPart = Math.abs(missingRaw);
+  // const missingPart = Math.sign(Number(missingRaw)) === 1 ? Math.abs(Number(missingRaw));
+
+  return {currentPart, currentPercentage, minPart, missingPart, totalWeight};
+}
+
+/**
+ * Get mapped voters for ERC20 Voting proposal
+ * @param votes list of votes on proposal
+ * @param totalVotingWeight number of eligible voting tokens at proposal creation snapshot
+ * @param tokenDecimals proposal token decimal
+ * @param tokenSymbol proposal token symbol
+ * @returns mapped voters
+ */
+export function getErc20Voters(
+  votes: TokenVotingProposal['votes'],
+  totalVotingWeight: bigint,
+  tokenDecimals: number,
+  tokenSymbol: string
+): Array<VoterType> {
   let votingPower;
   let tokenAmount;
 
   // map to voters structure
-  const voters = votes.flatMap(vote => {
+  return votes.flatMap(vote => {
     if (vote.vote === undefined) return [];
 
     votingPower =
@@ -141,9 +174,9 @@ export function getErc20VotersAndParticipation(
 
     tokenAmount = `${abbreviateTokenAmount(
       parseFloat(
-        Number(formatUnits(vote.weight, token.decimals)).toFixed(2)
+        Number(formatUnits(vote.weight, tokenDecimals)).toFixed(2)
       ).toString()
-    )} ${token.symbol}`;
+    )} ${tokenSymbol}`;
 
     return {
       wallet: vote.address,
@@ -152,36 +185,6 @@ export function getErc20VotersAndParticipation(
       tokenAmount,
     };
   });
-
-  // calculate participation summary
-  const formattedTotalWeight = abbreviateTokenAmount(
-    parseFloat(
-      Number(formatUnits(totalVotingWeight, token.decimals)).toFixed(2)
-    ).toString()
-  );
-
-  const formattedParticipation = abbreviateTokenAmount(
-    parseFloat(
-      Number(formatUnits(usedVotingWeight, token.decimals)).toFixed(2)
-    ).toString()
-  );
-
-  const participationPercentage = parseFloat(
-    Big(Number(usedVotingWeight))
-      .mul(100)
-      .div(totalVotingWeight.toString())
-      .toFixed(2)
-  );
-
-  return {
-    voters,
-    summary: i18n.t('votingTerminal.participationErc20', {
-      participation: formattedParticipation,
-      percentage: participationPercentage,
-      tokenSymbol: token.symbol,
-      totalWeight: formattedTotalWeight,
-    }),
-  };
 }
 
 /**
@@ -431,14 +434,17 @@ function getPublishedProposalStep(
  * @returns transformed data for terminal
  */
 export function getTerminalProps(
+  t: TFunction,
   proposal: DetailedProposal,
   voter: string | null
 ) {
   let token;
   let voters;
-  let participation;
+  let currentParticipation;
+  let minParticipation;
+  let missingParticipation;
   let results;
-  let approval;
+  let supportThreshold;
   let strategy;
 
   if (isErc20VotingProposal(proposal)) {
@@ -449,16 +455,12 @@ export function getTerminalProps(
     };
 
     // voters
-    const ptcResults = getErc20VotersAndParticipation(
+    voters = getErc20Voters(
       proposal.votes,
-      proposal.token,
       proposal.totalVotingWeight,
-      proposal.usedVotingWeight
-    );
-    voters = ptcResults.voters.sort(a => (a.wallet === voter ? -1 : 0));
-
-    // participation summary
-    participation = ptcResults.summary;
+      proposal.token.decimals,
+      proposal.token.symbol
+    ).sort(a => (a.wallet === voter ? -1 : 0));
 
     // results
     results = getErc20Results(
@@ -467,37 +469,36 @@ export function getTerminalProps(
       proposal.totalVotingWeight
     );
 
-    // min approval
-    approval = getErc20MinimumApproval(
-      proposal.settings.minSupport,
-      proposal.totalVotingWeight,
-      proposal.token
-    );
+    // calculate participation
+    const {currentPart, currentPercentage, minPart, missingPart, totalWeight} =
+      getErc20VotingParticipation(
+        proposal.settings.minTurnout,
+        proposal.usedVotingWeight,
+        proposal.totalVotingWeight,
+        proposal.token.decimals
+      );
+
+    minParticipation = t('votingTerminal.participationErc20', {
+      participation: minPart,
+      totalWeight,
+      tokenSymbol: token.symbol,
+      percentage: Math.round(proposal.settings.minTurnout * 100),
+    });
+
+    currentParticipation = t('votingTerminal.participationErc20', {
+      participation: currentPart,
+      totalWeight,
+      tokenSymbol: token.symbol,
+      percentage: currentPercentage,
+    });
+
+    missingParticipation = missingPart;
+
+    // support threshold
+    supportThreshold = Math.round(proposal.settings.minSupport * 100);
 
     // strategy
-    strategy = i18n.t('votingTerminal.tokenVoting');
-  } else if (isAddressListVotingProposal(proposal)) {
-    // voters
-    const ptcResults = getWhitelistVoterParticipation(
-      proposal.votes,
-      proposal.totalVotingWeight
-    );
-    voters = ptcResults.voters.sort(a => (a.wallet === voter ? -1 : 0));
-
-    // participation summary
-    participation = ptcResults.summary;
-
-    // results
-    results = getWhitelistResults(proposal.result, proposal.totalVotingWeight);
-
-    // approval
-    approval = getWhitelistMinimumApproval(
-      proposal.settings.minSupport,
-      proposal.totalVotingWeight
-    );
-
-    // strategy
-    strategy = i18n.t('votingTerminal.multisig');
+    strategy = t('votingTerminal.tokenVoting');
   }
 
   return {
@@ -505,10 +506,11 @@ export function getTerminalProps(
     status: proposal.status,
     voters,
     results,
-    approval,
     strategy,
-    participation,
-
+    supportThreshold,
+    minParticipation,
+    currentParticipation,
+    missingParticipation,
     startDate: `${format(
       proposal.startDate,
       KNOWN_FORMATS.proposals
