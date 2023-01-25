@@ -5,6 +5,7 @@ import {
   AddresslistVotingClient,
   Erc20TokenDetails,
   IMintTokenParams,
+  VotingMode,
   TokenVotingClient,
 } from '@aragon/sdk-client';
 import {resolveIpfsCid} from '@aragon/sdk-common';
@@ -371,6 +372,20 @@ export function generateCachedProposalId(
   proposalId: string
 ): string {
   return `${daoAddress}_${proposalId}`;
+}
+
+type DecodedVotingMode = {
+  earlyExecution: boolean;
+  voteReplacement: boolean;
+};
+
+export function decodeVotingMode(mode: VotingMode): DecodedVotingMode {
+  return {
+    // Note: This implies that earlyExecution and voteReplacement may never be
+    // both true at the same time, as they shouldn't.
+    earlyExecution: mode === VotingMode.EARLY_EXECUTION,
+    voteReplacement: mode === VotingMode.VOTE_REPLACEMENT,
+  };
 }
 
 /**
