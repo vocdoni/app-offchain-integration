@@ -1,12 +1,12 @@
 // Library utils / Ethers for now
 import {ApolloClient} from '@apollo/client';
 import {
-  Client,
   AddresslistVotingClient,
+  Client,
   Erc20TokenDetails,
   IMintTokenParams,
-  VotingMode,
   TokenVotingClient,
+  VotingMode,
 } from '@aragon/sdk-client';
 import {resolveIpfsCid} from '@aragon/sdk-common';
 import {Address} from '@aragon/ui-components/dist/utils/addresses';
