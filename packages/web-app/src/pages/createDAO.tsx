@@ -89,7 +89,6 @@ const CreateDAO: React.FC = () => {
     tokenTotalSupply,
     membership,
     daoName,
-    eligibilityTokenAmount,
   ] = useWatch({
     control: formMethods.control,
     name: [
@@ -98,7 +97,6 @@ const CreateDAO: React.FC = () => {
       'tokenTotalSupply',
       'membership',
       'daoName',
-      'eligibilityTokenAmount',
     ],
   });
 
@@ -163,13 +161,10 @@ const CreateDAO: React.FC = () => {
           !dirtyFields.tokenName ||
           !dirtyFields.wallets ||
           !dirtyFields.tokenSymbol ||
-          !(
-            dirtyFields.eligibilityType || dirtyFields.eligibilityTokenAmount
-          ) ||
           errors.wallets ||
           errors.eligibilityTokenAmount ||
-          tokenTotalSupply === 0 ||
-          !(eligibilityTokenAmount !== 0)
+          tokenTotalSupply === 0
+          ///////// !(eligibilityType === 'token' && eligibilityTokenAmount !== 0)
         )
           return false;
         return errors.tokenName || errors.tokenSymbol || errors.wallets
@@ -193,11 +188,8 @@ const CreateDAO: React.FC = () => {
     dirtyFields.tokenName,
     dirtyFields.wallets,
     dirtyFields.tokenSymbol,
-    dirtyFields.eligibilityType,
-    dirtyFields.eligibilityTokenAmount,
     dirtyFields.tokenAddress,
     tokenTotalSupply,
-    eligibilityTokenAmount,
   ]);
 
   const daoConfigureCommunity = useMemo(() => {
