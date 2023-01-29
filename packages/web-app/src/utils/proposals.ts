@@ -7,22 +7,23 @@
 
 import {
   AddresslistVotingProposal,
-  AddresslistVotingProposalListItem,
   AddresslistVotingProposalResult,
   Erc20TokenDetails,
   ICreateProposalParams,
+  MultisigProposal,
   ProposalMetadata,
   ProposalStatus,
   TokenVotingProposal,
-  TokenVotingProposalListItem,
   TokenVotingProposalResult,
   VoteValues,
+  VotingMode,
   VotingSettings,
 } from '@aragon/sdk-client';
 import {ProgressStatusProps, VoterType} from '@aragon/ui-components';
 import Big from 'big.js';
-import {format} from 'date-fns';
+import {format, formatDistanceToNow, Locale} from 'date-fns';
 import differenceInSeconds from 'date-fns/fp/differenceInSeconds';
+import * as Locales from 'date-fns/locale';
 import {BigNumber} from 'ethers';
 import {TFunction} from 'react-i18next';
 
@@ -32,7 +33,12 @@ import {i18n} from '../../i18n.config';
 import {getFormattedUtcOffset, KNOWN_FORMATS} from './date';
 import {formatUnits} from './library';
 import {abbreviateTokenAmount} from './tokens';
-import {AddressListVote, DetailedProposal, Erc20ProposalVote} from './types';
+import {
+  AddressListVote,
+  DetailedProposal,
+  Erc20ProposalVote,
+  SupportedProposals,
+} from './types';
 
 export const MappedVotes: {[key in VoteValues]: VoterType['option']} = {
   1: 'abstain',
@@ -42,11 +48,7 @@ export const MappedVotes: {[key in VoteValues]: VoterType['option']} = {
 
 // this type guard will need to evolve when there are more types
 export function isTokenBasedProposal(
-  proposal:
-    | DetailedProposal
-    | TokenVotingProposalListItem
-    | AddresslistVotingProposalListItem
-    | undefined
+  proposal: SupportedProposals | undefined
 ): proposal is TokenVotingProposal {
   if (!proposal) return false;
   return 'token' in proposal;
@@ -60,13 +62,16 @@ export function isErc20Token(
 }
 
 export function isErc20VotingProposal(
-  proposal:
-    | DetailedProposal
-    | TokenVotingProposalListItem
-    | AddresslistVotingProposalListItem
-    | undefined
+  proposal: SupportedProposals | undefined
 ): proposal is TokenVotingProposal & {token: Erc20TokenDetails} {
   return isTokenBasedProposal(proposal) && isErc20Token(proposal.token);
+}
+
+export function isMultisigProposal(
+  proposal: SupportedProposals | undefined
+): proposal is MultisigProposal {
+  if (!proposal) return false;
+  return 'approvals' in proposal;
 }
 
 /**
@@ -494,28 +499,29 @@ export function getTerminalProps(
 
     // strategy
     strategy = t('votingTerminal.tokenVoting');
+    return {
+      token,
+      status: proposal.status,
+      voters,
+      results,
+      strategy,
+      supportThreshold,
+      minParticipation,
+      currentParticipation,
+      missingParticipation,
+      startDate: `${format(
+        proposal.startDate,
+        KNOWN_FORMATS.proposals
+      )}  ${getFormattedUtcOffset()}`,
+
+      endDate: `${format(
+        proposal.endDate,
+        KNOWN_FORMATS.proposals
+      )}  ${getFormattedUtcOffset()}`,
+    };
   }
 
-  return {
-    token,
-    status: proposal.status,
-    voters,
-    results,
-    strategy,
-    supportThreshold,
-    minParticipation,
-    currentParticipation,
-    missingParticipation,
-    startDate: `${format(
-      proposal.startDate,
-      KNOWN_FORMATS.proposals
-    )}  ${getFormattedUtcOffset()}`,
-
-    endDate: `${format(
-      proposal.endDate,
-      KNOWN_FORMATS.proposals
-    )}  ${getFormattedUtcOffset()}`,
-  };
+  // TODO: please add Multisig path
 }
 
 export type MapToDetailedProposalParams = {
@@ -611,17 +617,10 @@ export function addVoteToProposal(
         .add((vote as Erc20ProposalVote).weight)
         .toBigInt(),
     } as TokenVotingProposal;
-  } else {
-    // AddressList calculation
-    return {
-      ...proposal,
-      votes: [...proposal.votes, {...vote}],
-      result: {
-        ...proposal.result,
-        [voteValue]: proposal.result[voteValue] + 1,
-      },
-    } as AddresslistVotingProposal;
   }
+
+  // TODO please add multisig vote config
+  return {} as DetailedProposal;
 }
 
 /**
@@ -661,5 +660,131 @@ export function prefixProposalIdWithPlgnAdr(
     // other proposals => 0x3; removes leading zeros from contract proposal id
     // NOTE: Be very careful before modifying; in fact, leave it alone ;)
     return `${pluginAddress}_0x${parts[1].replace(/^0+/, '')}`;
+  }
+}
+
+export function getVoteStatusAndLabel(
+  proposal: DetailedProposal,
+  voted: boolean,
+  canVote: boolean,
+  t: TFunction
+) {
+  let voteStatus = '';
+  let voteButtonLabel = '';
+
+  // TODO: update with multisig props
+  if (isMultisigProposal(proposal)) return [voteStatus, voteButtonLabel];
+
+  voteButtonLabel = voted
+    ? canVote
+      ? t('votingTerminal.status.revote')
+      : t('votingTerminal.status.voteSubmitted')
+    : t('votingTerminal.voteOver');
+
+  switch (proposal.status) {
+    case 'Pending':
+      {
+        const locale = (Locales as Record<string, Locale>)[i18n.language];
+        const timeUntilNow = formatDistanceToNow(proposal.startDate, {
+          includeSeconds: true,
+          locale,
+        });
+
+        voteButtonLabel = t('votingTerminal.voteNow');
+        voteStatus = t('votingTerminal.status.pending', {timeUntilNow});
+      }
+      break;
+    case 'Succeeded':
+      voteStatus = t('votingTerminal.status.succeeded');
+      break;
+    case 'Executed':
+      voteStatus = t('votingTerminal.status.executed');
+      break;
+    case 'Defeated':
+      voteStatus = t('votingTerminal.status.defeated');
+
+      break;
+    case 'Active':
+      {
+        const locale = (Locales as Record<string, Locale>)[i18n.language];
+        const timeUntilEnd = formatDistanceToNow(proposal.endDate, {
+          includeSeconds: true,
+          locale,
+        });
+
+        voteStatus = t('votingTerminal.status.active', {timeUntilEnd});
+
+        // haven't voted
+        if (!voted) voteButtonLabel = t('votingTerminal.voteNow');
+      }
+      break;
+  }
+  return [voteStatus, voteButtonLabel];
+}
+
+export function isEarlyExecutable(
+  missingParticipation: number | undefined,
+  proposal: DetailedProposal | undefined,
+  results: ProposalVoteResults | undefined,
+  votingMode: VotingMode | undefined
+): boolean {
+  if (
+    missingParticipation === undefined ||
+    votingMode !== VotingMode.EARLY_EXECUTION || // early execution disabled
+    !isErc20VotingProposal(proposal) || // proposal is not token-based
+    !results // no mapped data
+  ) {
+    return false;
+  }
+
+  // check if proposal can be executed early
+  const votes: Record<keyof ProposalVoteResults, Big> = {
+    yes: Big(0),
+    no: Big(0),
+    abstain: Big(0),
+  };
+
+  for (const voteType in results) {
+    votes[voteType as keyof ProposalVoteResults] = Big(
+      results[voteType as keyof ProposalVoteResults].value.toString()
+    );
+  }
+
+  // renaming for clarity, should be renamed in later versions of sdk
+  const supportThreshold = proposal.settings.minSupport;
+
+  // those who didn't vote (this is NOT voting abstain)
+  const absentee = formatUnits(
+    proposal.totalVotingWeight - proposal.usedVotingWeight,
+    proposal.token.decimals
+  );
+
+  return (
+    // participation reached
+    missingParticipation === 0 &&
+    // support threshold met
+    votes.yes.div(votes.yes.add(votes.no)).gt(supportThreshold) &&
+    // even if absentees show up and all vote against, still cannot change outcome
+    votes.yes.div(votes.yes.add(votes.no).add(absentee)).gt(supportThreshold)
+  );
+}
+
+export function getProposalExecutionStatus(
+  proposalStatus: ProposalStatus | undefined,
+  canExecuteEarly: boolean,
+  executionFailed: boolean
+) {
+  switch (proposalStatus) {
+    case 'Succeeded':
+      return executionFailed ? 'executable-failed' : 'executable';
+    case 'Executed':
+      return 'executed';
+    case 'Defeated':
+      return 'defeated';
+    case 'Active':
+      return canExecuteEarly ? 'executable' : 'default';
+    case 'Pending':
+    default:
+      return 'default';
   }
 }
