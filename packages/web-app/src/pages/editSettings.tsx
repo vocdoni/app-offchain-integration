@@ -206,7 +206,7 @@ const EditSettings: React.FC = () => {
   ]);
 
   const setCurrentGovernance = useCallback(() => {
-    setValue('tokenTotalSupply', tokenSupply);
+    setValue('tokenTotalSupply', tokenSupply?.formatted);
     setValue('minimumApproval', Math.round(daoSettings.supportThreshold * 100));
     setValue(
       'minimumParticipation',
@@ -239,7 +239,7 @@ const EditSettings: React.FC = () => {
     days,
     hours,
     minutes,
-    tokenSupply,
+    tokenSupply?.formatted,
     setValue,
   ]);
 

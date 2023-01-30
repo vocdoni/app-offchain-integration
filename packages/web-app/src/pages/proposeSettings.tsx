@@ -184,7 +184,6 @@ const ProposeSettingWrapper: React.FC<Props> = ({
         durationHours,
         durationMinutes,
         resourceLinks,
-        tokenSupply,
       ] = getValues([
         'daoName',
         'daoSummary',
@@ -197,7 +196,6 @@ const ProposeSettingWrapper: React.FC<Props> = ({
         'durationHours',
         'durationMinutes',
         'daoLinks',
-        'tokenTotalSupply',
       ]);
 
       const metadataAction: ActionUpdateMetadata = {
@@ -233,7 +231,7 @@ const ProposeSettingWrapper: React.FC<Props> = ({
 
       setValue('actions', [metadataAction, voteSettingsAction]);
     }
-  }, [daoToken, getValues, setValue]);
+  }, [daoToken, getValues, setValue, tokenSupply?.raw]);
 
   useEffect(() => {
     // encoding actions
@@ -447,7 +445,7 @@ const ProposeSettingWrapper: React.FC<Props> = ({
         daoName: daoDetails?.metadata.name,
         daoToken,
         totalVotingWeight:
-          pluginType === 'token-voting.plugin.dao.eth' && tokenSupply
+          pluginType === 'token-voting.plugin.dao.eth' && tokenSupply?.formatted
             ? tokenSupply.formatted
             : members.length,
         // TODO: Add multisig
@@ -486,7 +484,7 @@ const ProposeSettingWrapper: React.FC<Props> = ({
       pluginType,
       preferences?.functional,
       proposalCreationData,
-      tokenSupply,
+      tokenSupply?.formatted,
     ]
   );
 
