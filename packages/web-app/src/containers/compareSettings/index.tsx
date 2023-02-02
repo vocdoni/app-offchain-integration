@@ -110,8 +110,8 @@ const CompareSettings: React.FC = () => {
             })
           : t('createDAO.step3.eligibility.anyone.title'),
       days: durationDays,
-      hours: durationMinutes,
-      minutes: durationHours,
+      hours: durationHours,
+      minutes: durationMinutes,
       votingMode: {
         earlyExecution: earlyExecution ? t('labels.yes') : t('labels.no'),
         voteReplacement: voteReplacement ? t('labels.yes') : t('labels.no'),
