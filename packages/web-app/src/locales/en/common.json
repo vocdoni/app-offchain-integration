@@ -585,7 +585,6 @@
       "tokenMembershipSubtitle": "Tokens act as voting chips. The more tokens you hold, the more weight your vote has. Token holders can also create proposals. ",
       "walletMemberShip": "Authorized wallets",
       "walletMemberShipSubtitle": "Allowlist wallet addresses of trusted members, so voting is 1 wallet = 1 vote. Allowlisted wallets can also create proposals. ",
-      "multisigMembers": "Multisig Members",
       "nameSubtitle": "The full name of the token. Example: Uniswap",
       "symbolSubtitle": "The abbreviation of the token. Example: UNI",
       "addExistingTokenHelptext": "Hinterlege einen bestehenden Token, welcher deine Community für die Governance verwendet. To learn more about what it’s important if you use an existing Token, read first the ",
@@ -624,6 +623,8 @@
       "days": "Days",
       "hours": "Hours",
       "minutes": "Minutes",
+      "minimumApprovalSubtitle": "Participation is the amount of addresses in the authorised list that approve on a proposal. The minimum is how many have to approve for the result to be valid.",
+      "minApprovalAddressCount": "of {{count}} Addresses",
       "alerts": {
         "minimumApprovalAlert": "of {{amount}} Tokens",
         "minimumParticipationAlert": "Rounded up to {{percentage}}% equals {{walletCount}} Wallets have to vote",
