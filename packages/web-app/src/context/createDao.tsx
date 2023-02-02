@@ -40,6 +40,9 @@ import {
 import {useGlobalModalContext} from './globalModals';
 import {useNetwork} from './network';
 import {usePrivacyContext} from './privacyContext';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import {toAscii} from 'idna-uts46';
 
 // TODO: Copied from SDK. To be removed once SDK supports encoders for DAO creation
 function encodeRatio(ratio: number, digits: number): number {
@@ -279,7 +282,11 @@ const CreateDaoProvider: React.FC = ({children}) => {
         metadataUri: ipfsUri || '',
         // TODO: We're using dao name without spaces for ens, We need to add alert
         // to inform this to user
-        ensSubdomain: daoName?.replace(/ /g, '_'),
+        ensSubdomain: toAscii(daoName?.replaceAll(/[ .]/g, '-'), {
+          transitional: true,
+          useStd3ASCII: true,
+          verifyDnsLength: true,
+        }),
         plugins: [...plugins],
       };
     } catch {
