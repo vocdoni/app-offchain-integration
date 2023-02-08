@@ -31,6 +31,7 @@ import {
 } from 'utils/date';
 import {
   getErc20VotingParticipation,
+  getNonEmptyActions,
   getWhitelistVoterParticipation,
 } from 'utils/proposals';
 import {getTokenInfo} from 'utils/tokens';
@@ -269,9 +270,9 @@ const ReviewProposal: React.FC<ReviewProposalProps> = ({
                 : t('votingTerminal.tokenVoting')
             }
           />
-
+          {/* TODO: Sarkawt:Fabrice : add minApproval to `getNonEmptyActions()` once multisig voting setting is ready */}
           <ExecutionWidget
-            actions={values.actions}
+            actions={getNonEmptyActions(values.actions, 0)}
             onAddAction={
               addActionsStepNumber
                 ? () => setStep(addActionsStepNumber)

@@ -22,6 +22,7 @@ import {CustomHeaderProps, FormItem} from '../addAddresses';
 import AccordionSummary from '../addAddresses/accordionSummary';
 import {AddressRow} from '../addAddresses/addressRow';
 import {useAlertContext} from 'context/alert';
+import {useDaoDetails} from 'hooks/useDaoDetails';
 
 type RemoveAddressesProps = ActionIndex & CustomHeaderProps;
 
@@ -36,9 +37,15 @@ const RemoveAddresses: React.FC<RemoveAddressesProps> = ({
   const {removeAction} = useActionsContext();
   const {alert} = useAlertContext();
 
-  // dao data
-  const {data: dao} = useDaoParam();
-  const {data} = useDaoMembers(dao, 'multisig.plugin.dao.eth');
+  // DAO data
+  const {data: daoId} = useDaoParam();
+  const {data: daoDetails} = useDaoDetails(daoId);
+
+  // plugin data
+  const {data} = useDaoMembers(
+    daoDetails?.plugins[0].instanceAddress || '',
+    'multisig.plugin.dao.eth'
+  );
 
   // form context data & hooks
   const {control, setValue} = useFormContext();
