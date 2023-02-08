@@ -28,7 +28,8 @@ export const useTokenMetadata = (
             return fetchTokenData(
               asset.type === 'erc20' ? asset.address : constants.AddressZero,
               client,
-              network
+              network,
+              asset.type === 'erc20' ? asset.symbol : undefined
             );
           })
         );

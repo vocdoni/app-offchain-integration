@@ -41,7 +41,7 @@ const TokenList: React.FC<TokenListProps> = ({tokens}) => {
             : {
                 tokenUSDValue: usdFormatter.format(token.marketData.price),
                 treasuryShare: usdFormatter.format(
-                  token.marketData.treasuryShare
+                  token.marketData.balanceValue
                 ),
                 treasurySharePercentage: `${token.treasurySharePercentage?.toFixed(
                   0
@@ -66,7 +66,7 @@ const TokenList: React.FC<TokenListProps> = ({tokens}) => {
                   style: 'currency',
                   currency: 'USD',
                   signDisplay: 'always',
-                }).format(token.marketData.valueChangeDuringInterval),
+                }).format(token.marketData.valueChangeDuringInterval!),
               })}
         />
       ))}

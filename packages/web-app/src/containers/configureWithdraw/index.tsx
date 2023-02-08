@@ -115,7 +115,7 @@ const ConfigureWithdrawForm: React.FC<ConfigureWithdrawFormProps> = ({
           isNativeToken(tokenAddress)
             ? provider.getBalance(daoAddress)
             : fetchBalance(tokenAddress, daoAddress, provider, nativeCurrency),
-          fetchTokenData(tokenAddress, client, network),
+          fetchTokenData(tokenAddress, client, network, symbol),
         ]);
 
         // use blockchain if api data unavailable
@@ -166,6 +166,7 @@ const ConfigureWithdrawForm: React.FC<ConfigureWithdrawFormProps> = ({
     network,
     daoAddress,
     nativeCurrency,
+    symbol,
   ]);
 
   /*************************************************
