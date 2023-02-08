@@ -99,7 +99,7 @@ export function minutesToMills(minutes: number): number {
   return minutes * 60 * 1000;
 }
 
-function offsetToMills(offset: Offset) {
+export function offsetToMills(offset: Offset) {
   return (
     (offset.days ? daysToMills(offset.days) : 0) +
     (offset.hours ? hoursToMills(offset.hours) : 0) +
