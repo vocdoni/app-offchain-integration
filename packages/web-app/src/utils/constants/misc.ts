@@ -103,11 +103,15 @@ export const MAX_DURATION_DAYS = 365;
 export const MIN_DURATION_HOURS = 1;
 
 // Multisig duration boundaries
-export const MULTISIG_MAX_DURATION_DAYS = 30;
+// Note: multisig does not contain a hard end boundary
 export const MULTISIG_MIN_DURATION_HOURS = 1;
 
 // recommended duration for multisig proposal
 export const MULTISIG_REC_DURATION_DAYS = 5;
+export const MULTISIG_MAX_REC_DURATION_DAYS = 30;
+
+// delay for correcting invalid user inputs
+export const CORRECTION_DELAY = 2000;
 
 // delay for correcting invalid user inputs
 export const CORRECTION_DELAY = 2000;
