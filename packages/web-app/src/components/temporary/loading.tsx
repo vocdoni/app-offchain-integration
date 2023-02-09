@@ -3,9 +3,9 @@ import React from 'react';
 
 export const Loading: React.FC = () => {
   return (
-    <div className="flex flex-col items-center w-full">
-      <p className="my-4 text-2xl font-bold text-center">Loading...</p>
+    <div className="flex fixed top-1/3 right-px flex-col items-center w-full">
       <Spinner size="big" />
+      <p className="my-4 text-lg text-center">Loading...</p>
     </div>
   );
 };
