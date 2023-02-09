@@ -207,7 +207,6 @@
     "updateMetadataAction": "Update DAO Metadata",
     "updateMetadataActionDescription": "Change your DAO metadata",
     "name": "Name",
-
     "minimumApprovalDescription": "Participation is the amount of addresses in the authorised list that approve on a proposal. The minimum is how many have to approve for the result to be valid.",
     "minimumApprovalAdditionalInfo": "When new wallets gets added or removed to the Multisig DAO, you have to review the Minimum Approval.",
     "minimumApprovalProgressInfo": "of {{amount}} Addresses"
