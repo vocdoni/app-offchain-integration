@@ -4,7 +4,6 @@ import {
   TokenVotingClient,
   TokenVotingProposal,
   VotingMode,
-  VotingSettings,
 } from '@aragon/sdk-client';
 import {
   Breadcrumb,
@@ -38,11 +37,15 @@ import {useSpecificProvider} from 'context/providers';
 import {useCache} from 'hooks/useCache';
 import {useClient} from 'hooks/useClient';
 import {useDaoDetails} from 'hooks/useDaoDetails';
+import {MultisigMember, useDaoMembers} from 'hooks/useDaoMembers';
 import {useDaoParam} from 'hooks/useDaoParam';
 import {useDaoProposal} from 'hooks/useDaoProposal';
 import {useMappedBreadcrumbs} from 'hooks/useMappedBreadcrumbs';
 import {PluginTypes, usePluginClient} from 'hooks/usePluginClient';
-import {usePluginSettings} from 'hooks/usePluginSettings';
+import {
+  isTokenVotingSettings,
+  usePluginSettings,
+} from 'hooks/usePluginSettings';
 import useScreen from 'hooks/useScreen';
 import {useWallet} from 'hooks/useWallet';
 import {useWalletCanVote} from 'hooks/useWalletCanVote';
@@ -55,11 +58,12 @@ import {
 } from 'utils/library';
 import {NotFound} from 'utils/paths';
 import {
-  isEarlyExecutable,
   getProposalExecutionStatus,
   getProposalStatusSteps,
   getTerminalProps,
-  getVoteStatusAndLabel,
+  getVoteButtonLabel,
+  getVoteStatus,
+  isEarlyExecutable,
   isErc20VotingProposal,
   isMultisigProposal,
 } from 'utils/proposals';
@@ -82,15 +86,21 @@ const Proposal: React.FC = () => {
   const {data: dao} = useDaoParam();
   const {data: daoDetails, isLoading: detailsAreLoading} = useDaoDetails(dao);
 
-  const {data} = usePluginSettings(
+  const {data: daoSettings} = usePluginSettings(
     daoDetails?.plugins[0].instanceAddress as string,
     daoDetails?.plugins[0].id as PluginTypes
   );
 
-  // TODO: fix when integrating multisig
-  const daoSettings = data as VotingSettings;
+  const {
+    data: {members},
+  } = useDaoMembers(
+    daoDetails?.plugins[0].instanceAddress as string,
+    daoDetails?.plugins[0].id as PluginTypes
+  );
 
-  const earlyExecution = daoSettings.votingMode === VotingMode.EARLY_EXECUTION;
+  const earlyExecution =
+    isTokenVotingSettings(daoSettings) &&
+    daoSettings.votingMode === VotingMode.EARLY_EXECUTION;
 
   const {client} = useClient();
   const {set, get} = useCache();
@@ -195,7 +205,6 @@ const Proposal: React.FC = () => {
             mintTokenActions.actions.push(action.data);
             return Promise.resolve({} as Action);
 
-          // TODO: switch to multisig
           // case 'addAllowedUsers':
           //   return decodeAddMembersToAction(
           //     action.data,
@@ -299,12 +308,21 @@ const Proposal: React.FC = () => {
 
   // terminal props
   const mappedProps = useMemo(() => {
-    if (proposal) return getTerminalProps(t, proposal, address);
-  }, [address, proposal, t]);
+    if (proposal)
+      return getTerminalProps(
+        t,
+        proposal,
+        address,
+        isMultisigProposal(proposal)
+          ? (members as unknown as MultisigMember[])
+          : undefined
+      );
+  }, [address, members, proposal, t]);
 
   // get early execution status
   const canExecuteEarly = useMemo(
     () =>
+      isTokenVotingSettings(daoSettings) &&
       isEarlyExecutable(
         mappedProps?.missingParticipation,
         proposal,
@@ -312,10 +330,10 @@ const Proposal: React.FC = () => {
         daoSettings.votingMode
       ),
     [
-      daoSettings?.votingMode,
-      proposal,
+      daoSettings,
       mappedProps?.missingParticipation,
       mappedProps?.results,
+      proposal,
     ]
   );
 
@@ -332,24 +350,31 @@ const Proposal: React.FC = () => {
 
   // whether current user has voted
   const voted = useMemo(() => {
-    // TODO: updated with multisig
-    if (isMultisigProposal(proposal)) return false;
+    if (!address || !proposal) return false;
 
-    return address &&
-      proposal?.votes.some(
+    if (isMultisigProposal(proposal)) {
+      return proposal.approvals.some(
+        a => a.toLowerCase() === address.toLowerCase()
+      );
+    } else {
+      return proposal.votes.some(
         voter =>
           voter.address.toLowerCase() === address.toLowerCase() &&
           voter.vote !== undefined
-      )
-      ? true
-      : false;
+      );
+    }
   }, [address, proposal]);
 
   // vote button and status
   const [voteStatus, buttonLabel] = useMemo(() => {
-    return proposal
-      ? getVoteStatusAndLabel(proposal, voted, canVote, t)
-      : ['', ''];
+    if (proposal) {
+      return [
+        getVoteStatus(proposal, t),
+        getVoteButtonLabel(proposal, canVote, voted, t),
+      ];
+    }
+
+    return ['', ''];
   }, [proposal, voted, canVote, t]);
 
   // vote button state and handler

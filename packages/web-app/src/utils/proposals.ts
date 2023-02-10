@@ -29,6 +29,7 @@ import {TFunction} from 'react-i18next';
 
 import {ProposalVoteResults} from 'containers/votingTerminal';
 import {CachedProposal} from 'context/apolloClient';
+import {MultisigMember} from 'hooks/useDaoMembers';
 import {i18n} from '../../i18n.config';
 import {getFormattedUtcOffset, KNOWN_FORMATS} from './date';
 import {formatUnits} from './library';
@@ -38,10 +39,18 @@ import {
   AddressListVote,
   DetailedProposal,
   Erc20ProposalVote,
+  StrictlyExclude,
   SupportedProposals,
 } from './types';
 
-export const MappedVotes: {[key in VoteValues]: VoterType['option']} = {
+export type TokenVotingOptions = StrictlyExclude<
+  VoterType['option'],
+  'approved' | 'none'
+>;
+
+export const MappedVotes: {
+  [key in VoteValues]: TokenVotingOptions;
+} = {
   1: 'abstain',
   2: 'yes',
   3: 'no',
@@ -437,10 +446,11 @@ function getPublishedProposalStep(
 export function getTerminalProps(
   t: TFunction,
   proposal: DetailedProposal,
-  voter: string | null
+  voter: string | null,
+  members?: MultisigMember[]
 ) {
   let token;
-  let voters;
+  let voters: Array<VoterType>;
   let currentParticipation;
   let minParticipation;
   let missingParticipation;
@@ -521,8 +531,31 @@ export function getTerminalProps(
       )}  ${getFormattedUtcOffset()}`,
     };
   }
+  // This method's return needs to be typed properly
+  else if (isMultisigProposal(proposal)) {
+    // add members to Map of VoterType
+    const mappedMembers = new Map(
+      // map multisig members to voterType
+      members
+        ?.map(m => ({wallet: m.address, option: 'none'} as VoterType))
+        .map(v => [v.wallet, v])
+    );
 
-  // TODO: please add Multisig path
+    // loop through approvals and update vote option to approved;
+    proposal.approvals.forEach(address => {
+      // considering only members can approve, no need to check if Map has the key
+      mappedMembers.set(address, {
+        wallet: stripPlgnAdrFromProposalId(address),
+        option: 'approved',
+      });
+    });
+
+    return {
+      approvals: proposal.approvals,
+      voters: mappedMembers.values(),
+      status: proposal.status,
+    };
+  }
 }
 
 export type MapToDetailedProposalParams = {
@@ -670,63 +703,85 @@ export function prefixProposalIdWithPlgnAdr(
   }
 }
 
-export function getVoteStatusAndLabel(
-  proposal: DetailedProposal,
-  voted: boolean,
-  canVote: boolean,
-  t: TFunction
-) {
-  let voteStatus = '';
-  let voteButtonLabel = '';
-
-  // TODO: update with multisig props
-  if (isMultisigProposal(proposal)) return [voteStatus, voteButtonLabel];
-
-  voteButtonLabel = voted
-    ? canVote
-      ? t('votingTerminal.status.revote')
-      : t('votingTerminal.status.voteSubmitted')
-    : t('votingTerminal.voteOver');
+export function getVoteStatus(proposal: DetailedProposal, t: TFunction) {
+  let label = '';
 
   switch (proposal.status) {
     case 'Pending':
       {
         const locale = (Locales as Record<string, Locale>)[i18n.language];
-        const timeUntilNow = formatDistanceToNow(proposal.startDate, {
-          includeSeconds: true,
-          locale,
-        });
+        const timeUntilNow = formatDistanceToNow(
+          (proposal as TokenVotingProposal).startDate || new Date(),
+          {
+            includeSeconds: true,
+            locale,
+          }
+        );
 
-        voteButtonLabel = t('votingTerminal.voteNow');
-        voteStatus = t('votingTerminal.status.pending', {timeUntilNow});
+        label = t('votingTerminal.status.pending', {timeUntilNow});
       }
-      break;
-    case 'Succeeded':
-      voteStatus = t('votingTerminal.status.succeeded');
-      break;
-    case 'Executed':
-      voteStatus = t('votingTerminal.status.executed');
-      break;
-    case 'Defeated':
-      voteStatus = t('votingTerminal.status.defeated');
-
       break;
     case 'Active':
       {
         const locale = (Locales as Record<string, Locale>)[i18n.language];
-        const timeUntilEnd = formatDistanceToNow(proposal.endDate, {
-          includeSeconds: true,
-          locale,
-        });
+        const timeUntilEnd = formatDistanceToNow(
+          (proposal as TokenVotingProposal).endDate || new Date(),
+          {
+            includeSeconds: true,
+            locale,
+          }
+        );
 
-        voteStatus = t('votingTerminal.status.active', {timeUntilEnd});
-
-        // haven't voted
-        if (!voted) voteButtonLabel = t('votingTerminal.voteNow');
+        label = t('votingTerminal.status.active', {timeUntilEnd});
       }
       break;
+    case 'Succeeded':
+      label = t('votingTerminal.status.succeeded');
+
+      break;
+    case 'Executed':
+      label = t('votingTerminal.status.executed');
+
+      break;
+    case 'Defeated':
+      label = isMultisigProposal(proposal)
+        ? t('votingTerminal.status.expired')
+        : t('votingTerminal.status.defeated');
   }
-  return [voteStatus, voteButtonLabel];
+  return label;
+}
+
+export function getVoteButtonLabel(
+  proposal: DetailedProposal,
+  canVoteOrApprove: boolean,
+  votedOrApproved: boolean,
+  t: TFunction
+) {
+  let label = '';
+
+  if (isMultisigProposal(proposal)) {
+    label = votedOrApproved
+      ? t('votingTerminal.status.approved')
+      : t('votingTerminal.concluded');
+
+    if (proposal.status === 'Pending') label = t('votingTerminal.approve');
+    else if (proposal.status === 'Active' && !votedOrApproved)
+      label = t('votingTerminal.approve');
+  }
+
+  if (isTokenBasedProposal(proposal)) {
+    label = votedOrApproved
+      ? canVoteOrApprove
+        ? t('votingTerminal.status.revote')
+        : t('votingTerminal.status.voteSubmitted')
+      : t('votingTerminal.voteOver');
+
+    if (proposal.status === 'Pending') label = t('votingTerminal.voteNow');
+    else if (proposal.status === 'Active' && !votedOrApproved)
+      label = t('votingTerminal.voteNow');
+  }
+
+  return label;
 }
 
 export function isEarlyExecutable(
