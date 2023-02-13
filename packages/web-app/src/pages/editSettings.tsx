@@ -48,7 +48,7 @@ const EditSettings: React.FC = () => {
     name: 'daoLinks',
     control,
   });
-  const {errors} = useFormState({control});
+  const {errors, isValid} = useFormState({control});
 
   const {data: daoDetails, isLoading: detailsAreLoading} = useDaoDetails(
     daoId!
@@ -357,7 +357,11 @@ const EditSettings: React.FC = () => {
                 dropdownItems={metadataAction}
               >
                 <AccordionContent>
-                  <DefineMetadata bgWhite arrayName="daoLinks" />
+                  <DefineMetadata
+                    bgWhite
+                    arrayName="daoLinks"
+                    currentDaoName={daoDetails?.metadata?.name || ''}
+                  />
                 </AccordionContent>
               </AccordionItem>
 
@@ -398,7 +402,7 @@ const EditSettings: React.FC = () => {
                 label={t('settings.reviewProposal')}
                 iconLeft={<IconGovernance />}
                 size="large"
-                disabled={settingsUnchanged}
+                disabled={settingsUnchanged || !isValid}
                 onClick={() =>
                   navigate(
                     generatePath(ProposeNewSettings, {network, dao: daoId})
