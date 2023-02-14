@@ -4,6 +4,7 @@ import {
   MultisigClient,
   TokenVotingClient,
   TokenVotingProposal,
+  VoteValues,
   VotingMode,
 } from '@aragon/sdk-client';
 import {
@@ -101,6 +102,9 @@ const Proposal: React.FC = () => {
     daoDetails?.plugins[0].instanceAddress as string,
     daoDetails?.plugins[0].id as PluginTypes
   );
+
+  const multisigDAO =
+    (daoDetails?.plugins[0].id as PluginTypes) === 'multisig.plugin.dao.eth';
 
   const earlyExecution =
     isTokenVotingSettings(daoSettings) &&
@@ -413,14 +417,22 @@ const Proposal: React.FC = () => {
     else if (canVote) {
       return {
         voteNowDisabled: false,
-        onClick: () => setVotingInProcess(true),
+        onClick: () => {
+          if (multisigDAO) {
+            handleSubmitVote(VoteValues.YES);
+          } else {
+            setVotingInProcess(true);
+          }
+        },
       };
     } else return {voteNowDisabled: true};
   }, [
     address,
     canVote,
     earlyExecution,
+    handleSubmitVote,
     isOnWrongNetwork,
+    multisigDAO,
     open,
     proposal?.status,
     voteSubmitted,
