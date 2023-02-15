@@ -14,7 +14,7 @@ export const ModifyMultisigSettingsCard: React.FC<{
     <AccordionMethod
       type="execution-widget"
       methodName={t('labels.updateGovernanceAction')}
-      smartContractName={t('labels.aragonCore')}
+      smartContractName={t('labels.aragonOSx')}
       methodDescription={t('labels.updateGovernanceActionDescription')}
       verified
     >
@@ -28,7 +28,7 @@ export const ModifyMultisigSettingsCard: React.FC<{
           <Dd>
             {inputs.onlyListed
               ? t('createDAO.step3.multisigMembers')
-              : t('createDAO.step3.eligibility.anyone.title')}
+              : t('createDAO.step3.eligibility.anyWallet.title')}
           </Dd>
         </Dl>
       </ActionCardDlContainer>
