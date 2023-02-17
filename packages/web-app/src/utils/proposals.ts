@@ -41,16 +41,13 @@ import {MultisigMember} from 'hooks/useDaoMembers';
 import {isMultisigVotingSettings} from 'hooks/usePluginSettings';
 import {i18n} from '../../i18n.config';
 import {getFormattedUtcOffset, KNOWN_FORMATS} from './date';
-import {
-  customJSONReplacer,
-  formatUnits,
-  generateCachedProposalId,
-} from './library';
+import {customJSONReplacer, formatUnits} from './library';
 import {abbreviateTokenAmount} from './tokens';
 import {
   Action,
   DetailedProposal,
   Erc20ProposalVote,
+  ProposalId,
   StrictlyExclude,
   SupportedProposals,
   SupportedVotingSettings,
@@ -600,7 +597,7 @@ export type MapToDetailedProposalParams = {
   pluginSettings: VotingSettings;
   metadata: ProposalMetadata;
   proposalParams: ICreateProposalParams;
-  proposalId: string;
+  proposalGuid: string;
 };
 
 /**
@@ -617,7 +614,7 @@ export function mapToDetailedProposal(params: MapToDetailedProposalParams) {
     dao: {address: params.daoAddress, name: params.daoName},
     endDate: params.proposalParams.endDate!,
     startDate: params.proposalParams.startDate!,
-    id: params.proposalId,
+    id: params.proposalGuid,
     metadata: params.metadata,
     status: ProposalStatus.PENDING,
     votes: [],
@@ -644,6 +641,7 @@ export function mapToDetailedProposal(params: MapToDetailedProposalParams) {
       totalVotingWeight: params.totalVotingWeight as bigint,
       usedVotingWeight: BigInt(0),
       result: {yes: BigInt(0), no: BigInt(0), abstain: BigInt(0)},
+      executionTxHash: '',
     } as CachedProposal;
   } else {
     // addressList
@@ -651,6 +649,7 @@ export function mapToDetailedProposal(params: MapToDetailedProposalParams) {
       ...commonProps,
       totalVotingWeight: params.totalVotingWeight as number,
       result: {yes: 0, no: 0, abstain: 0},
+      executionTxHash: '',
     } as CachedProposal;
   }
 }
@@ -799,7 +798,7 @@ export function getVoteStatus(proposal: DetailedProposal, t: TFunction) {
 
 export function getVoteButtonLabel(
   proposal: DetailedProposal,
-  canVoteOrApprove: boolean,
+  canVoteOrApprove: boolean | boolean[],
   votedOrApproved: boolean,
   t: TFunction
 ) {
@@ -817,7 +816,11 @@ export function getVoteButtonLabel(
 
   if (isTokenBasedProposal(proposal)) {
     label = votedOrApproved
-      ? canVoteOrApprove
+      ? (
+          Array.isArray(canVoteOrApprove)
+            ? canVoteOrApprove.some(v => v)
+            : canVoteOrApprove
+        )
         ? t('votingTerminal.status.revote')
         : t('votingTerminal.status.voteSubmitted')
       : t('votingTerminal.voteOver');
@@ -939,7 +942,7 @@ export const augmentProposalWithCachedVote = (
   cachedVotes: PendingTokenBasedVotes | PendingMultisigApprovals,
   functionalCookiesEnabled: boolean | undefined
 ) => {
-  const id = generateCachedProposalId(daoAddress, proposal.id);
+  const id = new ProposalId(proposal.id).makeGloballyUnique(daoAddress);
 
   if (isErc20VotingProposal(proposal)) {
     const cachedVote = (cachedVotes as PendingTokenBasedVotes)[id];
@@ -1023,7 +1026,7 @@ export function augmentProposalWithCachedExecution(
   cache: ReactiveVar<PendingMultisigExecution | PendingTokenBasedExecution>,
   cacheKey: typeof PENDING_EXECUTION_KEY | typeof PENDING_MULTISIG_EXECUTION_KEY
 ) {
-  const id = generateCachedProposalId(daoAddress, proposal.id);
+  const id = new ProposalId(proposal.id).makeGloballyUnique(daoAddress);
 
   const cachedExecution = cachedExecutions[id];
 

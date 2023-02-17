@@ -7,8 +7,10 @@ import {
   MultisigVotingSettings,
   ProposalCreationSteps,
   ProposalMetadata,
+  TokenType,
   TokenVotingClient,
   VotingSettings,
+  WithdrawParams,
 } from '@aragon/sdk-client';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useFormContext} from 'react-hook-form';
@@ -47,10 +49,9 @@ import {
   getNonEmptyActions,
   mapToDetailedProposal,
   MapToDetailedProposalParams,
-  prefixProposalIdWithPlgnAdr,
 } from 'utils/proposals';
-import {getTokenInfo} from 'utils/tokens';
-import {Action, ProposalResource} from 'utils/types';
+import {getTokenInfo, isNativeToken} from 'utils/tokens';
+import {Action, ProposalId, ProposalResource} from 'utils/types';
 import {pendingProposalsVar} from './apolloClient';
 import {useGlobalModalContext} from './globalModals';
 import {useNetwork} from './network';
@@ -153,11 +154,13 @@ const CreateProposalProvider: React.FC<Props> = ({
       switch (action.name) {
         case 'withdraw_assets': {
           actions.push(
-            client.encoding.withdrawAction(dao, {
-              recipientAddress: action.to,
+            client.encoding.withdrawAction({
               amount: BigInt(Number(action.amount) * Math.pow(10, 18)),
-              tokenAddress: action.tokenAddress,
-            })
+              recipientAddressOrEns: action.to,
+              ...(isNativeToken(action.tokenAddress)
+                ? {type: TokenType.NATIVE}
+                : {type: TokenType.ERC20, tokenAddress: action.tokenAddress}),
+            } as WithdrawParams)
           );
           break;
         }
@@ -229,7 +232,7 @@ const CreateProposalProvider: React.FC<Props> = ({
     });
 
     return Promise.all(actions);
-  }, [client, dao, getValues, pluginClient, pluginSettings, pluginAddress]);
+  }, [client, getValues, pluginClient, pluginSettings, pluginAddress]);
 
   // Because getValues does NOT get updated on each render, leaving this as
   // a function to be called when data is needed instead of a memoized value
@@ -409,7 +412,7 @@ const CreateProposalProvider: React.FC<Props> = ({
   ]);
 
   const handleCacheProposal = useCallback(
-    (proposalId: string) => {
+    (proposalGuid: string) => {
       if (!address || !daoDetails || !pluginSettings || !proposalCreationData)
         return;
 
@@ -440,7 +443,7 @@ const CreateProposalProvider: React.FC<Props> = ({
         // TODO: fix when implementing multisig
         pluginSettings: pluginSettings as VotingSettings,
         proposalParams: proposalCreationData,
-        proposalId,
+        proposalGuid: proposalGuid,
         metadata: metadata,
       };
 
@@ -449,7 +452,7 @@ const CreateProposalProvider: React.FC<Props> = ({
         ...cachedProposals,
         [daoDetails.address]: {
           ...cachedProposals[daoDetails.address],
-          [proposalId]: {...cachedProposal},
+          [proposalGuid]: {...cachedProposal},
         },
       };
       pendingProposalsVar(newCache);
@@ -531,10 +534,9 @@ const CreateProposalProvider: React.FC<Props> = ({
             break;
           case ProposalCreationSteps.DONE: {
             //TODO: replace with step.proposal id when SDK returns proper format
-            const prefixedId = prefixProposalIdWithPlgnAdr(
-              step.proposalId.toString(),
-              pluginAddress
-            );
+            const prefixedId = new ProposalId(
+              step.proposalId
+            ).makeGloballyUnique(pluginAddress);
 
             setProposalId(prefixedId);
             setCreationProcessState(TransactionState.SUCCESS);

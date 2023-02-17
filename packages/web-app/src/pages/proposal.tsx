@@ -74,7 +74,7 @@ import {
   isMultisigProposal,
   stripPlgnAdrFromProposalId,
 } from 'utils/proposals';
-import {Action} from 'utils/types';
+import {Action, ProposalId} from 'utils/types';
 
 // TODO: @Sepehr Please assign proper tags on action decoding
 const PROPOSAL_TAGS = ['Finance', 'Withdraw'];
@@ -88,7 +88,11 @@ const Proposal: React.FC = () => {
   const {breadcrumbs, tag} = useMappedBreadcrumbs();
 
   const navigate = useNavigate();
-  const {id: proposalId} = useParams();
+  const {id: urlId} = useParams();
+  const proposalId = useMemo(
+    () => (urlId ? new ProposalId(urlId) : undefined),
+    [urlId]
+  );
 
   const {data: dao} = useDaoParam();
   const {data: daoDetails, isLoading: detailsAreLoading} = useDaoDetails(dao);
@@ -138,7 +142,7 @@ const Proposal: React.FC = () => {
     data: proposal,
     error: proposalError,
     isLoading: proposalIsLoading,
-  } = useDaoProposal(dao, proposalId!, pluginType);
+  } = useDaoProposal(dao, proposalId!, pluginType, pluginAddress);
 
   const {data: canVote} = useWalletCanVote(
     address,
@@ -206,7 +210,9 @@ const Proposal: React.FC = () => {
               client,
               apolloClient,
               provider,
-              network
+              network,
+              action.to,
+              action.value
             );
           case 'mint':
             if (mintTokenActions.actions.length === 0) {
