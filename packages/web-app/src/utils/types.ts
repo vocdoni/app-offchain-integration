@@ -265,6 +265,7 @@ export type ActionMintToken = {
     newHoldersCount: number;
     daoTokenSymbol: string;
     daoTokenAddress: string;
+    totalMembers?: number;
   };
 };
 
