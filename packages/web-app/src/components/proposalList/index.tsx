@@ -1,9 +1,12 @@
 import {CardProposal, CardProposalProps, Spinner} from '@aragon/ui-components';
-import React from 'react';
+import React, {useMemo} from 'react';
 import {useTranslation} from 'react-i18next';
-import {useNavigate, useParams} from 'react-router-dom';
+import {generatePath, NavigateFunction, useNavigate} from 'react-router-dom';
 
+import {MultisigProposalListItem} from '@aragon/sdk-client';
 import {useNetwork} from 'context/network';
+import {useDaoMembers} from 'hooks/useDaoMembers';
+import {PluginTypes} from 'hooks/usePluginClient';
 import {trackEvent} from 'services/analytics';
 import {
   CHAIN_METADATA,
@@ -12,6 +15,7 @@ import {
 } from 'utils/constants';
 import {translateProposalDate} from 'utils/date';
 import {formatUnits} from 'utils/library';
+import {Proposal} from 'utils/paths';
 import {isErc20VotingProposal} from 'utils/proposals';
 import {abbreviateTokenAmount} from 'utils/tokens';
 import {ProposalListItem} from 'utils/types';
@@ -19,16 +23,42 @@ import {i18n} from '../../../i18n.config';
 
 type ProposalListProps = {
   proposals: Array<ProposalListItem>;
+  pluginAddress: string;
+  pluginType: PluginTypes;
   isLoading?: boolean;
 };
 
-const ProposalList: React.FC<ProposalListProps> = ({proposals, isLoading}) => {
+function isMultisigProposalListItem(
+  proposal: ProposalListItem | undefined
+): proposal is MultisigProposalListItem {
+  if (!proposal) return false;
+  return 'approvals' in proposal;
+}
+
+const ProposalList: React.FC<ProposalListProps> = ({
+  proposals,
+  pluginAddress,
+  pluginType,
+  isLoading,
+}) => {
   const {t} = useTranslation();
   const {network} = useNetwork();
-  const {dao} = useParams();
   const navigate = useNavigate();
 
-  if (isLoading) {
+  const {data: members, isLoading: areMembersLoading} = useDaoMembers(
+    pluginAddress,
+    pluginType
+  );
+
+  const mappedProposals: ({id: string} & CardProposalProps)[] = useMemo(
+    () =>
+      proposals.map(p =>
+        proposal2CardProps(p, members.members.length, network, navigate)
+      ),
+    [proposals, network, navigate, members.members]
+  );
+
+  if (isLoading || areMembersLoading) {
     return (
       <div className="flex justify-center items-center h-7">
         <Spinner size="default" />
@@ -36,7 +66,7 @@ const ProposalList: React.FC<ProposalListProps> = ({proposals, isLoading}) => {
     );
   }
 
-  if (proposals.length === 0) {
+  if (mappedProposals.length === 0) {
     return (
       <div className="flex justify-center items-center h-7 text-gray-600">
         <p data-testid="proposalList">{t('governance.noProposals')}</p>
@@ -46,18 +76,8 @@ const ProposalList: React.FC<ProposalListProps> = ({proposals, isLoading}) => {
 
   return (
     <div className="space-y-3" data-testid="proposalList">
-      {mapToCardViewProposal(proposals, network).map(({id, ...proposal}) => (
-        <CardProposal
-          {...proposal}
-          key={id}
-          onClick={() => {
-            trackEvent('governance_viewProposal_clicked', {
-              proposal_id: id,
-              dao_address: dao,
-            });
-            navigate(`proposals/${id}`);
-          }}
-        />
+      {mappedProposals.map(({id, ...p}) => (
+        <CardProposal {...p} key={id} />
       ))}
     </div>
   );
@@ -80,68 +100,98 @@ export type CardViewProposal = Omit<CardProposalProps, 'onClick'> & {
  * @param network supported network name
  * @returns list of proposals ready to be display as CardProposals
  */
-export function mapToCardViewProposal(
-  proposals: Array<ProposalListItem>,
-  network: SupportedNetworks
-): Array<CardViewProposal> {
-  return proposals.map(proposal => {
-    if (isErc20VotingProposal(proposal)) {
-      const totalVoteCount =
-        Number(proposal.result.abstain) +
-        Number(proposal.result.yes) +
-        Number(proposal.result.no);
+export function proposal2CardProps(
+  proposal: ProposalListItem,
+  membersCount: number,
+  network: SupportedNetworks,
+  navigate: NavigateFunction
+): {id: string} & CardProposalProps {
+  const props = {
+    id: proposal.id,
+    title: proposal.metadata.title,
+    description: proposal.metadata.summary,
+    explorer: CHAIN_METADATA[network].explorer,
+    publisherAddress: proposal.creatorAddress,
+    publishLabel: i18n.t('governance.proposals.publishedBy'),
+    process: proposal.status.toLowerCase() as CardProposalProps['process'],
+    onClick: () => {
+      trackEvent('governance_viewProposal_clicked', {
+        proposal_id: proposal.id,
+        dao_address: proposal.dao.address,
+      });
+      navigate(
+        generatePath(Proposal, {
+          network,
+          dao: proposal.dao.address,
+          id: proposal.id,
+        })
+      );
+    },
+  };
 
-      return {
-        id: proposal.id,
-        title: proposal.metadata.title,
-        description: proposal.metadata.summary,
-        process: proposal.status.toLowerCase() as CardProposalProps['process'],
-        explorer: CHAIN_METADATA[network].explorer,
-        publisherAddress: proposal.creatorAddress,
-        publishLabel: i18n.t('governance.proposals.publishedBy'),
-        voteTitle: i18n.t('governance.proposals.voteTitle'),
-        stateLabel: PROPOSAL_STATE_LABELS,
+  if (isErc20VotingProposal(proposal)) {
+    const totalVoteCount =
+      Number(proposal.result.abstain) +
+      Number(proposal.result.yes) +
+      Number(proposal.result.no);
 
-        alertMessage: translateProposalDate(
-          proposal.status,
-          proposal.startDate,
-          proposal.endDate
-        ),
-
-        ...(proposal.status.toLowerCase() === 'active'
-          ? {
-              voteProgress: relativeVoteCount(
-                Number(proposal.result.yes) || 0,
-                totalVoteCount
-              ),
-              voteLabel: i18n.t('labels.yes'),
-
-              tokenSymbol: proposal.token.symbol,
-              tokenAmount: abbreviateTokenAmount(
-                parseFloat(
-                  Number(
-                    formatUnits(proposal.result.yes, proposal.token.decimals)
-                  ).toFixed(2)
-                ).toString()
-              ),
-            }
-          : {}),
-      };
-    }
-
-    return {
-      id: proposal.id,
-      title: proposal.metadata.title,
-      description: proposal.metadata.summary,
-      // TODO: Check if we have to include the process key
-      // process: proposal.status.toLowerCase() as CardProposalProps['process'],
-      explorer: CHAIN_METADATA[network].explorer,
-      publisherAddress: proposal.creatorAddress,
-      publishLabel: i18n.t('governance.proposals.publishedBy'),
+    const specificProps = {
       voteTitle: i18n.t('governance.proposals.voteTitle'),
       stateLabel: PROPOSAL_STATE_LABELS,
-    } as CardViewProposal;
-  });
+
+      alertMessage: translateProposalDate(
+        proposal.status,
+        proposal.startDate,
+        proposal.endDate
+      ),
+    };
+    if (proposal.status.toLowerCase() === 'active') {
+      const activeProps = {
+        voteProgress: relativeVoteCount(
+          Number(proposal.result.yes) || 0,
+          totalVoteCount
+        ),
+        voteLabel: i18n.t('labels.yes'),
+
+        tokenSymbol: proposal.token.symbol,
+        tokenAmount: abbreviateTokenAmount(
+          parseFloat(
+            Number(
+              formatUnits(proposal.result.yes, proposal.token.decimals)
+            ).toFixed(2)
+          ).toString()
+        ),
+      };
+      return {...props, ...specificProps, ...activeProps};
+    } else {
+      return {...props, ...specificProps};
+    }
+  } else if (isMultisigProposalListItem(proposal)) {
+    //TODO still don't have the date. Please mend when ready.
+    const startDate = new Date();
+    const endDate = new Date();
+
+    // Temporarily hardcode start as now and end as one day later. [VR 06-02-2023]
+    const startInMills = startDate.getTime();
+    endDate.setTime(startInMills + 86400000);
+
+    const specificProps = {
+      voteTitle: i18n.t('governance.proposals.voteTitleMultisig'),
+      stateLabel: PROPOSAL_STATE_LABELS,
+      alertMessage: translateProposalDate(proposal.status, startDate, endDate),
+    };
+    if (proposal.status.toLowerCase() === 'active') {
+      const activeProps = {
+        voteProgress: relativeVoteCount(proposal.approvals, membersCount),
+        voteLabel: i18n.t('votingTerminal.approvedBy'),
+      };
+      return {...props, ...specificProps, ...activeProps};
+    } else {
+      return {...props, ...specificProps};
+    }
+  } else {
+    throw Error('invalid proposal type');
+  }
 }
 
 export default ProposalList;

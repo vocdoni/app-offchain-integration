@@ -1,3 +1,4 @@
+import {ProposalStatus} from '@aragon/sdk-client';
 import {
   ButtonGroup,
   ButtonText,
@@ -23,7 +24,6 @@ import NoProposals from 'public/noProposals.svg';
 import {erc20VotingProposals_erc20VotingProposals} from 'queries/__generated__/erc20VotingProposals';
 import {trackEvent} from 'services/analytics';
 import {ProposalListItem} from 'utils/types';
-import {ProposalStatus} from '@aragon/sdk-client';
 
 const Governance: React.FC = () => {
   const {
@@ -150,7 +150,12 @@ const Governance: React.FC = () => {
           </ButtonGroup>
         </ButtonGroupContainer>
         <ListWrapper>
-          <ProposalList proposals={displayedProposals} isLoading={isLoading} />
+          <ProposalList
+            proposals={displayedProposals}
+            pluginAddress={daoDetails?.plugins[0].instanceAddress as string}
+            pluginType={daoDetails?.plugins[0].id as PluginTypes}
+            isLoading={isLoading}
+          />
         </ListWrapper>
 
         {!endReached && displayedProposals?.length > 0 && (
