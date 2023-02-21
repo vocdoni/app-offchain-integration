@@ -370,7 +370,7 @@ export function getProposalStatusSteps(
     case 'Succeeded':
       if (executionFailed)
         return [
-          ...getPassedProposalSteps(t, creationDate, startDate, publishedBlock),
+          ...getPassedProposalSteps(t, creationDate, endDate, publishedBlock),
           {
             label: t('governance.statusWidget.failed'),
             mode: 'failed',
@@ -382,7 +382,7 @@ export function getProposalStatusSteps(
         ];
       else
         return [
-          ...getPassedProposalSteps(t, creationDate, startDate, publishedBlock),
+          ...getPassedProposalSteps(t, creationDate, endDate, publishedBlock),
           {
             label: t('governance.statusWidget.succeeded'),
             mode: 'upcoming',
@@ -391,7 +391,13 @@ export function getProposalStatusSteps(
     case 'Executed':
       if (executionDate)
         return [
-          ...getPassedProposalSteps(t, creationDate, startDate, publishedBlock),
+          ...getPassedProposalSteps(
+            t,
+            creationDate,
+            endDate,
+            publishedBlock,
+            executionDate
+          ),
           {
             label: t('governance.statusWidget.executed'),
             mode: 'succeeded',
@@ -404,7 +410,7 @@ export function getProposalStatusSteps(
         ];
       else
         return [
-          ...getPassedProposalSteps(t, creationDate, startDate, publishedBlock),
+          ...getPassedProposalSteps(t, creationDate, endDate, publishedBlock),
           {label: t('governance.statusWidget.failed'), mode: 'failed'},
         ];
 
@@ -427,19 +433,29 @@ export function getProposalStatusSteps(
 function getPassedProposalSteps(
   t: TFunction,
   creationDate: Date,
-  startDate: Date,
-  block: string
+  endDate: Date,
+  block: string,
+  executionDate?: Date
 ): Array<ProgressStatusProps> {
   return [
     {...getPublishedProposalStep(t, creationDate, block)},
-    {
-      label: t('governance.statusWidget.passed'),
-      mode: 'done',
-      date: `${format(
-        startDate,
-        KNOWN_FORMATS.proposals
-      )}  ${getFormattedUtcOffset()}`,
-    },
+    executionDate! < endDate
+      ? {
+          label: t('governance.statusWidget.passed'),
+          mode: 'done',
+          date: `${format(
+            executionDate!,
+            KNOWN_FORMATS.proposals
+          )}  ${getFormattedUtcOffset()}`,
+        }
+      : {
+          label: t('governance.statusWidget.passed'),
+          mode: 'done',
+          date: `${format(
+            endDate,
+            KNOWN_FORMATS.proposals
+          )}  ${getFormattedUtcOffset()}`,
+        },
   ];
 }
 
