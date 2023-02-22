@@ -215,6 +215,7 @@ export function getErc20Voters(
       option: MappedVotes[vote.vote],
       votingPower,
       tokenAmount,
+      voteReplaced: vote.voteReplaced,
     };
   });
 }
@@ -509,7 +510,12 @@ export function getLiveProposalTerminalProps(
       proposal.totalVotingWeight,
       proposal.token.decimals,
       proposal.token.symbol
-    ).sort(a => (a.wallet === voter ? -1 : 0));
+    ).sort((a, b) => {
+      const x = Number(a.votingPower?.slice(0, a.votingPower.length - 1));
+      const y = Number(b.votingPower?.slice(0, b.votingPower.length - 1));
+
+      return x > y ? -1 : 1;
+    });
 
     // results
     results = getErc20Results(
