@@ -5,7 +5,6 @@ import {
   InstalledPluginListItem,
   ProposalCreationSteps,
   ProposalMetadata,
-  TokenVotingClient,
   VotingMode,
 } from '@aragon/sdk-client';
 import {withTransaction} from '@elastic/apm-rum-react';
@@ -32,7 +31,12 @@ import {useClient} from 'hooks/useClient';
 import {useDaoDetails} from 'hooks/useDaoDetails';
 import {useDaoParam} from 'hooks/useDaoParam';
 import {useDaoToken} from 'hooks/useDaoToken';
-import {PluginTypes, usePluginClient} from 'hooks/usePluginClient';
+import {
+  isMultisigClient,
+  isTokenVotingClient,
+  PluginTypes,
+  usePluginClient,
+} from 'hooks/usePluginClient';
 import {
   isMultisigVotingSettings,
   isTokenVotingSettings,
@@ -53,6 +57,7 @@ import {CacheProposalParams, mapToCacheProposal} from 'utils/proposals';
 import {
   Action,
   ActionUpdateMetadata,
+  ActionUpdateMultisigPluginSettings,
   ActionUpdatePluginSettings,
   ProposalId,
   ProposalResource,
@@ -138,6 +143,7 @@ const ProposeSettingWrapper: React.FC<Props> = ({
 
   const {data: dao, isLoading} = useDaoParam();
   const {data: daoDetails, isLoading: daoDetailsLoading} = useDaoDetails(dao);
+
   const {id: pluginType, instanceAddress: pluginAddress} =
     daoDetails?.plugins[0] || ({} as InstalledPluginListItem);
 
@@ -145,16 +151,15 @@ const ProposeSettingWrapper: React.FC<Props> = ({
     pluginAddress,
     pluginType as PluginTypes
   );
+
   const {data: daoToken} = useDaoToken(pluginAddress);
   const {data: tokenSupply, isLoading: tokenSupplyIsLoading} = useTokenSupply(
     daoToken?.address || ''
   );
+
   const {client} = useClient();
-  const pluginClient = usePluginClient(
-    // TODO update context to work with multisig
-    // pluginType as PluginTypes
-    'token-voting.plugin.dao.eth'
-  ) as unknown as TokenVotingClient | undefined;
+
+  const pluginClient = usePluginClient(pluginType as PluginTypes);
 
   const [proposalCreationData, setProposalCreationData] =
     useState<ICreateProposalParams>();
@@ -185,6 +190,7 @@ const ProposeSettingWrapper: React.FC<Props> = ({
         daoSummary,
         daoLogo,
         minimumApproval,
+        multisigMinimumApprovals,
         minimumParticipation,
         eligibilityType,
         eligibilityTokenAmount,
@@ -199,6 +205,7 @@ const ProposeSettingWrapper: React.FC<Props> = ({
         'daoSummary',
         'daoLogo',
         'minimumApproval',
+        'multisigMinimumApprovals',
         'minimumParticipation',
         'eligibilityType',
         'eligibilityTokenAmount',
@@ -220,34 +227,45 @@ const ProposeSettingWrapper: React.FC<Props> = ({
         },
       };
 
-      const voteSettingsAction: ActionUpdatePluginSettings = {
-        name: 'modify_token_voting_settings',
-        inputs: {
-          token: daoToken,
-          totalVotingWeight: tokenSupply?.raw || BigInt(0),
+      if (isTokenVotingSettings(pluginSettings)) {
+        const voteSettingsAction: ActionUpdatePluginSettings = {
+          name: 'modify_token_voting_settings',
+          inputs: {
+            token: daoToken,
+            totalVotingWeight: tokenSupply?.raw || BigInt(0),
 
-          minDuration: getSecondsFromDHM(
-            durationDays,
-            durationHours,
-            durationMinutes
-          ),
-          supportThreshold: Number(minimumApproval) / 100,
-          minParticipation: Number(minimumParticipation) / 100,
-          minProposerVotingPower:
-            eligibilityType === 'token'
-              ? BigInt(eligibilityTokenAmount)
-              : undefined,
-          votingMode: earlyExecution
-            ? VotingMode.EARLY_EXECUTION
-            : voteReplacement
-            ? VotingMode.VOTE_REPLACEMENT
-            : VotingMode.STANDARD,
-        },
-      };
+            minDuration: getSecondsFromDHM(
+              durationDays,
+              durationHours,
+              durationMinutes
+            ),
+            supportThreshold: Number(minimumApproval) / 100,
+            minParticipation: Number(minimumParticipation) / 100,
+            minProposerVotingPower:
+              eligibilityType === 'token'
+                ? BigInt(eligibilityTokenAmount)
+                : undefined,
+            votingMode: earlyExecution
+              ? VotingMode.EARLY_EXECUTION
+              : voteReplacement
+              ? VotingMode.VOTE_REPLACEMENT
+              : VotingMode.STANDARD,
+          },
+        };
+        setValue('actions', [metadataAction, voteSettingsAction]);
+      } else {
+        const multisigSettingsAction: ActionUpdateMultisigPluginSettings = {
+          name: 'modify_multisig_voting_settings',
+          inputs: {
+            minApprovals: multisigMinimumApprovals,
+            onlyListed: pluginSettings.onlyListed,
+          },
+        };
 
-      setValue('actions', [metadataAction, voteSettingsAction]);
+        setValue('actions', [metadataAction, multisigSettingsAction]);
+      }
     }
-  }, [daoToken, getValues, setValue, tokenSupply?.raw]);
+  }, [daoToken, pluginSettings, getValues, setValue, tokenSupply?.raw]);
 
   useEffect(() => {
     // encoding actions
@@ -260,13 +278,31 @@ const ProposeSettingWrapper: React.FC<Props> = ({
         if (action.name === 'modify_metadata') {
           const ipfsUri = await client.methods.pinMetadata(action.inputs);
           actions.push(client.encoding.updateDaoMetadataAction(dao, ipfsUri));
-        } else if (action.name === 'modify_token_voting_settings') {
+        } else if (
+          action.name === 'modify_token_voting_settings' &&
+          isTokenVotingClient(pluginClient)
+        ) {
           actions.push(
             Promise.resolve(
               pluginClient.encoding.updatePluginSettingsAction(
-                dao,
+                pluginAddress,
                 action.inputs
               )
+            )
+          );
+        } else if (
+          action.name === 'modify_multisig_voting_settings' &&
+          isMultisigClient(pluginClient)
+        ) {
+          actions.push(
+            Promise.resolve(
+              pluginClient.encoding.updateMultisigVotingSettings({
+                pluginAddress,
+                votingSettings: {
+                  minApprovals: action.inputs.minApprovals,
+                  onlyListed: action.inputs.onlyListed,
+                },
+              })
             )
           );
         }
