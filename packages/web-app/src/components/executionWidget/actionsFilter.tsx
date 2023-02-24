@@ -6,10 +6,10 @@ import {Action} from 'utils/types';
 import {AddAddressCard} from './actions/addAddressCard';
 import {MintTokenCard} from './actions/mintTokenCard';
 import {ModifyMetadataCard} from './actions/modifyMetadataCard';
-import {ModifySettingsCard} from './actions/modifySettingsCard';
+import {ModifyMultisigSettingsCard} from './actions/modifyMultisigSettingsCard';
+import {ModifyMvSettingsCard} from './actions/modifySettingsCard';
 import {RemoveAddressCard} from './actions/removeAddressCard';
 import {WithdrawCard} from './actions/withdrawCard';
-import {ModifyMultisigSettingsCard} from './actions/modifyMultisigSettingsCard';
 
 type ActionsFilterProps = {
   action: Action;
@@ -34,7 +34,7 @@ export const ActionsFilter: React.FC<ActionsFilterProps> = ({action}) => {
     case 'modify_metadata':
       return <ModifyMetadataCard action={action} />;
     case 'modify_token_voting_settings':
-      return <ModifySettingsCard action={action} />;
+      return <ModifyMvSettingsCard action={action} />;
     case 'modify_multisig_voting_settings':
       return <ModifyMultisigSettingsCard action={action} />;
     default:

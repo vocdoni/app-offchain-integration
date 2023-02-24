@@ -104,7 +104,7 @@ export type Deposit = BaseTransfer & {
   transferType: TransferTypes.Deposit;
 };
 export type Withdraw = BaseTransfer & {
-  proposalId: string;
+  proposalId: ProposalId;
   to: Address;
   transferType: TransferTypes.Withdraw;
 };
@@ -161,12 +161,9 @@ type ExecutionData = {
   amount: number;
 };
 
-export type AddressListVote = {
+export type Erc20ProposalVote = {
   address: string;
   vote: VoteValues;
-};
-
-export type Erc20ProposalVote = AddressListVote & {
   weight: bigint;
 };
 
@@ -219,7 +216,8 @@ export type ActionsTypes =
   | 'external_contract'
   | 'modify_token_voting_settings'
   | 'modify_metadata'
-  | 'modify_multisig_voting_settings';
+  | 'modify_multisig_voting_settings'
+  | 'update_minimum_approval';
 
 // TODO Refactor ActionWithdraw With the new input structure
 export type ActionWithdraw = {
@@ -254,6 +252,18 @@ export type ActionRemoveAddress = {
   };
 };
 
+export type ActionUpdateMinimumApproval = {
+  name: 'update_minimum_approval';
+  inputs: {
+    minimumApproval: number;
+  };
+  summary: {
+    addedWallets: number;
+    removedWallets: number;
+    totalWallets?: number;
+  };
+};
+
 export type ActionMintToken = {
   name: 'mint_tokens';
   inputs: {
@@ -268,6 +278,7 @@ export type ActionMintToken = {
     newHoldersCount: number;
     daoTokenSymbol: string;
     daoTokenAddress: string;
+    totalMembers?: number;
   };
 };
 
@@ -299,6 +310,7 @@ export type Action =
   | ActionMintToken
   | ActionUpdatePluginSettings
   | ActionUpdateMetadata
+  | ActionUpdateMinimumApproval
   | ActionUpdateMultisigPluginSettings;
 
 export type ParamType = {
@@ -368,3 +380,36 @@ export type SmartContract = {
   logo?: string;
   name: string;
 };
+
+/**
+ * Opaque class encapsulating a proposal id, which can
+ * be globally unique or just unique per plugin address
+ */
+export class ProposalId {
+  private id: string;
+
+  constructor(val: string) {
+    this.id = val.toString();
+  }
+
+  /** Returns proposal id in form needed for SDK */
+  export() {
+    return this.id;
+  }
+
+  /** Make the proposal id globally unique by combining with an address (should be plugin address) */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  makeGloballyUnique(_: string): string {
+    return this.id;
+  }
+
+  /** Return a string to be used as part of a url representing a proposal */
+  toUrlSlug(): string {
+    return this.id;
+  }
+
+  /** The proposal id as a string */
+  toString() {
+    return this.id;
+  }
+}

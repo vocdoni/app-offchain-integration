@@ -2,6 +2,7 @@ import {useApolloClient} from '@apollo/client';
 import {
   DaoAction,
   MultisigClient,
+  MultisigProposal,
   TokenVotingClient,
   TokenVotingProposal,
   VoteValues,
@@ -63,9 +64,9 @@ import {
 } from 'utils/library';
 import {NotFound} from 'utils/paths';
 import {
+  getLiveProposalTerminalProps,
   getProposalExecutionStatus,
   getProposalStatusSteps,
-  getLiveProposalTerminalProps,
   getVoteButtonLabel,
   getVoteStatus,
   isEarlyExecutable,
@@ -73,11 +74,13 @@ import {
   isMultisigProposal,
   stripPlgnAdrFromProposalId,
 } from 'utils/proposals';
-import {Action} from 'utils/types';
+import {Action, ProposalId} from 'utils/types';
 
 // TODO: @Sepehr Please assign proper tags on action decoding
 const PROPOSAL_TAGS = ['Finance', 'Withdraw'];
 
+const PENDING_PROPOSAL_STATUS_INTERVAL = 1000 * 60 * 60;
+const PROPOSAL_STATUS_INTERVAL = 1000 * 60 * 2;
 const NumberFormatter = new Intl.NumberFormat('en-US');
 
 const Proposal: React.FC = () => {
@@ -85,9 +88,12 @@ const Proposal: React.FC = () => {
   const {open} = useGlobalModalContext();
   const {isDesktop} = useScreen();
   const {breadcrumbs, tag} = useMappedBreadcrumbs();
-
   const navigate = useNavigate();
-  const {id: proposalId} = useParams();
+  const {id: urlId} = useParams();
+  const proposalId = useMemo(
+    () => (urlId ? new ProposalId(urlId) : undefined),
+    [urlId]
+  );
 
   const {data: dao} = useDaoParam();
   const {data: daoDetails, isLoading: detailsAreLoading} = useDaoDetails(dao);
@@ -107,9 +113,9 @@ const Proposal: React.FC = () => {
   const multisigDAO =
     (daoDetails?.plugins[0].id as PluginTypes) === 'multisig.plugin.dao.eth';
 
-  const earlyExecution =
+  const allowVoteReplacement =
     isTokenVotingSettings(daoSettings) &&
-    daoSettings.votingMode === VotingMode.EARLY_EXECUTION;
+    daoSettings.votingMode === VotingMode.VOTE_REPLACEMENT;
 
   const {client} = useClient();
   const {set, get} = useCache();
@@ -119,6 +125,8 @@ const Proposal: React.FC = () => {
   const provider = useSpecificProvider(CHAIN_METADATA[network].id);
   const {address, isConnected, isOnWrongNetwork} = useWallet();
 
+  const [voteStatus, setVoteStatus] = useState('');
+  const [intervalInMills, setIntervalInMills] = useState(0);
   const [decodedActions, setDecodedActions] =
     useState<(Action | undefined)[]>();
 
@@ -137,7 +145,13 @@ const Proposal: React.FC = () => {
     data: proposal,
     error: proposalError,
     isLoading: proposalIsLoading,
-  } = useDaoProposal(dao, proposalId!, pluginType);
+  } = useDaoProposal(
+    dao,
+    proposalId!,
+    pluginType,
+    pluginAddress,
+    intervalInMills
+  );
 
   const {data: canVote} = useWalletCanVote(
     address,
@@ -199,13 +213,15 @@ const Proposal: React.FC = () => {
           pluginClient?.decoding.findInterface(action.data);
 
         switch (functionParams?.functionName) {
-          case 'withdraw':
+          case 'transfer':
             return decodeWithdrawToAction(
               action.data,
               client,
               apolloClient,
               provider,
-              network
+              network,
+              action.to,
+              action.value
             );
           case 'mint':
             if (mintTokenActions.actions.length === 0) {
@@ -320,6 +336,29 @@ const Proposal: React.FC = () => {
     }
   }, [voteSubmitted]);
 
+  useEffect(() => {
+    if (proposal) {
+      // set the very first time
+      setVoteStatus(getVoteStatus(proposal, t));
+
+      const interval = setInterval(async () => {
+        // remove interval timer once the proposal has started
+        if (proposal.startDate.valueOf() >= new Date().valueOf()) {
+          clearInterval(interval);
+          setIntervalInMills(PROPOSAL_STATUS_INTERVAL);
+        } else if (proposal.status === 'Pending') {
+          // recalculate vote status for pending proposal
+          setVoteStatus(getVoteStatus(proposal, t));
+        }
+      }, PENDING_PROPOSAL_STATUS_INTERVAL);
+
+      return () => clearInterval(interval);
+    }
+  }, [proposal, t]);
+
+  /*************************************************
+   *              Handlers and Callbacks           *
+   *************************************************/
   // terminal props
   const mappedProps = useMemo(() => {
     if (proposal)
@@ -335,13 +374,15 @@ const Proposal: React.FC = () => {
   // get early execution status
   const canExecuteEarly = useMemo(
     () =>
-      isTokenVotingSettings(daoSettings) &&
-      isEarlyExecutable(
-        mappedProps?.missingParticipation,
-        proposal,
-        mappedProps?.results,
-        daoSettings.votingMode
-      ),
+      isTokenVotingSettings(daoSettings)
+        ? isEarlyExecutable(
+            mappedProps?.missingParticipation,
+            proposal,
+            mappedProps?.results,
+            daoSettings.votingMode
+          )
+        : (proposal as MultisigProposal)?.approvals?.length >=
+          daoSettings?.minApprovals,
     [
       daoSettings,
       mappedProps?.missingParticipation,
@@ -381,22 +422,23 @@ const Proposal: React.FC = () => {
   }, [address, proposal]);
 
   // vote button and status
-  const [voteStatus, buttonLabel] = useMemo(() => {
+  const buttonLabel = useMemo(() => {
     if (proposal) {
-      return [
-        getVoteStatus(proposal, t),
-        getVoteButtonLabel(proposal, canVote, voted, t),
-      ];
+      return getVoteButtonLabel(proposal, canVote, voted, t);
     }
-
-    return ['', ''];
   }, [proposal, voted, canVote, t]);
 
   // vote button state and handler
   const {voteNowDisabled, onClick} = useMemo(() => {
+    // disable voting on non-active proposals
     if (proposal?.status !== 'Active') return {voteNowDisabled: true};
 
-    if (earlyExecution && voteSubmitted) return {voteNowDisabled: true};
+    // disable approval on multisig when wallet has voted
+    if (multisigDAO && (voted || voteSubmitted)) return {voteNowDisabled: true};
+
+    // disable voting on mv with no vote replacement when wallet has voted
+    if (!allowVoteReplacement && (voted || voteSubmitted))
+      return {voteNowDisabled: true};
 
     // not logged in
     if (!address) {
@@ -421,7 +463,7 @@ const Proposal: React.FC = () => {
     }
 
     // member, not yet voted
-    else if (canVote) {
+    else if (Array.isArray(canVote) ? canVote.some(v => v) : canVote) {
       return {
         voteNowDisabled: false,
         onClick: () => {
@@ -435,15 +477,29 @@ const Proposal: React.FC = () => {
     } else return {voteNowDisabled: true};
   }, [
     address,
+    allowVoteReplacement,
     canVote,
-    earlyExecution,
     handleSubmitVote,
     isOnWrongNetwork,
     multisigDAO,
     open,
     proposal?.status,
     voteSubmitted,
+    voted,
   ]);
+
+  // handler for execution
+  const handleExecuteNowClicked = () => {
+    if (!address) {
+      open('wallet');
+      statusRef.current.wasNotLoggedIn = true;
+    } else if (isOnWrongNetwork) {
+      // don't allow execution on wrong network
+      open('network');
+    } else {
+      handleExecuteProposal();
+    }
+  };
 
   // alert message, only shown when not eligible to vote
   const alertMessage = useMemo(() => {
@@ -453,7 +509,7 @@ const Proposal: React.FC = () => {
       address && // logged in
       !isOnWrongNetwork && // on proper network
       !voted && // haven't voted
-      !canVote // cannot vote
+      !(Array.isArray(canVote) ? canVote.some(v => v) : canVote) // cannot vote
     ) {
       // presence of token delineates token voting proposal
       // people add types to these things!!
@@ -470,22 +526,21 @@ const Proposal: React.FC = () => {
     // TODO: add multisig option
     if (isMultisigProposal(proposal)) return [];
 
-    if (
-      proposal?.status &&
-      proposal?.startDate &&
-      proposal?.endDate &&
-      proposal?.creationDate
-    ) {
+    if (proposal) {
       return getProposalStatusSteps(
         t,
         proposal.status,
         proposal.startDate,
         proposal.endDate,
         proposal.creationDate,
-        NumberFormatter.format(proposal.creationBlockNumber),
+        proposal.creationBlockNumber
+          ? NumberFormatter.format(proposal.creationBlockNumber)
+          : '',
         executionFailed,
-        NumberFormatter.format(proposal.executionBlockNumber),
-        proposal.executionDate
+        proposal.executionBlockNumber
+          ? NumberFormatter.format(proposal.executionBlockNumber!)
+          : '',
+        proposal.executionDate || undefined
       );
     } else return [];
   }, [proposal, executionFailed, t]);
@@ -586,8 +641,8 @@ const Proposal: React.FC = () => {
           <ExecutionWidget
             actions={decodedActions}
             status={executionStatus}
-            onExecuteClicked={handleExecuteProposal}
-            txhash={transactionHash}
+            onExecuteClicked={handleExecuteNowClicked}
+            txhash={transactionHash || proposal?.executionTxHash || undefined}
           />
         </ProposalContainer>
         <AdditionalInfoContainer>

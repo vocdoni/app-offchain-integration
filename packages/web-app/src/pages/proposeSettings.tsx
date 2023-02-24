@@ -1,11 +1,10 @@
 import {useReactiveVar} from '@apollo/client';
 import {
   DaoAction,
-  ICreateProposalParams,
+  CreateMajorityVotingProposalParams,
   InstalledPluginListItem,
   ProposalCreationSteps,
   ProposalMetadata,
-  TokenVotingClient,
   VotingMode,
   VotingSettings,
 } from '@aragon/sdk-client';
@@ -22,33 +21,56 @@ import DefineProposal from 'containers/defineProposal';
 import ReviewProposal from 'containers/reviewProposal';
 import SetupVotingForm from 'containers/setupVotingForm';
 import PublishModal from 'containers/transactionModals/publishModal';
-import {pendingProposalsVar} from 'context/apolloClient';
+import {
+  pendingMultisigProposalsVar,
+  pendingTokenBasedProposalsVar,
+} from 'context/apolloClient';
 import {useGlobalModalContext} from 'context/globalModals';
 import {useNetwork} from 'context/network';
 import {usePrivacyContext} from 'context/privacyContext';
 import {useClient} from 'hooks/useClient';
 import {useDaoDetails} from 'hooks/useDaoDetails';
-import {useDaoMembers} from 'hooks/useDaoMembers';
 import {useDaoParam} from 'hooks/useDaoParam';
 import {useDaoToken} from 'hooks/useDaoToken';
-import {PluginTypes, usePluginClient} from 'hooks/usePluginClient';
-import {usePluginSettings} from 'hooks/usePluginSettings';
+import {
+  isMultisigClient,
+  isTokenVotingClient,
+  PluginTypes,
+  usePluginClient,
+} from 'hooks/usePluginClient';
+import {
+  isMultisigVotingSettings,
+  isTokenVotingSettings,
+  usePluginSettings,
+} from 'hooks/usePluginSettings';
 import {usePollGasFee} from 'hooks/usePollGasfee';
 import {useTokenSupply} from 'hooks/useTokenSupply';
 import {useWallet} from 'hooks/useWallet';
-import {PENDING_PROPOSALS_KEY, TransactionState} from 'utils/constants';
-import {getCanonicalUtcOffset, getSecondsFromDHM} from 'utils/date';
+import {
+  PENDING_MULTISIG_PROPOSALS_KEY,
+  PENDING_PROPOSALS_KEY,
+  TransactionState,
+} from 'utils/constants';
+import {
+  daysToMills,
+  getCanonicalDate,
+  getCanonicalTime,
+  getCanonicalUtcOffset,
+  getDHMFromSeconds,
+  getSecondsFromDHM,
+  hoursToMills,
+  minutesToMills,
+  offsetToMills,
+} from 'utils/date';
 import {customJSONReplacer} from 'utils/library';
 import {EditSettings, Proposal} from 'utils/paths';
-import {
-  mapToDetailedProposal,
-  MapToDetailedProposalParams,
-  prefixProposalIdWithPlgnAdr,
-} from 'utils/proposals';
+import {CacheProposalParams, mapToCacheProposal} from 'utils/proposals';
 import {
   Action,
   ActionUpdateMetadata,
+  ActionUpdateMultisigPluginSettings,
   ActionUpdatePluginSettings,
+  ProposalId,
   ProposalResource,
 } from 'utils/types';
 
@@ -115,6 +137,7 @@ type Props = {
   setShowTxModal: (value: boolean) => void;
 };
 
+// TODO: this is almost identical to CreateProposal wrapper, please merge if possible
 const ProposeSettingWrapper: React.FC<Props> = ({
   showTxModal,
   setShowTxModal,
@@ -131,35 +154,41 @@ const ProposeSettingWrapper: React.FC<Props> = ({
 
   const {data: dao, isLoading} = useDaoParam();
   const {data: daoDetails, isLoading: daoDetailsLoading} = useDaoDetails(dao);
+
   const {id: pluginType, instanceAddress: pluginAddress} =
     daoDetails?.plugins[0] || ({} as InstalledPluginListItem);
-  const {
-    data: {members},
-  } = useDaoMembers(pluginAddress, pluginType as PluginTypes);
+
   const {data: pluginSettings} = usePluginSettings(
     pluginAddress,
     pluginType as PluginTypes
   );
+  const {
+    days: minDays,
+    hours: minHours,
+    minutes: minMinutes,
+  } = getDHMFromSeconds((pluginSettings as VotingSettings).minDuration);
+
   const {data: daoToken} = useDaoToken(pluginAddress);
   const {data: tokenSupply, isLoading: tokenSupplyIsLoading} = useTokenSupply(
     daoToken?.address || ''
   );
+
   const {client} = useClient();
-  const pluginClient = usePluginClient(
-    // TODO update context to work with multisig
-    // pluginType as PluginTypes
-    'token-voting.plugin.dao.eth'
-  ) as unknown as TokenVotingClient | undefined;
+
+  const pluginClient = usePluginClient(pluginType as PluginTypes);
 
   const [proposalCreationData, setProposalCreationData] =
-    useState<ICreateProposalParams>();
+    useState<CreateMajorityVotingProposalParams>();
 
   const [creationProcessState, setCreationProcessState] =
     useState<TransactionState>(TransactionState.WAITING);
 
   const [proposalId, setProposalId] = useState<string>();
 
-  const cachedProposals = useReactiveVar(pendingProposalsVar);
+  const cachedMultisigProposals = useReactiveVar(pendingMultisigProposalsVar);
+  const cachedTokenBasedProposals = useReactiveVar(
+    pendingTokenBasedProposalsVar
+  );
 
   const shouldPoll =
     creationProcessState === TransactionState.WAITING &&
@@ -177,6 +206,7 @@ const ProposeSettingWrapper: React.FC<Props> = ({
         daoSummary,
         daoLogo,
         minimumApproval,
+        multisigMinimumApprovals,
         minimumParticipation,
         eligibilityType,
         eligibilityTokenAmount,
@@ -191,6 +221,7 @@ const ProposeSettingWrapper: React.FC<Props> = ({
         'daoSummary',
         'daoLogo',
         'minimumApproval',
+        'multisigMinimumApprovals',
         'minimumParticipation',
         'eligibilityType',
         'eligibilityTokenAmount',
@@ -212,34 +243,45 @@ const ProposeSettingWrapper: React.FC<Props> = ({
         },
       };
 
-      const voteSettingsAction: ActionUpdatePluginSettings = {
-        name: 'modify_token_voting_settings',
-        inputs: {
-          token: daoToken,
-          totalVotingWeight: tokenSupply?.raw || BigInt(0),
+      if (isTokenVotingSettings(pluginSettings)) {
+        const voteSettingsAction: ActionUpdatePluginSettings = {
+          name: 'modify_token_voting_settings',
+          inputs: {
+            token: daoToken,
+            totalVotingWeight: tokenSupply?.raw || BigInt(0),
 
-          minDuration: getSecondsFromDHM(
-            durationDays,
-            durationHours,
-            durationMinutes
-          ),
-          supportThreshold: Number(minimumApproval) / 100,
-          minParticipation: Number(minimumParticipation) / 100,
-          minProposerVotingPower:
-            eligibilityType === 'token'
-              ? BigInt(eligibilityTokenAmount)
-              : undefined,
-          votingMode: earlyExecution
-            ? VotingMode.EARLY_EXECUTION
-            : voteReplacement
-            ? VotingMode.VOTE_REPLACEMENT
-            : VotingMode.STANDARD,
-        },
-      };
+            minDuration: getSecondsFromDHM(
+              durationDays,
+              durationHours,
+              durationMinutes
+            ),
+            supportThreshold: Number(minimumApproval) / 100,
+            minParticipation: Number(minimumParticipation) / 100,
+            minProposerVotingPower:
+              eligibilityType === 'token'
+                ? BigInt(eligibilityTokenAmount)
+                : undefined,
+            votingMode: earlyExecution
+              ? VotingMode.EARLY_EXECUTION
+              : voteReplacement
+              ? VotingMode.VOTE_REPLACEMENT
+              : VotingMode.STANDARD,
+          },
+        };
+        setValue('actions', [metadataAction, voteSettingsAction]);
+      } else {
+        const multisigSettingsAction: ActionUpdateMultisigPluginSettings = {
+          name: 'modify_multisig_voting_settings',
+          inputs: {
+            minApprovals: multisigMinimumApprovals,
+            onlyListed: pluginSettings.onlyListed,
+          },
+        };
 
-      setValue('actions', [metadataAction, voteSettingsAction]);
+        setValue('actions', [metadataAction, multisigSettingsAction]);
+      }
     }
-  }, [daoToken, getValues, setValue, tokenSupply?.raw]);
+  }, [daoToken, pluginSettings, getValues, setValue, tokenSupply?.raw]);
 
   useEffect(() => {
     // encoding actions
@@ -252,13 +294,31 @@ const ProposeSettingWrapper: React.FC<Props> = ({
         if (action.name === 'modify_metadata') {
           const ipfsUri = await client.methods.pinMetadata(action.inputs);
           actions.push(client.encoding.updateDaoMetadataAction(dao, ipfsUri));
-        } else if (action.name === 'modify_token_voting_settings') {
+        } else if (
+          action.name === 'modify_token_voting_settings' &&
+          isTokenVotingClient(pluginClient)
+        ) {
           actions.push(
             Promise.resolve(
               pluginClient.encoding.updatePluginSettingsAction(
-                dao,
+                pluginAddress,
                 action.inputs
               )
+            )
+          );
+        } else if (
+          action.name === 'modify_multisig_voting_settings' &&
+          isMultisigClient(pluginClient)
+        ) {
+          actions.push(
+            Promise.resolve(
+              pluginClient.encoding.updateMultisigVotingSettings({
+                pluginAddress,
+                votingSettings: {
+                  minApprovals: action.inputs.minApprovals,
+                  onlyListed: action.inputs.onlyListed,
+                },
+              })
             )
           );
         }
@@ -267,7 +327,7 @@ const ProposeSettingWrapper: React.FC<Props> = ({
     };
 
     const getProposalCreationParams =
-      async (): Promise<ICreateProposalParams> => {
+      async (): Promise<CreateMajorityVotingProposalParams> => {
         const [
           title,
           summary,
@@ -279,6 +339,8 @@ const ProposeSettingWrapper: React.FC<Props> = ({
           endDate,
           endTime,
           endUtc,
+          durationSwitch,
+          startSwitch,
         ] = getValues([
           'proposalTitle',
           'proposalSummary',
@@ -290,6 +352,8 @@ const ProposeSettingWrapper: React.FC<Props> = ({
           'endDate',
           'endTime',
           'endUtc',
+          'durationSwitch',
+          'startSwitch',
         ]);
 
         const actions = await encodeActions();
@@ -303,16 +367,72 @@ const ProposeSettingWrapper: React.FC<Props> = ({
 
         const ipfsUri = await pluginClient?.methods.pinMetadata(metadata);
 
+        // getting dates
+        let startDateTime =
+          startSwitch === 'now'
+            ? new Date(
+                `${getCanonicalDate()}T${getCanonicalTime({
+                  minutes: 10,
+                })}:00${getCanonicalUtcOffset()}`
+              )
+            : new Date(
+                `${startDate}T${startTime}:00${getCanonicalUtcOffset(startUtc)}`
+              );
+
+        // End date
+        let endDateTime;
+        if (durationSwitch === 'duration') {
+          const [days, hours, minutes] = getValues([
+            'durationDays',
+            'durationHours',
+            'durationMinutes',
+          ]);
+
+          // Calculate the end date using duration
+          const endDateTimeMill =
+            startDateTime.valueOf() + offsetToMills({days, hours, minutes});
+
+          endDateTime = new Date(endDateTimeMill);
+        } else {
+          endDateTime = new Date(
+            `${endDate}T${endTime}:00${getCanonicalUtcOffset(endUtc)}`
+          );
+        }
+
+        if (startSwitch === 'now') {
+          endDateTime = new Date(endDateTime.getTime() + minutesToMills(10));
+        } else {
+          if (startDateTime.valueOf() < new Date().valueOf()) {
+            startDateTime = new Date(
+              `${getCanonicalDate()}T${getCanonicalTime({
+                minutes: 10,
+              })}:00${getCanonicalUtcOffset()}`
+            );
+          }
+
+          const minEndDateTimeMills =
+            startDateTime.valueOf() +
+            daysToMills(minDays || 0) +
+            hoursToMills(minHours || 0) +
+            minutesToMills(minMinutes || 0);
+
+          if (endDateTime.valueOf() < minEndDateTimeMills) {
+            const legacyStartDate = new Date(
+              `${startDate}T${startTime}:00${getCanonicalUtcOffset(startUtc)}`
+            );
+            const endMills =
+              endDateTime.valueOf() +
+              (startDateTime.valueOf() - legacyStartDate.valueOf());
+
+            endDateTime = new Date(endMills);
+          }
+        }
         // Ignore encoding if the proposal had no actions
         return {
           pluginAddress,
           metadataUri: ipfsUri || '',
-          startDate: new Date(
-            `${startDate}T${startTime}:00${getCanonicalUtcOffset(startUtc)}`
-          ),
-          endDate: new Date(
-            `${endDate}T${endTime}:00${getCanonicalUtcOffset(endUtc)}`
-          ),
+          startDate: startDateTime,
+          endDate: endDateTime,
           actions,
         };
       };
@@ -327,6 +447,9 @@ const ProposeSettingWrapper: React.FC<Props> = ({
     creationProcessState,
     showTxModal,
     getValues,
+    minDays,
+    minHours,
+    minMinutes,
     dao,
     pluginAddress,
     pluginClient,
@@ -407,17 +530,15 @@ const ProposeSettingWrapper: React.FC<Props> = ({
             break;
           case ProposalCreationSteps.DONE: {
             //TODO: replace with step.proposal id when SDK returns proper format
-            const prefixedId = prefixProposalIdWithPlgnAdr(
-              step.proposalId.toString(),
-              pluginAddress
-            );
+            const proposalGuid = new ProposalId(
+              step.proposalId
+            ).makeGloballyUnique(pluginAddress);
 
-            console.log('proposal id', prefixedId);
-            setProposalId(prefixedId);
+            setProposalId(proposalGuid);
             setCreationProcessState(TransactionState.SUCCESS);
 
             // cache proposal
-            handleCacheProposal(prefixedId);
+            handleCacheProposal(proposalGuid);
             break;
           }
         }
@@ -429,7 +550,7 @@ const ProposeSettingWrapper: React.FC<Props> = ({
   };
 
   const handleCacheProposal = useCallback(
-    (proposalId: string) => {
+    (proposalGuid: string) => {
       if (!address || !daoDetails || !pluginSettings || !proposalCreationData)
         return;
 
@@ -440,59 +561,76 @@ const ProposeSettingWrapper: React.FC<Props> = ({
         'links',
       ]);
 
-      const metadata: ProposalMetadata = {
-        title,
-        summary,
-        description,
-        resources: resources.filter((r: ProposalResource) => r.name && r.url),
-      };
+      let cacheKey = '';
+      let newCache;
+      let proposalToCache;
 
-      const proposalData: MapToDetailedProposalParams = {
+      let proposalData: CacheProposalParams = {
         creatorAddress: address,
         daoAddress: daoDetails?.address,
         daoName: daoDetails?.metadata.name,
-        daoToken,
-        totalVotingWeight:
-          pluginType === 'token-voting.plugin.dao.eth' && tokenSupply?.formatted
-            ? tokenSupply.formatted
-            : members.length,
-        // TODO: Add multisig
-        pluginSettings: pluginSettings as VotingSettings,
+        proposalGuid,
         proposalParams: proposalCreationData,
-        proposalId,
-        metadata: metadata,
-      };
-
-      const cachedProposal = mapToDetailedProposal(proposalData);
-      const newCache = {
-        ...cachedProposals,
-        [daoDetails.address]: {
-          ...cachedProposals[daoDetails.address],
-          [proposalId]: {...cachedProposal},
+        metadata: {
+          title,
+          summary,
+          description,
+          resources: resources.filter((r: ProposalResource) => r.name && r.url),
         },
       };
-      pendingProposalsVar(newCache);
+
+      if (isTokenVotingSettings(pluginSettings)) {
+        proposalData = {
+          ...proposalData,
+          daoToken,
+          pluginSettings,
+          totalVotingWeight: tokenSupply?.raw,
+        };
+
+        cacheKey = PENDING_PROPOSALS_KEY;
+        proposalToCache = mapToCacheProposal(proposalData);
+        newCache = {
+          ...cachedTokenBasedProposals,
+          [daoDetails.address]: {
+            ...cachedTokenBasedProposals[daoDetails.address],
+            [proposalGuid]: {...proposalToCache},
+          },
+        };
+        pendingTokenBasedProposalsVar(newCache);
+      } else if (isMultisigVotingSettings(pluginSettings)) {
+        proposalData.minApprovals = pluginSettings.minApprovals;
+        proposalData.onlyListed = pluginSettings.onlyListed;
+        cacheKey = PENDING_MULTISIG_PROPOSALS_KEY;
+        proposalToCache = mapToCacheProposal(proposalData);
+        newCache = {
+          ...cachedMultisigProposals,
+          [daoDetails.address]: {
+            ...cachedMultisigProposals[daoDetails.address],
+            [proposalGuid]: {...proposalToCache},
+          },
+        };
+        pendingMultisigProposalsVar(newCache);
+      }
 
       // persist new cache if functional cookies enabled
       if (preferences?.functional) {
         localStorage.setItem(
-          PENDING_PROPOSALS_KEY,
+          cacheKey,
           JSON.stringify(newCache, customJSONReplacer)
         );
       }
     },
     [
       address,
-      cachedProposals,
+      cachedMultisigProposals,
+      cachedTokenBasedProposals,
       daoDetails,
       daoToken,
       getValues,
-      members.length,
       pluginSettings,
-      pluginType,
       preferences?.functional,
       proposalCreationData,
-      tokenSupply?.formatted,
+      tokenSupply?.raw,
     ]
   );
 

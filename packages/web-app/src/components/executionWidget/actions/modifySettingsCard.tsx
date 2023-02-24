@@ -8,7 +8,7 @@ import {getDHMFromSeconds} from 'utils/date';
 import {getErc20MinParticipation} from 'utils/proposals';
 import {ActionUpdatePluginSettings} from 'utils/types';
 
-export const ModifySettingsCard: React.FC<{
+export const ModifyMvSettingsCard: React.FC<{
   action: ActionUpdatePluginSettings;
 }> = ({action: {inputs}}) => {
   const {t} = useTranslation();

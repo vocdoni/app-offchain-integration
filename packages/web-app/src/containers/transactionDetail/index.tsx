@@ -45,12 +45,16 @@ const TransactionDetail: React.FC<TransactionDetailProps> = ({
 
   const transactionUrl = `
     ${CHAIN_METADATA[network].explorer}tx/${transfer.transaction}`;
-  const proposalId = (transfer as Withdraw).proposalId;
+  const proposalId =
+    transfer.transferType === TransferTypes.Withdraw
+      ? (transfer as Withdraw).proposalId
+      : undefined;
 
   const {data: proposal} = useDaoProposal(
     daoAddress,
     proposalId,
-    daoPlugin.id as PluginTypes
+    daoPlugin.id as PluginTypes,
+    daoPlugin.instanceAddress
   );
 
   const handleNavigateToProposal = useCallback(() => {
@@ -58,7 +62,7 @@ const TransactionDetail: React.FC<TransactionDetailProps> = ({
       generatePath(Proposal, {
         network,
         dao: daoAddress,
-        id: proposalId,
+        id: proposalId!.toUrlSlug(), // only called for Withdrawals
       })
     );
     onClose();

@@ -12,6 +12,7 @@ export type VoterType = {
   option: 'yes' | 'abstain' | 'no' | 'approved' | 'none';
   votingPower?: string;
   tokenAmount?: string;
+  voteReplaced?: boolean;
 };
 
 export type VotersTableProps = {
@@ -49,6 +50,7 @@ export const VotersTable: React.FC<VotersTableProps> = ({
           <tr>
             <TableCell type="head" text="Wallet" className="w-1/2" />
             {showOption && <TableCell type="head" text="Option" />}
+            {showOption && <TableCell type="head" />}
             {showVotingPower && (
               <TableCell
                 type="head"
@@ -77,6 +79,15 @@ export const VotersTable: React.FC<VotersTableProps> = ({
                     </span>
                   )}
                 </TableCell>
+              )}
+              {showOption && voter.voteReplaced === true ? (
+                <TableCell type="tag">
+                  <span className="flex items-center -ml-2 text-xs text-ui-600">
+                    Edited
+                  </span>
+                </TableCell>
+              ) : (
+                <TableCell type="text" />
               )}
               {showVotingPower && (
                 <TableCell type="text" text={voter.votingPower} rightAligned />
