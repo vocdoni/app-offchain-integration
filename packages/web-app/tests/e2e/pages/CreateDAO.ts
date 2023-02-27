@@ -41,6 +41,30 @@ export default class CreateDAO {
       .should('not.be.disabled')
       .click();
 
-    cy.wait(6000);
+    // Select all checkboxes on review page and clicks the primary button
+    cy.get('p')
+      .should('contain', 'These values are correct')
+      .each(el => el.trigger('click'));
+    cy.get('button[mode="primary"]')
+      .contains('Deploy your DAO')
+      .parent()
+      .should('not.be.disabled')
+      .click();
+
+    // Approve the tx from the modal
+    cy.get('button[mode="primary"]')
+      .contains('Approve transaction')
+      .parent()
+      .should('not.be.disabled')
+      .click();
+
+    // Brings up the MetaMask tx window and clicks confirm
+    cy.confirmMetamaskTransaction();
+    cy.switchToCypressWindow();
+
+    // Waits till the tx completes by checking the state of the primary button the tx modal
+    cy.get('button[mode="primary"]').contains('Launch DAO Dashboard');
+
+    cy.wait(5000);
   }
 }
