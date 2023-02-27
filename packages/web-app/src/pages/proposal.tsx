@@ -78,7 +78,7 @@ import {Action, ProposalId} from 'utils/types';
 // TODO: @Sepehr Please assign proper tags on action decoding
 // const PROPOSAL_TAGS = ['Finance', 'Withdraw'];
 
-const PENDING_PROPOSAL_STATUS_INTERVAL = 1000 * 60 * 60;
+const PENDING_PROPOSAL_STATUS_INTERVAL = 1000 * 60;
 const PROPOSAL_STATUS_INTERVAL = 1000 * 60 * 2;
 const NumberFormatter = new Intl.NumberFormat('en-US');
 
@@ -462,7 +462,7 @@ const Proposal: React.FC = () => {
     }
 
     // member, not yet voted
-    else if (Array.isArray(canVote) ? canVote.some(v => v) : canVote) {
+    else if (canVote) {
       return {
         voteNowDisabled: false,
         onClick: () => {
@@ -508,7 +508,7 @@ const Proposal: React.FC = () => {
       address && // logged in
       !isOnWrongNetwork && // on proper network
       !voted && // haven't voted
-      !(Array.isArray(canVote) ? canVote.some(v => v) : canVote) // cannot vote
+      !canVote // cannot vote
     ) {
       // presence of token delineates token voting proposal
       // people add types to these things!!
@@ -660,7 +660,7 @@ const Container = styled.div.attrs({
 })``;
 
 const HeaderContainer = styled.div.attrs({
-  className: 'flex flex-col gap-y-2 desktop:p-0 px-2 tablet:px-3 pt-2',
+  className: 'flex flex-col gap-y-2 desktop:p-0 tablet:px-3 pt-2',
 })``;
 
 const ProposalTitle = styled.p.attrs({
