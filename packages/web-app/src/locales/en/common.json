@@ -82,7 +82,6 @@
     "security": "Security",
     "popularity": "Popularity",
     "daoName": "DAO name",
-    "ens": "ENS",
     "summary": "Summary",
     "description": "Description",
     "addLink": "Add link",
@@ -208,7 +207,8 @@
     "submitProposal": "Publish proposal",
     "addWalletsDescriptionLinkLabel": "read our guide",
     "addWalletsDescription": "Wallets can create proposals, propose to send funds in and out of the treasury, and vote in your DAO.",
-    "daoEnsName": "ENS Subdomain"
+    "daoEnsName": "ENS Subdomain",
+    "ens": "ENS"
   },
   "placeHolders": {
     "selectToken": "Select a Token ...",

@@ -4,8 +4,10 @@ import React, {createContext, useContext, useEffect, useState} from 'react';
 import {useWallet} from 'hooks/useWallet';
 import {
   CHAIN_METADATA,
+  getSupportedNetworkByChainId,
   INFURA_PROJECT_ID,
   SupportedChainID,
+  SupportedNetworks,
 } from 'utils/constants';
 import {Nullable} from 'utils/types';
 import {useNetwork} from './network';
@@ -40,12 +42,12 @@ export function ProvidersProvider({children}: ProviderProviderProps) {
   const {network} = useNetwork();
 
   const [infuraProvider, setInfuraProvider] = useState(
-    new InfuraProvider(NW_ARB, INFURA_PROJECT_ID)
+    new InfuraProvider(NW_ARB, INFURA_PROJECT_ID[network])
   );
 
   useEffect(() => {
     const chainId = CHAIN_METADATA[network].id;
-    setInfuraProvider(getInfuraProvider(chainId as SupportedChainID));
+    setInfuraProvider(getInfuraProvider(network, chainId as SupportedChainID));
   }, [network]);
 
   return (
@@ -58,7 +60,10 @@ export function ProvidersProvider({children}: ProviderProviderProps) {
   );
 }
 
-function getInfuraProvider(givenChainId?: SupportedChainID) {
+function getInfuraProvider(
+  network: SupportedNetworks,
+  givenChainId?: SupportedChainID
+) {
   // NOTE Passing the chainIds from useWallet doesn't work in the case of
   // arbitrum and arbitrum-goerli. They need to be passed as objects.
   // However, I have no idea why this is necessary. Looking at the ethers
@@ -66,11 +71,11 @@ function getInfuraProvider(givenChainId?: SupportedChainID) {
   // I've tried it on a fresh project and had no problems there...
   // [VR 07-03-2022]
   if (givenChainId === 42161) {
-    return new InfuraProvider(NW_ARB, INFURA_PROJECT_ID);
+    return new InfuraProvider(NW_ARB, INFURA_PROJECT_ID[network]);
   } else if (givenChainId === 421613) {
-    return new InfuraProvider(NW_ARB_GOERLI, INFURA_PROJECT_ID);
+    return new InfuraProvider(NW_ARB_GOERLI, INFURA_PROJECT_ID[network]);
   } else {
-    return new InfuraProvider(givenChainId, INFURA_PROJECT_ID);
+    return new InfuraProvider(givenChainId, INFURA_PROJECT_ID[network]);
   }
 }
 
@@ -80,13 +85,15 @@ function getInfuraProvider(givenChainId?: SupportedChainID) {
  * @returns infura provider
  */
 export function useSpecificProvider(chainId: SupportedChainID): InfuraProvider {
+  const network = getSupportedNetworkByChainId(chainId) as SupportedNetworks;
+
   const [infuraProvider, setInfuraProvider] = useState(
-    getInfuraProvider(chainId)
+    getInfuraProvider(network, chainId)
   );
 
   useEffect(() => {
-    setInfuraProvider(getInfuraProvider(chainId));
-  }, [chainId]);
+    setInfuraProvider(getInfuraProvider(network, chainId));
+  }, [chainId, network]);
 
   return infuraProvider;
 }

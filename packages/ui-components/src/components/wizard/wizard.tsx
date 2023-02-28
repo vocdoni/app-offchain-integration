@@ -10,6 +10,7 @@ export type WizardProps = {
   currentStep?: number;
   totalSteps?: number;
   nav: React.ReactNode;
+  renderHtml?: boolean;
 };
 
 export const Wizard: React.FC<WizardProps> = ({
@@ -20,6 +21,7 @@ export const Wizard: React.FC<WizardProps> = ({
   description,
   includeStepper = true,
   nav,
+  renderHtml,
 }) => {
   return (
     <StepCard data-testid="wizard">
@@ -43,7 +45,13 @@ export const Wizard: React.FC<WizardProps> = ({
       {/* Main */}
       <Wrapper>
         <StepTitle>{title}</StepTitle>
-        <StepSubTitle>{description}</StepSubTitle>
+        {renderHtml ? (
+          <StepSubTitle
+            dangerouslySetInnerHTML={{__html: description as string}}
+          />
+        ) : (
+          <StepSubTitle>{description}</StepSubTitle>
+        )}
       </Wrapper>
     </StepCard>
   );
@@ -51,7 +59,7 @@ export const Wizard: React.FC<WizardProps> = ({
 
 const StepCard = styled.div.attrs({
   className:
-    'flex flex-col px-2 pt-2 pb-3 tablet:p-3 desktop:p-6 tablet:rounded-xl gap-y-3 bg-ui-0',
+    'flex flex-col px-2 pt-2 pb-3 tablet:p-3 desktop:p-6 tablet:rounded-xl gap-y-3 bg-ui-0 tablet:shadow-100',
 })``;
 
 const Wrapper = styled.div.attrs({
@@ -64,7 +72,12 @@ const StepTitle = styled.p.attrs({
 
 const StepSubTitle = styled.span.attrs({
   className: 'text-ui-600 ft-text-lg',
-})``;
+})`
+  & > a {
+    color: #003bf5;
+    font-weight: 700;
+  }
+`;
 
 const CenteredFlex = styled.div.attrs({
   className: 'flex justify-between text-sm desktop:text-base',
