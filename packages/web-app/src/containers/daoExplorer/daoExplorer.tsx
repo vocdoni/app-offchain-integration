@@ -18,8 +18,8 @@ import {CHAIN_METADATA, getSupportedNetworkByChainId} from 'utils/constants';
 import {Dashboard} from 'utils/paths';
 import {useReactiveVar} from '@apollo/client';
 import {favoriteDaosVar} from 'context/apolloClient';
+import {useNetwork} from 'context/network';
 
-const DEFAULT_CHAIN_ID = CHAIN_METADATA.goerli.id;
 const EXPLORE_FILTER = ['favorite', 'newest', 'popular'] as const;
 
 export type ExploreFilter = typeof EXPLORE_FILTER[number];
@@ -36,6 +36,7 @@ export const DaoExplorer = () => {
   const {t} = useTranslation();
   const navigate = useNavigate();
   const {address} = useWallet();
+  const {network} = useNetwork();
 
   const favoritedDaos = useReactiveVar(favoriteDaosVar);
   const loggedInAndHasFavoritedDaos =
@@ -49,6 +50,15 @@ export const DaoExplorer = () => {
   const [skip, setSkip] = useState(0);
   const {data, isLoading} = useDaos(filterValue, PAGE_SIZE, skip);
   const [displayedDaos, setDisplayedDaos] = useState(data);
+
+  useEffect(() => {
+    if (network && filterValue !== 'favorite') {
+      setDisplayedDaos([]);
+    }
+
+    // intentionally leaving filter value out
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [network]);
 
   useEffect(() => {
     if (data) {
@@ -112,7 +122,7 @@ export const DaoExplorer = () => {
                 name={dao.metadata.name}
                 logo={dao.metadata.avatar}
                 description={dao.metadata.description}
-                chainId={dao.chain || DEFAULT_CHAIN_ID} // Default to Goerli
+                chainId={dao.chain || CHAIN_METADATA[network].id} // Default to Goerli
                 daoType={
                   (dao?.plugins?.[0]?.id as PluginTypes) ===
                   'token-voting.plugin.dao.eth'
@@ -124,7 +134,7 @@ export const DaoExplorer = () => {
                   navigate(
                     generatePath(Dashboard, {
                       network: getSupportedNetworkByChainId(
-                        dao.chain || DEFAULT_CHAIN_ID
+                        dao.chain || CHAIN_METADATA[network].id
                       ),
                       dao: dao.address,
                     })
