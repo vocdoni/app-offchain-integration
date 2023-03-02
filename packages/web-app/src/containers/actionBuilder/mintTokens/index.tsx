@@ -9,7 +9,7 @@ import {
   useFormContext,
   useWatch,
 } from 'react-hook-form';
-import {Trans, useTranslation} from 'react-i18next';
+import {useTranslation} from 'react-i18next';
 import styled from 'styled-components';
 
 import {AccordionMethod} from 'components/accordionMethod';
@@ -77,7 +77,7 @@ const MintTokens: React.FC<MintTokensProps> = ({actionIndex}) => {
       methodName={t('labels.mintTokens')}
       smartContractName={t('labels.aragonOSx')}
       verified
-      methodDescription={<MintTokenDescription />}
+      methodDescription={t('newProposal.mintTokens.methodDescription')}
       additionalInfo={t('newProposal.mintTokens.additionalInfo')}
       dropdownItems={methodActions}
     >
@@ -343,30 +343,30 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
     }, 450);
   };
 
-  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const myFile = e.target.files[0];
-      const reader = new FileReader();
+  // const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   if (e.target.files && e.target.files[0]) {
+  //     const myFile = e.target.files[0];
+  //     const reader = new FileReader();
 
-      reader.onload = () => {
-        const csvData = reader.result;
-        if (csvData) {
-          const lines = (csvData as string).split('\n');
-          for (let i = 0; i < lines.length; i++) {
-            const tuple = lines[i].split(',');
-            if (tuple[0] === 'Address' && tuple[1] === 'Tokens' && i === 0) {
-              continue;
-            }
-            if (tuple[0] && tuple[1]) {
-              append({address: tuple[0], amount: tuple[1]});
-            }
-          }
-        }
-      };
+  //     reader.onload = () => {
+  //       const csvData = reader.result;
+  //       if (csvData) {
+  //         const lines = (csvData as string).split('\n');
+  //         for (let i = 0; i < lines.length; i++) {
+  //           const tuple = lines[i].split(',');
+  //           if (tuple[0] === 'Address' && tuple[1] === 'Tokens' && i === 0) {
+  //             continue;
+  //           }
+  //           if (tuple[0] && tuple[1]) {
+  //             append({address: tuple[0], amount: tuple[1]});
+  //           }
+  //         }
+  //       }
+  //     };
 
-      reader.readAsBinaryString(myFile);
-    }
-  };
+  //     reader.readAsBinaryString(myFile);
+  //   }
+  // };
 
   /*************************************************
    *                    Render                    *
@@ -410,7 +410,7 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
         />
 
         {/* eslint-disable-next-line tailwindcss/classnames-order */}
-        <label className="flex-1 tablet:flex-initial py-1.5 px-2 space-x-1.5 h-6 font-bold rounded-xl cursor-pointer hover:text-primary-500 bg-ui-0 ft-text-base">
+        {/* <label className="flex-1 tablet:flex-initial py-1.5 px-2 space-x-1.5 h-6 font-bold rounded-xl cursor-pointer hover:text-primary-500 bg-ui-0 ft-text-base">
           {t('labels.whitelistWallets.uploadCSV')}
           <input
             type="file"
@@ -419,7 +419,7 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
             onChange={handleCSVUpload}
             hidden
           />
-        </label>
+        </label> */}
       </ButtonContainer>
       {!daoTokenLoading && (
         <SummaryContainer>
@@ -454,22 +454,6 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
     </Container>
   );
 };
-
-export const MintTokenDescription: React.FC = () => (
-  <Trans i18nKey="newProposal.mintTokens.methodDescription">
-    Which wallet addresses should get tokens, and how many? Add the wallets you
-    want here, and then choose the distribution. Upload a CSV with
-    <a
-      href="data:text/csv;base64,QWRkcmVzcyxUb2tlbnMKMHgwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwLDEwLjUw"
-      download="MintTokenTemplate.csv"
-      // eslint-disable-next-line tailwindcss/classnames-order
-      className="font-bold rounded focus:ring-2 focus:outline-none text-primary-500 hover:text-primary-700 focus:ring-primary-500"
-    >
-      this template
-    </a>{' '}
-    if you want.
-  </Trans>
-);
 
 const Container = styled.div.attrs<{standAlone: boolean}>(({standAlone}) => ({
   className: `bg-white border divide-y border-ui-100 divide-ui-100 ${

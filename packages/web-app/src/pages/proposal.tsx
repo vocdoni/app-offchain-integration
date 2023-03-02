@@ -78,8 +78,8 @@ import {Action, ProposalId} from 'utils/types';
 // TODO: @Sepehr Please assign proper tags on action decoding
 // const PROPOSAL_TAGS = ['Finance', 'Withdraw'];
 
-const PENDING_PROPOSAL_STATUS_INTERVAL = 1000 * 60;
-const PROPOSAL_STATUS_INTERVAL = 1000 * 60 * 2;
+const PENDING_PROPOSAL_STATUS_INTERVAL = 1000 * 10;
+const PROPOSAL_STATUS_INTERVAL = 1000 * 60;
 const NumberFormatter = new Intl.NumberFormat('en-US');
 
 const Proposal: React.FC = () => {
@@ -156,7 +156,8 @@ const Proposal: React.FC = () => {
     address,
     proposalId!,
     pluginAddress,
-    pluginType
+    pluginType,
+    proposal?.status as string
   );
 
   const pluginClient = usePluginClient(pluginType);
@@ -288,7 +289,8 @@ const Proposal: React.FC = () => {
   useEffect(() => {
     if (proposal && proposal.status !== get('proposalStatus'))
       set('proposalStatus', proposal.status);
-  }, [get, proposal, set]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proposal?.status]);
 
   // handle can vote and wallet connection status
   useEffect(() => {
@@ -342,13 +344,15 @@ const Proposal: React.FC = () => {
       setVoteStatus(getVoteStatus(proposal, t));
 
       const interval = setInterval(async () => {
+        const v = getVoteStatus(proposal, t);
+
         // remove interval timer once the proposal has started
-        if (proposal.startDate.valueOf() >= new Date().valueOf()) {
+        if (proposal.startDate.valueOf() <= new Date().valueOf()) {
           clearInterval(interval);
           setIntervalInMills(PROPOSAL_STATUS_INTERVAL);
+          setVoteStatus(v);
         } else if (proposal.status === 'Pending') {
-          // recalculate vote status for pending proposal
-          setVoteStatus(getVoteStatus(proposal, t));
+          setVoteStatus(v);
         }
       }, PENDING_PROPOSAL_STATUS_INTERVAL);
 
@@ -523,13 +527,11 @@ const Proposal: React.FC = () => {
 
   // status steps for proposal
   const proposalSteps = useMemo(() => {
-    // TODO: add multisig option
-    if (isMultisigProposal(proposal)) return [];
-
     if (proposal) {
       return getProposalStatusSteps(
         t,
         proposal.status,
+        pluginType,
         proposal.startDate,
         proposal.endDate,
         proposal.creationDate,
@@ -543,7 +545,7 @@ const Proposal: React.FC = () => {
         proposal.executionDate || undefined
       );
     } else return [];
-  }, [proposal, executionFailed, t]);
+  }, [proposal, t, pluginType, executionFailed]);
 
   /*************************************************
    *                     Render                    *
@@ -639,6 +641,7 @@ const Proposal: React.FC = () => {
           />
 
           <ExecutionWidget
+            pluginType={pluginType}
             actions={decodedActions}
             status={executionStatus}
             onExecuteClicked={handleExecuteNowClicked}

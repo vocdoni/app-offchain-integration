@@ -4,7 +4,7 @@ import type {RunContext} from './runContext';
 before(() => {
   cy.readFile<RunContext>('tests/e2e/runContext.json', {timeout: 1000}).then(
     rc => {
-      if (Object.keys(rc).length == 0) {
+      if (Object.keys(rc).length === 0) {
         const runIdArray = new Uint8Array(4);
         crypto.getRandomValues(runIdArray);
         const runIdParts = [] as string[];
