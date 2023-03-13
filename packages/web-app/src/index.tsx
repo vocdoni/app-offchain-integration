@@ -56,6 +56,18 @@ const wagmiClient = createClient({
 // Web3Modal Ethereum Client
 const ethereumClient = new EthereumClient(wagmiClient, chains);
 
+const CACHE_VERSION = 1;
+const onLoad = () => {
+  // Wipe local storage cache if its structure is out of date and clashes
+  // with this version of the app.
+  const cacheVersion = localStorage.getItem('AragonCacheVersion');
+  if (!cacheVersion || parseInt(cacheVersion) < CACHE_VERSION) {
+    localStorage.clear();
+    localStorage.setItem('AragonCacheVersion', CACHE_VERSION.toString());
+  }
+};
+onLoad();
+
 ReactDOM.render(
   <>
     <React.StrictMode>
