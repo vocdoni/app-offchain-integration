@@ -32,4 +32,4 @@ After the merge a new github tag gets created and this tag triggers the publishi
 To release a new version manually just create a git tag in this format:  
 `MAJOR.MINOR.PATCH-ui-components`
 
-Be aware that this way the version in package.json will **not** be updated and this have to happend manually before creating the git tag.
+Be aware that this way the version in package.json will **not** be updated and this have to happened manually before creating the git tag.
