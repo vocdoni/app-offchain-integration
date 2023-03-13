@@ -56,6 +56,23 @@ const wagmiClient = createClient({
 // Web3Modal Ethereum Client
 const ethereumClient = new EthereumClient(wagmiClient, chains);
 
+const CACHE_VERSION = 1;
+const onLoad = () => {
+  // Wipe local storage cache if its structure is out of date and clashes
+  // with this version of the app.
+  const cacheVersion = localStorage.getItem('AragonCacheVersion');
+  const retainKeys = ['privacy-policy-preferences', 'favoriteDaos'];
+  if (!cacheVersion || parseInt(cacheVersion) < CACHE_VERSION) {
+    for (let i = 0; i < localStorage.length; i++) {
+      if (!retainKeys.includes(localStorage.key(i)!)) {
+        localStorage.removeItem(localStorage.key(i)!);
+      }
+    }
+    localStorage.setItem('AragonCacheVersion', CACHE_VERSION.toString());
+  }
+};
+onLoad();
+
 ReactDOM.render(
   <>
     <React.StrictMode>
