@@ -37,6 +37,9 @@ export const INFURA_PROJECT_ID: Record<
 };
 
 export const ARAGON_RPC = 'mainnet.eth.aragon.network';
+export const walletConnectProjectID = import.meta.env
+  .VITE_WALLET_CONNECT_PROJECT_ID as string;
+export const infuraApiKey = import.meta.env.VITE_INFURA_API_KEY as string;
 
 export const IPFS_ENDPOINT_TEST =
   'https://testing-ipfs-0.aragon.network/api/v0';
