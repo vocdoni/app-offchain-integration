@@ -5,14 +5,17 @@ import {render, RenderOptions} from '@testing-library/react';
 
 import {i18n} from '../../i18n.config';
 import {WalletMenuProvider} from 'context/walletMenu';
+import {WalletProvider} from 'context/augmentedWallet';
 
 const AllProviders: React.FC = ({children}) => {
   return (
-    <WalletMenuProvider>
-      <I18nextProvider i18n={i18n}>
-        <Router>{children}</Router>
-      </I18nextProvider>
-    </WalletMenuProvider>
+    <WalletProvider>
+      <WalletMenuProvider>
+        <I18nextProvider i18n={i18n}>
+          <Router>{children}</Router>
+        </I18nextProvider>
+      </WalletMenuProvider>
+    </WalletProvider>
   );
 };
 
