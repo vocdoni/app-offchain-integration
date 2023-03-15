@@ -479,3 +479,11 @@ export function removeUnchangedMinimumApprovalAction(
     else return action;
   });
 }
+
+/**
+ * Sleep for given time before continuing
+ * @param time time in milliseconds
+ */
+export function sleepFor(time = 600) {
+  return new Promise(resolve => setTimeout(resolve, time));
+}
