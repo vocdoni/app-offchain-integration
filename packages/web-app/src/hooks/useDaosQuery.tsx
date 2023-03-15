@@ -80,7 +80,9 @@ export const useDaosQuery = (
       const skip = limit * pageParam;
 
       return filter === 'favorite'
-        ? getFavoritedDaosFromCache(favoritedDaos, {skip, limit})
+        ? (getFavoritedDaosFromCache(favoritedDaos, {skip, limit}) as Promise<
+            DaoListItem[]
+          >)
         : fetchDaos(client, {
             skip,
             limit,
@@ -90,11 +92,14 @@ export const useDaosQuery = (
     },
 
     // calculate next page value
-    getNextPageParam: (lastPage, allPages) =>
-      lastPage.length === limit ? allPages.length : undefined,
+    getNextPageParam: (
+      lastPage: Array<DaoListItem>,
+      allPages: Array<DaoListItem[]>
+    ) => (lastPage.length === limit ? allPages.length : undefined),
 
     // transform and select final value
-    select: data => toAugmentedDaoListItem(data, CHAIN_METADATA[network].id),
+    select: (data: InfiniteData<DaoListItem[]>) =>
+      toAugmentedDaoListItem(data, CHAIN_METADATA[network].id),
 
     refetchOnWindowFocus: false,
   });
@@ -124,7 +129,7 @@ function toDaoSortBy(filter: ExploreFilter) {
  */
 // TODO: ideally chain id comes from the SDK; remove when available
 function toAugmentedDaoListItem(
-  data: InfiniteData<DaoListItem[] | NavigationDao[]>,
+  data: InfiniteData<DaoListItem[]>,
   chain: SupportedChainID
 ) {
   return {

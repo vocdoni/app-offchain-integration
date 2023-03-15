@@ -2,8 +2,6 @@
 // of a caching service provided by separate server
 // For now most of these methods will be passed the reactive
 // variables from Apollo-client
-import {DaoListItem} from '@aragon/sdk-client';
-
 import {NavigationDao} from 'context/apolloClient';
 import {sleepFor} from 'utils/library';
 
@@ -16,10 +14,10 @@ import {sleepFor} from 'utils/library';
 export async function getFavoritedDaosFromCache(
   cache: Array<NavigationDao>,
   options: {skip: number; limit: number}
-): Promise<DaoListItem[]> {
+): Promise<NavigationDao[]> {
   const {skip, limit} = options;
 
   // sleeping for 600 ms because the immediate apparition of DAOS creates a flickering issue
   await sleepFor(600);
-  return Promise.resolve(cache.slice(skip, skip + limit) as DaoListItem[]);
+  return Promise.resolve(cache.slice(skip, skip + limit));
 }
