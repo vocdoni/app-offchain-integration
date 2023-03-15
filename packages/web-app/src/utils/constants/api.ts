@@ -37,14 +37,14 @@ export const INFURA_PROJECT_ID: Record<
 };
 
 export const ARAGON_RPC = 'mainnet.eth.aragon.network';
-export const walletConnectProjectID = import.meta.env
-  .VITE_WALLET_CONNECT_PROJECT_ID as string;
-export const infuraApiKey = import.meta.env.VITE_INFURA_API_KEY as string;
 
 export const IPFS_ENDPOINT_TEST =
   'https://testing-ipfs-0.aragon.network/api/v0';
 export const IPFS_ENDPOINT_MAIN_0 = 'https://ipfs-0.aragon.network/api/v0';
 export const IPFS_ENDPOINT_MAIN_1 = 'https://ipfs-1.aragon.network/api/v0';
+
+// using Aragon node for avatar resolving
+export const AVATAR_IPFS_URL = 'https://ipfs.eth.aragon.network/ipfs';
 
 // Coingecko Api specific asset platform keys
 export const ASSET_PLATFORMS: Record<SupportedNetworks, string | null> = {
