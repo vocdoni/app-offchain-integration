@@ -5,24 +5,19 @@ import {
   Option,
   Spinner,
 } from '@aragon/ui-components';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {generatePath, useNavigate} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {useReactiveVar} from '@apollo/client';
 import {DaoCard} from 'components/daoCard';
-import {useDaos} from 'hooks/useDaos';
+import {favoriteDaosVar} from 'context/apolloClient';
+import {ExploreFilter, EXPLORE_FILTER, useDaosQuery} from 'hooks/useDaosQuery';
 import {PluginTypes} from 'hooks/usePluginClient';
 import {useWallet} from 'hooks/useWallet';
-import {CHAIN_METADATA, getSupportedNetworkByChainId} from 'utils/constants';
+import {getSupportedNetworkByChainId, SupportedChainID} from 'utils/constants';
 import {Dashboard} from 'utils/paths';
-import {useReactiveVar} from '@apollo/client';
-import {favoriteDaosVar} from 'context/apolloClient';
-import {useNetwork} from 'context/network';
-
-const EXPLORE_FILTER = ['favorite', 'newest', 'popular'] as const;
-
-export type ExploreFilter = typeof EXPLORE_FILTER[number];
 
 export function isExploreFilter(
   filterValue: string
@@ -30,67 +25,45 @@ export function isExploreFilter(
   return EXPLORE_FILTER.some(ef => ef === filterValue);
 }
 
-const PAGE_SIZE = 4;
-
 export const DaoExplorer = () => {
   const {t} = useTranslation();
   const navigate = useNavigate();
-  const {address} = useWallet();
-  const {network} = useNetwork();
+  const {isConnected} = useWallet();
 
   const favoritedDaos = useReactiveVar(favoriteDaosVar);
-  const loggedInAndHasFavoritedDaos =
-    address !== null && favoritedDaos.length > 0;
+  const loggedInAndHasFavoritedDaos = isConnected && favoritedDaos.length > 0;
 
   const [filterValue, setFilterValue] = useState<ExploreFilter>(() =>
     loggedInAndHasFavoritedDaos ? 'favorite' : 'newest'
   );
-  const filterRef = useRef(filterValue);
 
-  const [skip, setSkip] = useState(0);
-  const {data, isLoading} = useDaos(filterValue, PAGE_SIZE, skip);
-  const [displayedDaos, setDisplayedDaos] = useState(data);
-
-  useEffect(() => {
-    if (network && filterValue !== 'favorite') {
-      setDisplayedDaos([]);
-    }
-
-    // intentionally leaving filter value out
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [network]);
+  const {
+    data: infiniteDaos,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useDaosQuery(filterValue);
 
   useEffect(() => {
-    if (data) {
-      if (filterRef.current !== filterValue) {
-        setDisplayedDaos(data);
-        filterRef.current = filterValue;
-      } else setDisplayedDaos(prev => [...prev, ...data]);
+    if (!isConnected && filterValue !== 'newest') {
+      setFilterValue('newest');
     }
-
-    // NOTE: somewhere up the chain, changing login state is creating new instance
-    // of the data from useDaos hook. Patching by doing proper data comparison
-    // using JSON.stringify. Proper investigation needs to be done
-    // [FF - 01/16/2023]
-
-    // intentionally removing filterValue from the dependencies
-    // because the update to the ref needs to happen after data
-    // has changed only
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(data[0])]);
-
-  const filterWasChanged = filterRef.current !== filterValue;
-
-  const handleShowMoreClick = () => {
-    if (!isLoading) setSkip(prev => prev + PAGE_SIZE);
-  };
+  }, [filterValue, isConnected]);
 
   const handleFilterChange = (filterValue: string) => {
     if (isExploreFilter(filterValue)) {
       setFilterValue(filterValue);
-      setSkip(0);
     } else throw Error(`${filterValue} is not an acceptable filter value`);
-    return;
+  };
+
+  const handleDaoClicked = (dao: string, chain: SupportedChainID) => {
+    navigate(
+      generatePath(Dashboard, {
+        network: getSupportedNetworkByChainId(chain),
+        dao,
+      })
+    );
   };
 
   return (
@@ -102,7 +75,7 @@ export const DaoExplorer = () => {
             <ButtonGroupContainer>
               <ButtonGroup
                 defaultValue={filterValue}
-                onChange={v => handleFilterChange(v)}
+                onChange={handleFilterChange}
                 bgWhite={false}
               >
                 <Option label={t('explore.explorer.myDaos')} value="favorite" />
@@ -114,46 +87,39 @@ export const DaoExplorer = () => {
           )}
         </HeaderWrapper>
         <CardsWrapper>
-          {filterWasChanged && isLoading ? (
+          {isLoading ? (
             <Spinner size="default" />
           ) : (
-            displayedDaos.map((dao, index) => (
+            infiniteDaos?.pages?.map(dao => (
               <DaoCard
+                key={dao.address}
                 name={dao.metadata.name}
                 ensName={dao.ensDomain}
                 logo={dao.metadata.avatar}
                 description={dao.metadata.description}
-                chainId={dao.chain || CHAIN_METADATA[network].id} // Default to Goerli
+                chainId={dao.chain}
+                onClick={() => handleDaoClicked(dao.address, dao.chain)}
                 daoType={
                   (dao?.plugins?.[0]?.id as PluginTypes) ===
                   'token-voting.plugin.dao.eth'
                     ? 'token-based'
                     : 'wallet-based'
                 }
-                key={index}
-                onClick={() =>
-                  navigate(
-                    generatePath(Dashboard, {
-                      network: getSupportedNetworkByChainId(
-                        dao.chain || CHAIN_METADATA[network].id
-                      ),
-                      dao: dao.address,
-                    })
-                  )
-                }
               />
             ))
           )}
         </CardsWrapper>
       </MainContainer>
-      {data.length >= PAGE_SIZE && !filterWasChanged && (
+      {hasNextPage && (
         <div>
           <ButtonText
             label={t('explore.explorer.showMore')}
-            iconRight={isLoading ? <Spinner size="xs" /> : <IconChevronDown />}
+            iconRight={
+              isFetchingNextPage ? <Spinner size="xs" /> : <IconChevronDown />
+            }
             bgWhite
             mode="ghost"
-            onClick={handleShowMoreClick}
+            onClick={() => fetchNextPage()}
           />
         </div>
       )}
