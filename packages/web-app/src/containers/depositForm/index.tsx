@@ -74,23 +74,22 @@ const DepositForm: React.FC = () => {
             ? utils.formatEther(walletBalance || 0)
             : fetchBalance(tokenAddress, address, provider, nativeCurrency),
           fetchTokenData(tokenAddress, client, network, tokenSymbol),
+          getTokenInfo(tokenAddress, provider, nativeCurrency),
         ]);
 
-        // use blockchain if api data unavailable
-        const [balance, data] = await allTokenInfoPromise;
-        if (data) {
-          setValue('tokenName', data.name);
-          setValue('tokenSymbol', data.symbol);
-          setValue('tokenImgUrl', data.imgUrl);
-        } else {
-          const {name, symbol} = await getTokenInfo(
-            tokenAddress,
-            provider,
-            nativeCurrency
-          );
-          setValue('tokenName', name);
-          setValue('tokenSymbol', symbol);
+        const [balance, apiData, chainData] = await allTokenInfoPromise;
+        if (apiData) {
+          setValue('tokenName', apiData.name);
+          setValue('tokenSymbol', apiData.symbol);
+          setValue('tokenImgUrl', apiData.imgUrl);
         }
+
+        if (!apiData) {
+          setValue('tokenName', chainData.name);
+          setValue('tokenSymbol', chainData.symbol);
+        }
+
+        setValue('tokenDecimals', Number(chainData.decimals));
         setValue('tokenBalance', balance);
       } catch (error) {
         /**
@@ -136,6 +135,7 @@ const DepositForm: React.FC = () => {
         resetField('tokenImgUrl');
         resetField('tokenSymbol');
         resetField('tokenBalance');
+        resetField('tokenDecimals');
       }
 
       return validationResult;
@@ -200,7 +200,6 @@ const DepositForm: React.FC = () => {
           helpText={t('newDeposit.toSubtitle')}
         />
 
-        {/* TODO: Proper DAO address */}
         <ButtonWallet
           label={daoAddress}
           src={daoAddress}

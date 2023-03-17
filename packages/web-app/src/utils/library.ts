@@ -132,10 +132,18 @@ export async function decodeWithdrawToAction(
   const address =
     decoded.type === 'native' ? constants.AddressZero : decoded?.tokenAddress;
   try {
-    const [response, apiResponse] = await Promise.all([
-      getTokenInfo(address, provider, CHAIN_METADATA[network].nativeCurrency),
-      fetchTokenData(address, apolloClient, network),
-    ]);
+    const response = await getTokenInfo(
+      address,
+      provider,
+      CHAIN_METADATA[network].nativeCurrency
+    );
+
+    const apiResponse = await fetchTokenData(
+      address,
+      apolloClient,
+      network,
+      response.symbol
+    );
 
     return {
       amount: Number(formatUnits(decoded.amount, response.decimals)),
@@ -147,6 +155,7 @@ export async function decodeWithdrawToAction(
       tokenName: response.name,
       tokenPrice: apiResponse?.price || 0,
       tokenSymbol: response.symbol,
+      tokenDecimals: response.decimals,
       isCustomToken: false,
     };
   } catch (error) {
