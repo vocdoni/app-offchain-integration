@@ -6,17 +6,13 @@ import {
   IDaoQueryParams,
   SortDirection,
 } from '@aragon/sdk-client';
-import {resolveIpfsCid} from '@aragon/sdk-common';
 import {InfiniteData, useInfiniteQuery} from '@tanstack/react-query';
 
-import {favoriteDaosVar, NavigationDao} from 'context/apolloClient';
+import {favoriteDaosVar} from 'context/apolloClient';
 import {useNetwork} from 'context/network';
 import {getFavoritedDaosFromCache} from 'services/cache';
-import {
-  AVATAR_IPFS_URL,
-  CHAIN_METADATA,
-  SupportedChainID,
-} from 'utils/constants';
+import {CHAIN_METADATA, SupportedChainID} from 'utils/constants';
+import {resolveDaoAvatarIpfsCid} from 'utils/library';
 import {useClient} from './useClient';
 
 export const EXPLORE_FILTER = ['favorite', 'newest', 'popular'] as const;
@@ -62,7 +58,7 @@ export const useDaosQuery = (
 ) => {
   const {network} = useNetwork();
   const {client, network: clientNetwork} = useClient();
-  const favoritedDaos = useReactiveVar(favoriteDaosVar);
+  const cachedDaos = useReactiveVar(favoriteDaosVar);
 
   const {direction, limit} = {
     direction: options?.direction || DEFAULT_QUERY_PARAMS.direction,
@@ -79,16 +75,19 @@ export const useDaosQuery = (
     queryFn: ({pageParam = 0}) => {
       const skip = limit * pageParam;
 
-      return filter === 'favorite'
-        ? (getFavoritedDaosFromCache(favoritedDaos, {skip, limit}) as Promise<
-            DaoListItem[]
-          >)
-        : fetchDaos(client, {
-            skip,
-            limit,
-            direction,
-            sortBy: toDaoSortBy(filter),
-          });
+      if (filter === 'favorite') {
+        return getFavoritedDaosFromCache(cachedDaos, {
+          skip,
+          limit,
+        }) as Promise<DaoListItem[]>;
+      } else {
+        return fetchDaos(client, {
+          skip,
+          limit,
+          direction,
+          sortBy: toDaoSortBy(filter),
+        });
+      }
     },
 
     // calculate next page value
@@ -135,18 +134,19 @@ function toAugmentedDaoListItem(
   return {
     pages: data.pages.flatMap(page =>
       page.map(dao => {
-        if (dao.metadata.avatar && /^ipfs/.test(dao.metadata.avatar)) {
-          try {
-            const logoCid = resolveIpfsCid(dao.metadata.avatar);
-            dao.metadata.avatar = `${AVATAR_IPFS_URL}/${logoCid}`;
-          } catch (err) {
-            dao.metadata.avatar = undefined;
-          }
+        const augmentedDao = dao as AugmentedDaoListItem;
+
+        // add avatar
+        augmentedDao.metadata.avatar = resolveDaoAvatarIpfsCid(
+          augmentedDao.metadata.avatar
+        );
+
+        // add chain id
+        if (!augmentedDao.chain) {
+          augmentedDao.chain = chain;
         }
 
-        if (!(dao as NavigationDao).chain)
-          return {...dao, chain} as AugmentedDaoListItem;
-        else return dao as AugmentedDaoListItem;
+        return augmentedDao;
       })
     ),
 

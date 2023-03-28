@@ -416,11 +416,15 @@ export function decodeVotingMode(mode: VotingMode): DecodedVotingMode {
  */
 export function resolveDaoAvatarIpfsCid(avatar?: string): string | undefined {
   if (avatar) {
-    try {
-      const logoCid = resolveIpfsCid(avatar);
-      return `${AVATAR_IPFS_URL}/${logoCid}`;
-    } catch (err) {
-      console.warn('Error resolving DAO avatar IPFS Cid', err);
+    if (/^ipfs/.test(avatar)) {
+      try {
+        const logoCid = resolveIpfsCid(avatar);
+        return `${AVATAR_IPFS_URL}/${logoCid}`;
+      } catch (err) {
+        console.warn('Error resolving DAO avatar IPFS Cid', err);
+      }
+    } else {
+      return avatar;
     }
   }
 }
