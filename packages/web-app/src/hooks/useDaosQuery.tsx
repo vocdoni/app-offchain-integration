@@ -31,14 +31,14 @@ const DEFAULT_QUERY_PARAMS = {
 
 /**
  * Fetch a list of DAOs
- * @param client SDK common client
- * @param options Query params
+ * @param client SDK common client. Can be undefined if the client is not available.
+ * @param options query parameters for fetching the DAOs
  * @returns list of DAOs based on given params
  */
 async function fetchDaos(client: Client | undefined, options: IDaoQueryParams) {
-  return typeof client === 'undefined'
-    ? Promise.reject(new Error('Client not defined'))
-    : client.methods.getDaos(options);
+  return client
+    ? client.methods.getDaos(options)
+    : Promise.reject(new Error('Client not defined'));
 }
 
 /**
@@ -48,22 +48,20 @@ async function fetchDaos(client: Client | undefined, options: IDaoQueryParams) {
  *
  * The DAO criteria can be either popular or newest DAOs, or DAOs that a user has favorited.
  * @param filter criteria that should be applied when fetching dao
- * @param options.limit number of DAOs to return per fetch (page size)
+ * @param options.limit The maximum number of DAOs to return. Fetches 4 DAOs by default.
  * @param options.direction sort direction
  * @returns A list of daos and their respective infos (metadata, plugins, etc.)
  */
 export const useDaosQuery = (
   filter: ExploreFilter,
-  options?: Pick<IDaoQueryParams, 'direction' | 'limit'>
+  {
+    direction = DEFAULT_QUERY_PARAMS.direction,
+    limit = DEFAULT_QUERY_PARAMS.limit,
+  }: Partial<Pick<IDaoQueryParams, 'direction' | 'limit'>> = {}
 ) => {
   const {network} = useNetwork();
   const {client, network: clientNetwork} = useClient();
   const cachedDaos = useReactiveVar(favoriteDaosVar);
-
-  const {direction, limit} = {
-    direction: options?.direction || DEFAULT_QUERY_PARAMS.direction,
-    limit: options?.limit || DEFAULT_QUERY_PARAMS.limit,
-  };
 
   return useInfiniteQuery({
     // notice the use of `clientNetwork` instead of `network` from network context
@@ -91,10 +89,8 @@ export const useDaosQuery = (
     },
 
     // calculate next page value
-    getNextPageParam: (
-      lastPage: Array<DaoListItem>,
-      allPages: Array<DaoListItem[]>
-    ) => (lastPage.length === limit ? allPages.length : undefined),
+    getNextPageParam: (lastPage: DaoListItem[], allPages: DaoListItem[][]) =>
+      lastPage.length === limit ? allPages.length : undefined,
 
     // transform and select final value
     select: (data: InfiniteData<DaoListItem[]>) =>
@@ -121,8 +117,9 @@ function toDaoSortBy(filter: ExploreFilter) {
 }
 
 /**
- * Add the chain and proper avatar resolved link for each DAO
- * @param data DAO api response
+ * Function that augments an array of `DaoListItem` by adding
+ * the avatar IPFS CID and the chainID
+ * @param data array of `DaoListItem`
  * @param chain chain id
  * @returns augmented DAO with avatar link and proper chain
  */
@@ -132,24 +129,16 @@ function toAugmentedDaoListItem(
   chain: SupportedChainID
 ) {
   return {
-    pages: data.pages.flatMap(page =>
-      page.map(dao => {
-        const augmentedDao = dao as AugmentedDaoListItem;
-
-        // add avatar
-        augmentedDao.metadata.avatar = resolveDaoAvatarIpfsCid(
-          augmentedDao.metadata.avatar
-        );
-
-        // add chain id
-        if (!augmentedDao.chain) {
-          augmentedDao.chain = chain;
-        }
-
-        return augmentedDao;
-      })
-    ),
-
     pageParams: data.pageParams,
+    pages: data.pages.flatMap(page =>
+      page.map(dao => ({
+        ...dao,
+        metadata: {
+          ...dao.metadata,
+          avatar: resolveDaoAvatarIpfsCid(dao.metadata.avatar),
+        },
+        chain: (dao as AugmentedDaoListItem).chain || chain,
+      }))
+    ),
   };
 }

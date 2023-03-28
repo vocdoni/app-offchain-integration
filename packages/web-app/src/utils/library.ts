@@ -410,8 +410,9 @@ export function decodeVotingMode(mode: VotingMode): DecodedVotingMode {
 }
 
 /**
- * Get DAO avatar url given avatar IPFS cid
- * @param avatar - IPFS cid for DAO avatar
+ * Get DAO resolved IPFS CID URL for the DAO avatar
+ * @param avatar - avatar to be resolved. If it's an IPFS CID,
+ * the function will return a fully resolved URL.
  * @returns the url to the DAO avatar
  */
 export function resolveDaoAvatarIpfsCid(avatar?: string): string | undefined {

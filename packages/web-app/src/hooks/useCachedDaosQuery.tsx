@@ -1,31 +1,33 @@
 import {useReactiveVar} from '@apollo/client';
-import {useQuery} from '@tanstack/react-query';
+import {useQuery, UseQueryResult} from '@tanstack/react-query';
 
 import {favoriteDaosVar, NavigationDao} from 'context/apolloClient';
 import {getFavoritedDaosFromCache} from 'services/cache';
 import {resolveDaoAvatarIpfsCid} from 'utils/library';
 
 /**
- * This hook returns a list of cached daos. The data returned for each dao contains
- * information about the dao such as metadata, plugins installed on the dao,
- * address, etc.
- * @param skip number of DAOs to skip before fetching
- * @param limit number of DAOs to return per fetch (page size)
- * @returns A list of daos and their respective infos (metadata, plugins, etc.)
+ * This hook retrieves a list of cached DAOs with optional pagination.
+ * @param skip The number of DAOs to skip before starting to fetch the result set.
+ * (defaults to 0)
+ * @param limit The maximum number of DAOs to return. Fetches all available DAOs by default.
+ * @returns result object containing an array of NavigationDao objects with added avatar information.
  */
-export const useCachedDaosQuery = (skip = 0, limit = -1) => {
+export const useCachedDaosQuery = (
+  skip = 0,
+  limit = -1
+): UseQueryResult<NavigationDao[]> => {
   const cachedDaos = useReactiveVar(favoriteDaosVar);
 
-  return useQuery({
+  return useQuery<NavigationDao[]>({
     queryKey: ['cachedDaos'],
     queryFn: () => getFavoritedDaosFromCache(cachedDaos, {skip, limit}),
     select: addAvatarToDao,
   });
 };
 
-function addAvatarToDao(daos: NavigationDao[]) {
-  return daos.map(dao => {
-    dao.metadata.avatar = resolveDaoAvatarIpfsCid(dao.metadata.avatar);
-    return dao;
+function addAvatarToDao(daos: NavigationDao[]): NavigationDao[] {
+  return daos.map(({metadata, ...dao}) => {
+    const avatar = resolveDaoAvatarIpfsCid(metadata.avatar);
+    return {...dao, metadata, avatar};
   });
 }
