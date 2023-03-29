@@ -1,4 +1,3 @@
-import {useReactiveVar} from '@apollo/client';
 import {
   Client,
   DaoListItem,
@@ -8,9 +7,7 @@ import {
 } from '@aragon/sdk-client';
 import {InfiniteData, useInfiniteQuery} from '@tanstack/react-query';
 
-import {favoriteDaosVar} from 'context/apolloClient';
 import {useNetwork} from 'context/network';
-import {getFavoritedDaosFromCache} from 'services/cache';
 import {CHAIN_METADATA, SupportedChainID} from 'utils/constants';
 import {resolveDaoAvatarIpfsCid} from 'utils/library';
 import {useClient} from './useClient';
@@ -52,40 +49,27 @@ async function fetchDaos(client: Client | undefined, options: IDaoQueryParams) {
  * @param options.direction sort direction
  * @returns A list of daos and their respective infos (metadata, plugins, etc.)
  */
-export const useDaosQuery = (
-  filter: ExploreFilter,
+export const useDaosInfiniteQuery = (
+  enabled = true,
   {
+    sortBy = DEFAULT_QUERY_PARAMS.sortBy,
     direction = DEFAULT_QUERY_PARAMS.direction,
     limit = DEFAULT_QUERY_PARAMS.limit,
-  }: Partial<Pick<IDaoQueryParams, 'direction' | 'limit'>> = {}
+  }: Partial<Pick<IDaoQueryParams, 'direction' | 'limit' | 'sortBy'>> = {}
 ) => {
   const {network} = useNetwork();
   const {client, network: clientNetwork} = useClient();
-  const cachedDaos = useReactiveVar(favoriteDaosVar);
 
   return useInfiniteQuery({
     // notice the use of `clientNetwork` instead of `network` from network context
     // To avoid a case of network mismatch, always go with the client network.
     // When it has caught up to final value of url/context network, that final query
     // will become the last & latest "fresh" one
-    queryKey: ['infiniteDaos', filter, clientNetwork],
+    queryKey: ['infiniteDaos', sortBy, clientNetwork],
 
     queryFn: ({pageParam = 0}) => {
       const skip = limit * pageParam;
-
-      if (filter === 'favorite') {
-        return getFavoritedDaosFromCache(cachedDaos, {
-          skip,
-          limit,
-        }) as Promise<DaoListItem[]>;
-      } else {
-        return fetchDaos(client, {
-          skip,
-          limit,
-          direction,
-          sortBy: toDaoSortBy(filter),
-        });
-      }
+      return fetchDaos(client, {skip, limit, direction, sortBy});
     },
 
     // calculate next page value
@@ -96,25 +80,10 @@ export const useDaosQuery = (
     select: (data: InfiniteData<DaoListItem[]>) =>
       toAugmentedDaoListItem(data, CHAIN_METADATA[network].id),
 
+    enabled,
     refetchOnWindowFocus: false,
   });
 };
-
-/**
- * Map explore filter to SDK DAO sort by
- * @param filter selected DAO category
- * @returns the equivalent of the SDK enum
- */
-function toDaoSortBy(filter: ExploreFilter) {
-  switch (filter) {
-    case 'popular':
-      return DaoSortBy.POPULARITY;
-    case 'newest':
-      return DaoSortBy.CREATED_AT;
-    default:
-      return DaoSortBy.CREATED_AT;
-  }
-}
 
 /**
  * Function that augments an array of `DaoListItem` by adding
@@ -131,14 +100,17 @@ function toAugmentedDaoListItem(
   return {
     pageParams: data.pageParams,
     pages: data.pages.flatMap(page =>
-      page.map(dao => ({
-        ...dao,
-        metadata: {
-          ...dao.metadata,
-          avatar: resolveDaoAvatarIpfsCid(dao.metadata.avatar),
-        },
-        chain: (dao as AugmentedDaoListItem).chain || chain,
-      }))
+      page.map(
+        dao =>
+          ({
+            ...dao,
+            metadata: {
+              ...dao.metadata,
+              avatar: resolveDaoAvatarIpfsCid(dao.metadata.avatar),
+            },
+            chain: (dao as AugmentedDaoListItem).chain || chain,
+          } as AugmentedDaoListItem)
+      )
     ),
   };
 }
