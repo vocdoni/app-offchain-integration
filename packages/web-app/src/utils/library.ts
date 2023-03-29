@@ -7,6 +7,7 @@ import {
   IMintTokenParams,
   MultisigClient,
   MultisigVotingSettings,
+  SupportedNetworks as SdkSupportedNetworks,
   TokenVotingClient,
   VotingMode,
 } from '@aragon/sdk-client';
@@ -492,3 +493,29 @@ export function removeUnchangedMinimumApprovalAction(
 export function sleepFor(time = 600) {
   return new Promise(resolve => setTimeout(resolve, time));
 }
+
+/**
+ * Maps app network context name to SDK network name
+ * @param appNetwork supported network returned by the network context
+ * @returns translated equivalent SDK supported network
+ */
+export const translateToSdkNetwork = (
+  appNetwork: SupportedNetworks
+): SdkSupportedNetworks | 'unsupported' => {
+  if (typeof appNetwork !== 'string') {
+    return 'unsupported';
+  }
+
+  switch (appNetwork) {
+    // case 'polygon':
+    //   return 'matic';
+    // case 'mumbai':
+    //   return 'maticmum';
+    case 'ethereum':
+      return 'mainnet';
+    case 'goerli':
+      return 'goerli';
+  }
+
+  return 'unsupported';
+};

@@ -16,6 +16,7 @@ import {
   SUBGRAPH_API_URL,
   SupportedNetworks,
 } from 'utils/constants';
+import {translateToSdkNetwork} from 'utils/library';
 import {useWallet} from './useWallet';
 
 interface ClientContext {
@@ -37,27 +38,6 @@ const translateNetwork = (
     case 'goerli':
       return 'goerli';
   }
-  return 'unsupported';
-};
-
-const translateToSdkNetwork = (
-  appNetwork: SupportedNetworks
-): SdkSupportedNetworks | 'unsupported' => {
-  if (typeof appNetwork !== 'string') {
-    return 'unsupported';
-  }
-
-  switch (appNetwork) {
-    // case 'polygon':
-    //   return 'matic';
-    // case 'mumbai':
-    //   return 'maticmum';
-    case 'ethereum':
-      return 'mainnet';
-    case 'goerli':
-      return 'goerli';
-  }
-
   return 'unsupported';
 };
 
@@ -88,9 +68,7 @@ export const UseClientProvider: React.FC = ({children}) => {
     ) as SdkSupportedNetworks;
 
     // when network not supported by the SDK, don't set network
-    if (!SupportedNetworksArray.includes(translatedNetwork)) {
-      return;
-    }
+    if (!SupportedNetworksArray.includes(translatedNetwork)) return;
 
     let ipfsNodes = [
       {

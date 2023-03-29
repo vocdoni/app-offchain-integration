@@ -7,7 +7,6 @@ import {
 } from '@aragon/sdk-client';
 import {InfiniteData, useInfiniteQuery} from '@tanstack/react-query';
 
-import {useNetwork} from 'context/network';
 import {CHAIN_METADATA, SupportedChainID} from 'utils/constants';
 import {resolveDaoAvatarIpfsCid} from 'utils/library';
 import {useClient} from './useClient';
@@ -57,7 +56,6 @@ export const useDaosInfiniteQuery = (
     limit = DEFAULT_QUERY_PARAMS.limit,
   }: Partial<Pick<IDaoQueryParams, 'direction' | 'limit' | 'sortBy'>> = {}
 ) => {
-  const {network} = useNetwork();
   const {client, network: clientNetwork} = useClient();
 
   return useInfiniteQuery({
@@ -78,7 +76,9 @@ export const useDaosInfiniteQuery = (
 
     // transform and select final value
     select: (data: InfiniteData<DaoListItem[]>) =>
-      toAugmentedDaoListItem(data, CHAIN_METADATA[network].id),
+      // `clientNetwork` will always have a value because `network`
+      // is set to ethereum by default
+      toAugmentedDaoListItem(data, CHAIN_METADATA[clientNetwork!].id),
 
     enabled,
     refetchOnWindowFocus: false,
