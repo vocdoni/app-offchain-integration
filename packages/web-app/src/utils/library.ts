@@ -10,6 +10,7 @@ import {
   SupportedNetworks as SdkSupportedNetworks,
   TokenVotingClient,
   VotingMode,
+  Context as SdkContext,
 } from '@aragon/sdk-client';
 import {resolveIpfsCid} from '@aragon/sdk-common';
 import {Address} from '@aragon/ui-components/dist/utils/addresses';
@@ -495,22 +496,39 @@ export function sleepFor(time = 600) {
 }
 
 /**
+ * Maps SDK network name to app network context network name
+ * @param sdkNetwork supported network returned by the SDK
+ * @returns translated equivalent app supported network
+ */
+export function translateToAppNetwork(
+  sdkNetwork: SdkContext['network']
+): SupportedNetworks {
+  if (typeof sdkNetwork !== 'string') {
+    return 'unsupported';
+  }
+
+  switch (sdkNetwork) {
+    case 'mainnet':
+      return 'ethereum';
+    case 'goerli':
+      return 'goerli';
+  }
+  return 'unsupported';
+}
+
+/**
  * Maps app network context name to SDK network name
  * @param appNetwork supported network returned by the network context
  * @returns translated equivalent SDK supported network
  */
-export const translateToSdkNetwork = (
+export function translateToSdkNetwork(
   appNetwork: SupportedNetworks
-): SdkSupportedNetworks | 'unsupported' => {
+): SdkSupportedNetworks | 'unsupported' {
   if (typeof appNetwork !== 'string') {
     return 'unsupported';
   }
 
   switch (appNetwork) {
-    // case 'polygon':
-    //   return 'matic';
-    // case 'mumbai':
-    //   return 'maticmum';
     case 'ethereum':
       return 'mainnet';
     case 'goerli':
@@ -518,4 +536,4 @@ export const translateToSdkNetwork = (
   }
 
   return 'unsupported';
-};
+}

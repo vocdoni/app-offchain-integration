@@ -16,7 +16,7 @@ import {
   SUBGRAPH_API_URL,
   SupportedNetworks,
 } from 'utils/constants';
-import {translateToSdkNetwork} from 'utils/library';
+import {translateToAppNetwork, translateToSdkNetwork} from 'utils/library';
 import {useWallet} from './useWallet';
 
 interface ClientContext {
@@ -24,22 +24,6 @@ interface ClientContext {
   context?: SdkContext;
   network?: SupportedNetworks;
 }
-
-const translateNetwork = (
-  sdkNetwork: SdkContext['network']
-): SupportedNetworks => {
-  if (typeof sdkNetwork !== 'string') {
-    return 'unsupported';
-  }
-
-  switch (sdkNetwork) {
-    case 'mainnet':
-      return 'ethereum';
-    case 'goerli':
-      return 'goerli';
-  }
-  return 'unsupported';
-};
 
 const UseClientContext = createContext<ClientContext>({} as ClientContext);
 
@@ -51,7 +35,7 @@ export const useClient = () => {
     );
   }
   if (client.context) {
-    client.network = translateNetwork(client.context.network);
+    client.network = translateToAppNetwork(client.context.network);
   }
   return client;
 };
