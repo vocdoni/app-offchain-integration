@@ -33,6 +33,7 @@ export const useCachedDaosQuery = (
     queryKey: ['cachedDaos'],
     queryFn: () => getFavoritedDaosFromCache(cachedDaos, {skip, limit}),
     select: addAvatarToDaos,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -68,6 +69,7 @@ export const useCachedDaosInfiniteQuery = (
 
     select: augmentCachedDaos,
     enabled,
+    refetchOnWindowFocus: false,
   });
 };
 
