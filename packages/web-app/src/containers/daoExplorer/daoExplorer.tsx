@@ -141,7 +141,7 @@ export const DaoExplorer = () => {
           <ButtonText
             label={t('explore.explorer.showMore')}
             iconRight={
-              exploreDaosApi.isFetchingNextPage ? (
+              exploreDaosApi.isFetching && exploreDaosApi.isFetchingNextPage ? (
                 <Spinner size="xs" />
               ) : (
                 <IconChevronDown />
