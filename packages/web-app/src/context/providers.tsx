@@ -18,10 +18,10 @@ import {
   infuraApiKey,
   SupportedChainID,
   SupportedNetworks,
-  translateToNetworkishName,
 } from 'utils/constants';
 import {Nullable} from 'utils/types';
 import {useNetwork} from './network';
+import {translateToNetworkishName} from 'utils/library';
 
 const NW_ARB = {chainId: 42161, name: 'arbitrum'};
 const NW_ARB_GOERLI = {chainId: 421613, name: 'arbitrum-goerli'};

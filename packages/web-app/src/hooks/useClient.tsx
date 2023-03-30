@@ -16,9 +16,8 @@ import {
   IPFS_ENDPOINT_TEST,
   SUBGRAPH_API_URL,
   SupportedNetworks,
-  translateToAppNetwork,
-  translateToNetworkishName,
 } from 'utils/constants';
+import {translateToAppNetwork, translateToNetworkishName} from 'utils/library';
 import {useWallet} from './useWallet';
 
 interface ClientContext {

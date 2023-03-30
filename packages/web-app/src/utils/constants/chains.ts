@@ -1,10 +1,6 @@
 /* SUPPORTED NETWORK TYPES ================================================== */
 
 import {infuraApiKey} from './api';
-import {
-  Context as SdkContext,
-  SupportedNetworks as SdkSupportedNetworks,
-} from '@aragon/sdk-client';
 
 export const SUPPORTED_CHAIN_ID = [1, 5, 137, 80001, 42161, 421613] as const;
 export type SupportedChainID = typeof SUPPORTED_CHAIN_ID[number];
@@ -56,47 +52,6 @@ export function getSupportedNetworkByChainId(
     )?.[0] as SupportedNetworks;
   }
 }
-
-export const translateToAppNetwork = (
-  sdkNetwork: SdkContext['network']
-): SupportedNetworks => {
-  if (typeof sdkNetwork !== 'string') {
-    return 'unsupported';
-  }
-
-  switch (sdkNetwork) {
-    case 'mainnet':
-      return 'ethereum';
-    case 'goerli':
-      return 'goerli';
-    case 'maticmum':
-      return 'mumbai';
-    case 'matic':
-      return 'polygon';
-  }
-  return 'unsupported';
-};
-
-export const translateToNetworkishName = (
-  appNetwork: SupportedNetworks
-): SdkSupportedNetworks | 'unsupported' => {
-  if (typeof appNetwork !== 'string') {
-    return 'unsupported';
-  }
-
-  switch (appNetwork) {
-    case 'polygon':
-      return 'matic';
-    case 'mumbai':
-      return 'maticmum';
-    case 'ethereum':
-      return 'mainnet';
-    case 'goerli':
-      return 'goerli';
-  }
-
-  return 'unsupported';
-};
 
 export type NetworkDomain = 'L1 Blockchain' | 'L2 Blockchain';
 
