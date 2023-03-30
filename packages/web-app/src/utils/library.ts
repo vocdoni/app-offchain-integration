@@ -537,3 +537,15 @@ export function translateToSdkNetwork(
 
   return 'unsupported';
 }
+
+/**
+ * display ens names properly
+ * @param ensName ens name
+ * @returns ens name or empty string if ens name is null.dao.eth
+ */
+export function toDisplayEns(ensName?: string) {
+  if (ensName)
+    if (ensName === 'null.dao.eth') return '';
+    else return ensName;
+  else return '';
+}

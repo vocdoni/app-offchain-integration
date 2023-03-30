@@ -23,6 +23,7 @@ import {
 import {PluginTypes} from 'hooks/usePluginClient';
 import {useWallet} from 'hooks/useWallet';
 import {getSupportedNetworkByChainId, SupportedChainID} from 'utils/constants';
+import {toDisplayEns} from 'utils/library';
 import {Dashboard} from 'utils/paths';
 
 export function isExploreFilter(
@@ -120,7 +121,7 @@ export const DaoExplorer = () => {
               <DaoCard
                 key={dao.address}
                 name={dao.metadata.name}
-                ensName={dao.ensDomain}
+                ensName={toDisplayEns(dao.ensDomain)}
                 logo={dao.metadata.avatar}
                 description={dao.metadata.description}
                 chainId={dao.chain}

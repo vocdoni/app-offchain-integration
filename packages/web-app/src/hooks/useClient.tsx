@@ -2,9 +2,10 @@ import {
   Client,
   Context as SdkContext,
   ContextParams,
-  SupportedNetworks as SdkSupportedNetworks,
+  LIVE_CONTRACTS,
   SupportedNetworksArray,
 } from '@aragon/sdk-client';
+
 import {useNetwork} from 'context/network';
 import React, {createContext, useContext, useEffect, useState} from 'react';
 
@@ -16,7 +17,7 @@ import {
   SUBGRAPH_API_URL,
   SupportedNetworks,
 } from 'utils/constants';
-import {translateToAppNetwork, translateToSdkNetwork} from 'utils/library';
+import {translateToAppNetwork, translateToNetworkishName} from 'utils/library';
 import {useWallet} from './useWallet';
 
 interface ClientContext {
@@ -47,12 +48,15 @@ export const UseClientProvider: React.FC = ({children}) => {
   const [context, setContext] = useState<SdkContext>();
 
   useEffect(() => {
-    const translatedNetwork = translateToSdkNetwork(
-      network
-    ) as SdkSupportedNetworks;
+    const translatedNetwork = translateToNetworkishName(network);
 
     // when network not supported by the SDK, don't set network
-    if (!SupportedNetworksArray.includes(translatedNetwork)) return;
+    if (
+      translatedNetwork === 'unsupported' ||
+      !SupportedNetworksArray.includes(translatedNetwork)
+    ) {
+      return;
+    }
 
     let ipfsNodes = [
       {
@@ -78,8 +82,9 @@ export const UseClientProvider: React.FC = ({children}) => {
         },
       ];
     }
+
     const contextParams: ContextParams = {
-      //TODO: replace ethereum with mainnet for network
+      daoFactoryAddress: LIVE_CONTRACTS[translatedNetwork].daoFactory,
       network: translatedNetwork,
       signer: signer || undefined,
       web3Providers: CHAIN_METADATA[network].rpc[0],
