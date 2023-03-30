@@ -128,12 +128,14 @@ const ActionBuilder: React.FC = () => {
     setValue(`actions.${index}.tokenName`, token.name);
     setValue(`actions.${index}.tokenImgUrl`, token.imgUrl);
     setValue(`actions.${index}.tokenAddress`, token.address);
+    setValue(`actions.${index}.tokenDecimals`, token.decimals);
+
     setValue(
       `actions.${index}.tokenBalance`,
       formatUnits(token.count, token.decimals)
     );
 
-    fetchTokenPrice(token.address, network).then(price => {
+    fetchTokenPrice(token.address, network, token.symbol).then(price => {
       setValue(`actions.${index}.tokenPrice`, price);
     });
   };

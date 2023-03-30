@@ -7,8 +7,10 @@ import {
   IMintTokenParams,
   MultisigClient,
   MultisigVotingSettings,
+  SupportedNetworks as SdkSupportedNetworks,
   TokenVotingClient,
   VotingMode,
+  Context as SdkContext,
 } from '@aragon/sdk-client';
 import {resolveIpfsCid} from '@aragon/sdk-common';
 import {Address} from '@aragon/ui-components/dist/utils/addresses';
@@ -410,17 +412,22 @@ export function decodeVotingMode(mode: VotingMode): DecodedVotingMode {
 }
 
 /**
- * Get DAO avatar url given avatar IPFS cid
- * @param avatar - IPFS cid for DAO avatar
+ * Get DAO resolved IPFS CID URL for the DAO avatar
+ * @param avatar - avatar to be resolved. If it's an IPFS CID,
+ * the function will return a fully resolved URL.
  * @returns the url to the DAO avatar
  */
 export function resolveDaoAvatarIpfsCid(avatar?: string): string | undefined {
   if (avatar) {
-    try {
-      const logoCid = resolveIpfsCid(avatar);
-      return `${AVATAR_IPFS_URL}/${logoCid}`;
-    } catch (err) {
-      console.warn('Error resolving DAO avatar IPFS Cid', err);
+    if (/^ipfs/.test(avatar)) {
+      try {
+        const logoCid = resolveIpfsCid(avatar);
+        return `${AVATAR_IPFS_URL}/${logoCid}`;
+      } catch (err) {
+        console.warn('Error resolving DAO avatar IPFS Cid', err);
+      }
+    } else {
+      return avatar;
     }
   }
 }
@@ -478,4 +485,75 @@ export function removeUnchangedMinimumApprovalAction(
       return [];
     else return action;
   });
+}
+
+/**
+ * Sleep for given time before continuing
+ * @param time time in milliseconds
+ */
+export function sleepFor(time = 600) {
+  return new Promise(resolve => setTimeout(resolve, time));
+}
+
+/**
+ * Maps SDK network name to app network context network name
+ * @param sdkNetwork supported network returned by the SDK
+ * @returns translated equivalent app supported network
+ */
+export const translateToAppNetwork = (
+  sdkNetwork: SdkContext['network']
+): SupportedNetworks => {
+  if (typeof sdkNetwork !== 'string') {
+    return 'unsupported';
+  }
+
+  switch (sdkNetwork) {
+    case 'mainnet':
+      return 'ethereum';
+    case 'goerli':
+      return 'goerli';
+    case 'maticmum':
+      return 'mumbai';
+    case 'matic':
+      return 'polygon';
+  }
+  return 'unsupported';
+};
+
+/**
+ * Maps app network context name to SDK network name
+ * @param appNetwork supported network returned by the network context
+ * @returns translated equivalent SDK supported network
+ */
+export function translateToNetworkishName(
+  appNetwork: SupportedNetworks
+): SdkSupportedNetworks | 'unsupported' {
+  if (typeof appNetwork !== 'string') {
+    return 'unsupported';
+  }
+
+  switch (appNetwork) {
+    case 'polygon':
+      return 'matic';
+    case 'mumbai':
+      return 'maticmum';
+    case 'ethereum':
+      return 'mainnet';
+    case 'goerli':
+      return 'goerli';
+  }
+
+  return 'unsupported';
+}
+
+/**
+ * display ens names properly
+ * @param ensName ens name
+ * @returns ens name or empty string if ens name is null.dao.eth
+ */
+export function toDisplayEns(ensName?: string) {
+  if (ensName)
+    if (ensName === 'null.dao.eth') return '';
+    else return ensName;
+  else return '';
 }

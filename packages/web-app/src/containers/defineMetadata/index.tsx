@@ -15,6 +15,7 @@ import {URL_PATTERN} from 'utils/constants';
 import {isOnlyWhitespace} from 'utils/library';
 import {isDaoEnsNameValid} from 'utils/validators';
 import {useProviders} from 'context/providers';
+import {useNetwork} from 'context/network';
 
 const DAO_LOGO = {
   maxDimension: 2400,
@@ -34,6 +35,7 @@ const DefineMetadata: React.FC<DefineMetadataProps> = ({
   isSettingPage,
 }) => {
   const {t} = useTranslation();
+  const {isL2Network} = useNetwork();
   const {control, setError, clearErrors, getValues} = useFormContext();
   const {infura: provider} = useProviders();
 
@@ -124,7 +126,7 @@ const DefineMetadata: React.FC<DefineMetadataProps> = ({
       </FormItem>
 
       {/* ENS Ens Name */}
-      {!isSettingPage && (
+      {!isSettingPage && !isL2Network && (
         <FormItem>
           <Label
             label={t('labels.daoEnsName')}

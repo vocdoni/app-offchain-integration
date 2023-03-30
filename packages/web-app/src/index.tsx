@@ -1,12 +1,13 @@
 import {ApolloProvider} from '@apollo/client';
+import {loadConnectKit} from '@ledgerhq/connect-kit-loader';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {ReactQueryDevtools} from '@tanstack/react-query-devtools';
 import WalletConnectProvider from '@walletconnect/web3-provider/dist/umd/index.min.js';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {HashRouter as Router} from 'react-router-dom';
 import 'tailwindcss/tailwind.css';
-import {UseSignerProvider} from 'context/signer';
 import {IProviderOptions} from 'web3modal';
-import {loadConnectKit} from '@ledgerhq/connect-kit-loader';
 
 import {AlertProvider} from 'context/alert';
 import {client, goerliClient} from 'context/apolloClient';
@@ -15,6 +16,7 @@ import {GlobalModalsProvider} from 'context/globalModals';
 import {NetworkProvider} from 'context/network';
 import {PrivacyContextProvider} from 'context/privacyContext';
 import {ProvidersProvider} from 'context/providers';
+import {UseSignerProvider} from 'context/signer';
 import {TransactionDetailProvider} from 'context/transactionDetail';
 import {WalletMenuProvider} from 'context/walletMenu';
 import {UseCacheProvider} from 'hooks/useCache';
@@ -36,6 +38,8 @@ const providerOptions: IProviderOptions = {
     },
   },
 };
+// React-Query client
+const queryClient = new QueryClient();
 
 const CACHE_VERSION = 1;
 const onLoad = () => {
@@ -56,37 +60,40 @@ onLoad();
 
 ReactDOM.render(
   <React.StrictMode>
-    <PrivacyContextProvider>
-      <APMProvider>
-        <Router>
-          <AlertProvider>
-            <UseSignerProvider providerOptions={providerOptions}>
-              <NetworkProvider>
-                <UseClientProvider>
-                  <UseCacheProvider>
-                    <ProvidersProvider>
-                      <TransactionDetailProvider>
-                        <WalletMenuProvider>
-                          <GlobalModalsProvider>
-                            {/* By default, goerli client is chosen, each useQuery needs to pass the network client it needs as argument
+    <QueryClientProvider client={queryClient}>
+      <PrivacyContextProvider>
+        <APMProvider>
+          <Router>
+            <AlertProvider>
+              <UseSignerProvider providerOptions={providerOptions}>
+                <NetworkProvider>
+                  <UseClientProvider>
+                    <UseCacheProvider>
+                      <ProvidersProvider>
+                        <TransactionDetailProvider>
+                          <WalletMenuProvider>
+                            <GlobalModalsProvider>
+                              {/* By default, goerli client is chosen, each useQuery needs to pass the network client it needs as argument
                       For REST queries using apollo, there's no need to pass a different client to useQuery  */}
-                            <ApolloProvider
-                              client={client['goerli'] || goerliClient} //TODO remove fallback when all clients are defined
-                            >
-                              <App />
-                            </ApolloProvider>
-                          </GlobalModalsProvider>
-                        </WalletMenuProvider>
-                      </TransactionDetailProvider>
-                    </ProvidersProvider>
-                  </UseCacheProvider>
-                </UseClientProvider>
-              </NetworkProvider>
-            </UseSignerProvider>
-          </AlertProvider>
-        </Router>
-      </APMProvider>
-    </PrivacyContextProvider>
+                              <ApolloProvider
+                                client={client['goerli'] || goerliClient} //TODO remove fallback when all clients are defined
+                              >
+                                <App />
+                                <ReactQueryDevtools initialIsOpen={false} />
+                              </ApolloProvider>
+                            </GlobalModalsProvider>
+                          </WalletMenuProvider>
+                        </TransactionDetailProvider>
+                      </ProvidersProvider>
+                    </UseCacheProvider>
+                  </UseClientProvider>
+                </NetworkProvider>
+              </UseSignerProvider>
+            </AlertProvider>
+          </Router>
+        </APMProvider>
+      </PrivacyContextProvider>
+    </QueryClientProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );

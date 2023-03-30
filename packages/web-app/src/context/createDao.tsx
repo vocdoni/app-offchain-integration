@@ -11,6 +11,7 @@ import {
   VotingSettings,
   MultisigClient,
   MultisigPluginInstallParams,
+  SupportedNetworks as sdkSupportedNetworks,
 } from '@aragon/sdk-client';
 import {parseUnits} from 'ethers/lib/utils';
 import React, {createContext, useCallback, useContext, useState} from 'react';
@@ -28,6 +29,7 @@ import {
   CHAIN_METADATA,
   FAVORITE_DAOS_KEY,
   PENDING_DAOS_KEY,
+  SupportedNetworks,
   TransactionState,
 } from 'utils/constants';
 import {getSecondsFromDHM} from 'utils/date';
@@ -40,7 +42,7 @@ import {
 import {useGlobalModalContext} from './globalModals';
 import {useNetwork} from './network';
 import {usePrivacyContext} from './privacyContext';
-import {readFile} from 'utils/library';
+import {readFile, translateToNetworkishName} from 'utils/library';
 
 type CreateDaoContextType = {
   /** Prepares the creation data and awaits user confirmation to start process */
@@ -142,7 +144,7 @@ const CreateDaoProvider: React.FC = ({children}) => {
 
   const getMultisigPluginInstallParams = useCallback((): [
     MultisigPluginInstallParams,
-    'goerli' | 'mainnet'
+    sdkSupportedNetworks
   ] => {
     const {
       blockchain,
@@ -150,6 +152,10 @@ const CreateDaoProvider: React.FC = ({children}) => {
       multisigMinimumApprovals,
       eligibilityType,
     } = getValues();
+    const translatedNetwork = translateToNetworkishName(
+      blockchain.label?.toLowerCase() as SupportedNetworks
+    ) as sdkSupportedNetworks;
+
     return [
       {
         members: multisigWallets.map(wallet => wallet.address),
@@ -158,13 +164,13 @@ const CreateDaoProvider: React.FC = ({children}) => {
           onlyListed: eligibilityType === 'multisig',
         },
       },
-      blockchain.network === 'test' ? 'goerli' : 'mainnet',
+      translatedNetwork,
     ];
   }, [getValues]);
 
   const getVoteSettings = useCallback((): [
     VotingSettings,
-    'goerli' | 'mainnet'
+    sdkSupportedNetworks
   ] => {
     const {
       blockchain,
@@ -186,6 +192,9 @@ const CreateDaoProvider: React.FC = ({children}) => {
     if (voteReplacement) votingMode = VotingMode.VOTE_REPLACEMENT;
     else if (earlyExecution) votingMode = VotingMode.EARLY_EXECUTION;
     else votingMode = VotingMode.STANDARD;
+    const translatedNetwork = translateToNetworkishName(
+      blockchain.label?.toLowerCase() as SupportedNetworks
+    ) as sdkSupportedNetworks;
 
     return [
       {
@@ -202,7 +211,7 @@ const CreateDaoProvider: React.FC = ({children}) => {
             : BigInt(0),
         votingMode,
       },
-      blockchain.network === 'test' ? 'goerli' : 'mainnet',
+      translatedNetwork,
     ];
   }, [getValues]);
 
@@ -260,7 +269,6 @@ const CreateDaoProvider: React.FC = ({children}) => {
       links: links.filter(r => r.name && r.url),
     };
 
-    console.log(daoLogo);
     if (daoLogo) {
       try {
         const daoLogoBuffer = await readFile(daoLogo as Blob);
@@ -278,7 +286,7 @@ const CreateDaoProvider: React.FC = ({children}) => {
         metadataUri: ipfsUri || '',
         // TODO: We're using dao name without spaces for ens, We need to add alert
         // to inform this to user
-        ensSubdomain: daoEnsName,
+        ensSubdomain: daoEnsName || '',
         plugins: [...plugins],
       };
     } catch {
@@ -365,7 +373,7 @@ const CreateDaoProvider: React.FC = ({children}) => {
             const newFavoriteDao: NavigationDao = {
               address: step.address.toLocaleLowerCase(),
               chain: CHAIN_METADATA[network].id,
-              ensDomain: daoCreationData.ensSubdomain,
+              ensDomain: daoCreationData.ensSubdomain || '',
               plugins: daoCreationData.plugins,
               metadata: {
                 name: metadata.name,
