@@ -2,9 +2,10 @@ import {
   Client,
   Context as SdkContext,
   ContextParams,
-  SupportedNetworks as SdkSupportedNetworks,
+  LIVE_CONTRACTS,
   SupportedNetworksArray,
 } from '@aragon/sdk-client';
+
 import {useNetwork} from 'context/network';
 import React, {createContext, useContext, useEffect, useState} from 'react';
 
@@ -15,6 +16,8 @@ import {
   IPFS_ENDPOINT_TEST,
   SUBGRAPH_API_URL,
   SupportedNetworks,
+  translateToAppNetwork,
+  translateToNetworkishName,
 } from 'utils/constants';
 import {useWallet} from './useWallet';
 
@@ -23,43 +26,6 @@ interface ClientContext {
   context?: SdkContext;
   network?: SupportedNetworks;
 }
-
-const translateNetwork = (
-  sdkNetwork: SdkContext['network']
-): SupportedNetworks => {
-  if (typeof sdkNetwork !== 'string') {
-    return 'unsupported';
-  }
-
-  switch (sdkNetwork) {
-    case 'mainnet':
-      return 'ethereum';
-    case 'goerli':
-      return 'goerli';
-  }
-  return 'unsupported';
-};
-
-const translateToSdkNetwork = (
-  appNetwork: SupportedNetworks
-): SdkSupportedNetworks | 'unsupported' => {
-  if (typeof appNetwork !== 'string') {
-    return 'unsupported';
-  }
-
-  switch (appNetwork) {
-    // case 'polygon':
-    //   return 'matic';
-    // case 'mumbai':
-    //   return 'maticmum';
-    case 'ethereum':
-      return 'mainnet';
-    case 'goerli':
-      return 'goerli';
-  }
-
-  return 'unsupported';
-};
 
 const UseClientContext = createContext<ClientContext>({} as ClientContext);
 
@@ -71,7 +37,7 @@ export const useClient = () => {
     );
   }
   if (client.context) {
-    client.network = translateNetwork(client.context.network);
+    client.network = translateToAppNetwork(client.context.network);
   }
   return client;
 };
@@ -83,12 +49,13 @@ export const UseClientProvider: React.FC = ({children}) => {
   const [context, setContext] = useState<SdkContext>();
 
   useEffect(() => {
-    const translatedNetwork = translateToSdkNetwork(
-      network
-    ) as SdkSupportedNetworks;
+    const translatedNetwork = translateToNetworkishName(network);
 
     // when network not supported by the SDK, don't set network
-    if (!SupportedNetworksArray.includes(translatedNetwork)) {
+    if (
+      translatedNetwork === 'unsupported' ||
+      !SupportedNetworksArray.includes(translatedNetwork)
+    ) {
       return;
     }
 
@@ -116,8 +83,9 @@ export const UseClientProvider: React.FC = ({children}) => {
         },
       ];
     }
+
     const contextParams: ContextParams = {
-      //TODO: replace ethereum with mainnet for network
+      daoFactoryAddress: LIVE_CONTRACTS[translatedNetwork].daoFactory,
       network: translatedNetwork,
       signer: signer || undefined,
       web3Providers: CHAIN_METADATA[network].rpc[0],

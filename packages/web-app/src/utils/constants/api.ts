@@ -11,9 +11,10 @@ export const SUBGRAPH_API_URL: SubgraphNetworkUrl = {
     'https://subgraph.satsuma-prod.com/qHR2wGfc5RLi6/aragon/osx-mainnet/api',
   goerli:
     'https://subgraph.satsuma-prod.com/qHR2wGfc5RLi6/aragon/osx-goerli/version/v1.0.0/api',
-  polygon: undefined,
+  polygon:
+    'https://subgraph.satsuma-prod.com/qHR2wGfc5RLi6/aragon/osx-polygon/api',
   mumbai:
-    'https://api.thegraph.com/subgraphs/name/aragon/aragon-zaragoza-mumbai',
+    'https://subgraph.satsuma-prod.com/qHR2wGfc5RLi6/aragon/osx-mumbai/api',
   arbitrum: undefined,
   'arbitrum-test': undefined,
   unsupported: undefined,
@@ -22,23 +23,21 @@ export const SUBGRAPH_API_URL: SubgraphNetworkUrl = {
 export const BASE_URL = 'https://api.coingecko.com/api/v3';
 export const DEFAULT_CURRENCY = 'usd';
 
-// NOTE: These are dummy endpoints and API keys used as POC. They should be
-// replaced by env var secrets in an upcoming PR.
-export const INFURA_PROJECT_ID: Record<
-  SupportedNetworks,
-  string | boolean | undefined
-> = {
-  ethereum: import.meta.env.VITE_INFURA_MAINNET_PROJECT_ID,
-  goerli: import.meta.env.VITE_INFURA_GOERLI_PROJECT_ID,
-  polygon: undefined,
-  mumbai: undefined,
+export const ARAGON_RPC = 'mainnet.eth.aragon.network';
+
+type AlchemyApiKeys = Record<SupportedNetworks, string | undefined>;
+export const alchemyApiKeys: AlchemyApiKeys = {
   arbitrum: undefined,
   'arbitrum-test': undefined,
+  ethereum: undefined,
+  goerli: undefined,
+  polygon: import.meta.env.VITE_ALCHEMY_KEY_POLYGON_MAINNET as string,
+  mumbai: import.meta.env.VITE_ALCHEMY_KEY_POLYGON_MUMBAI as string,
   unsupported: undefined,
 };
 
-export const ARAGON_RPC = 'mainnet.eth.aragon.network';
-export const infuraApiKey = import.meta.env.VITE_INFURA_API_KEY as string;
+export const infuraApiKey = import.meta.env
+  .VITE_INFURA_MAINNET_PROJECT_ID as string;
 
 export const IPFS_ENDPOINT_TEST =
   'https://testing-ipfs-0.aragon.network/api/v0';
