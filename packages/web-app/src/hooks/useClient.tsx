@@ -1,6 +1,14 @@
-import {Client, Context as SdkContext, ContextParams} from '@aragon/sdk-client';
+import {
+  Client,
+  Context as SdkContext,
+  ContextParams,
+  LIVE_CONTRACTS,
+  SupportedNetworksArray,
+} from '@aragon/sdk-client';
+
 import {useNetwork} from 'context/network';
 import React, {createContext, useContext, useEffect, useState} from 'react';
+
 import {
   CHAIN_METADATA,
   IPFS_ENDPOINT_MAIN_0,
@@ -8,8 +16,9 @@ import {
   IPFS_ENDPOINT_TEST,
   SUBGRAPH_API_URL,
   SupportedNetworks,
+  translateToAppNetwork,
+  translateToNetworkishName,
 } from 'utils/constants';
-
 import {useWallet} from './useWallet';
 
 interface ClientContext {
@@ -17,22 +26,6 @@ interface ClientContext {
   context?: SdkContext;
   network?: SupportedNetworks;
 }
-
-const translateNetwork = (
-  sdkNetwork: SdkContext['network']
-): SupportedNetworks => {
-  if (typeof sdkNetwork !== 'string') {
-    return 'unsupported';
-  }
-
-  switch (sdkNetwork) {
-    case 'mainnet':
-      return 'ethereum';
-    case 'goerli':
-      return 'goerli';
-  }
-  return 'unsupported';
-};
 
 const UseClientContext = createContext<ClientContext>({} as ClientContext);
 
@@ -44,7 +37,7 @@ export const useClient = () => {
     );
   }
   if (client.context) {
-    client.network = translateNetwork(client.context.network);
+    client.network = translateToAppNetwork(client.context.network);
   }
   return client;
 };
@@ -56,7 +49,15 @@ export const UseClientProvider: React.FC = ({children}) => {
   const [context, setContext] = useState<SdkContext>();
 
   useEffect(() => {
-    if (network === 'unsupported') return;
+    const translatedNetwork = translateToNetworkishName(network);
+
+    // when network not supported by the SDK, don't set network
+    if (
+      translatedNetwork === 'unsupported' ||
+      !SupportedNetworksArray.includes(translatedNetwork)
+    ) {
+      return;
+    }
 
     let ipfsNodes = [
       {
@@ -82,9 +83,10 @@ export const UseClientProvider: React.FC = ({children}) => {
         },
       ];
     }
+
     const contextParams: ContextParams = {
-      //TODO: replace ethereum with mainnet for network
-      network: network === 'ethereum' ? 'mainnet' : network,
+      daoFactoryAddress: LIVE_CONTRACTS[translatedNetwork].daoFactory,
+      network: translatedNetwork,
       signer: signer || undefined,
       web3Providers: CHAIN_METADATA[network].rpc[0],
       ipfsNodes,
