@@ -31,7 +31,6 @@ import {
   PENDING_DAOS_KEY,
   SupportedNetworks,
   TransactionState,
-  translateToNetworkishName,
 } from 'utils/constants';
 import {getSecondsFromDHM} from 'utils/date';
 import {Dashboard} from 'utils/paths';
@@ -43,7 +42,7 @@ import {
 import {useGlobalModalContext} from './globalModals';
 import {useNetwork} from './network';
 import {usePrivacyContext} from './privacyContext';
-import {readFile} from 'utils/library';
+import {readFile, translateToNetworkishName} from 'utils/library';
 
 type CreateDaoContextType = {
   /** Prepares the creation data and awaits user confirmation to start process */

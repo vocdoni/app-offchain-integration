@@ -57,7 +57,7 @@ export function getSupportedNetworkByChainId(
   }
 }
 
-export const translateToAppNetwork = (
+export const translateToAppNetwosrk = (
   sdkNetwork: SdkContext['network']
 ): SupportedNetworks => {
   if (typeof sdkNetwork !== 'string') {
@@ -77,7 +77,7 @@ export const translateToAppNetwork = (
   return 'unsupported';
 };
 
-export const translateToNetworkishName = (
+export const translateToNetworkisshName = (
   appNetwork: SupportedNetworks
 ): SdkSupportedNetworks | 'unsupported' => {
   if (typeof appNetwork !== 'string') {

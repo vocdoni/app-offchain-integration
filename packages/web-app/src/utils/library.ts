@@ -500,9 +500,9 @@ export function sleepFor(time = 600) {
  * @param sdkNetwork supported network returned by the SDK
  * @returns translated equivalent app supported network
  */
-export function translateToAppNetwork(
+export const translateToAppNetwork = (
   sdkNetwork: SdkContext['network']
-): SupportedNetworks {
+): SupportedNetworks => {
   if (typeof sdkNetwork !== 'string') {
     return 'unsupported';
   }
@@ -512,16 +512,20 @@ export function translateToAppNetwork(
       return 'ethereum';
     case 'goerli':
       return 'goerli';
+    case 'maticmum':
+      return 'mumbai';
+    case 'matic':
+      return 'polygon';
   }
   return 'unsupported';
-}
+};
 
 /**
  * Maps app network context name to SDK network name
  * @param appNetwork supported network returned by the network context
  * @returns translated equivalent SDK supported network
  */
-export function translateToSdkNetwork(
+export function translateToNetworkishName(
   appNetwork: SupportedNetworks
 ): SdkSupportedNetworks | 'unsupported' {
   if (typeof appNetwork !== 'string') {
@@ -529,6 +533,10 @@ export function translateToSdkNetwork(
   }
 
   switch (appNetwork) {
+    case 'polygon':
+      return 'matic';
+    case 'mumbai':
+      return 'maticmum';
     case 'ethereum':
       return 'mainnet';
     case 'goerli':
