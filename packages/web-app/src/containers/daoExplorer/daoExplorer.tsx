@@ -1,3 +1,4 @@
+import {DaoSortBy} from '@aragon/sdk-client';
 import {
   ButtonGroup,
   ButtonText,
@@ -5,25 +6,25 @@ import {
   Option,
   Spinner,
 } from '@aragon/ui-components';
-import React, {useEffect, useRef, useState} from 'react';
+import {UseInfiniteQueryResult} from '@tanstack/react-query';
+import React, {useEffect, useMemo, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {generatePath, useNavigate} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {DaoCard} from 'components/daoCard';
-import {useDaos} from 'hooks/useDaos';
+import {useCachedDaosInfiniteQuery} from 'hooks/useCachedDaos';
+import {
+  AugmentedDaoListItem,
+  ExploreFilter,
+  EXPLORE_FILTER,
+  useDaosInfiniteQuery,
+} from 'hooks/useDaos';
 import {PluginTypes} from 'hooks/usePluginClient';
 import {useWallet} from 'hooks/useWallet';
-import {CHAIN_METADATA, getSupportedNetworkByChainId} from 'utils/constants';
-import {Dashboard} from 'utils/paths';
-import {useReactiveVar} from '@apollo/client';
-import {favoriteDaosVar} from 'context/apolloClient';
-import {useNetwork} from 'context/network';
+import {getSupportedNetworkByChainId, SupportedChainID} from 'utils/constants';
 import {toDisplayEns} from 'utils/library';
-
-const EXPLORE_FILTER = ['favorite', 'newest', 'popular'] as const;
-
-export type ExploreFilter = typeof EXPLORE_FILTER[number];
+import {Dashboard} from 'utils/paths';
 
 export function isExploreFilter(
   filterValue: string
@@ -31,69 +32,67 @@ export function isExploreFilter(
   return EXPLORE_FILTER.some(ef => ef === filterValue);
 }
 
-const PAGE_SIZE = 4;
-
 export const DaoExplorer = () => {
   const {t} = useTranslation();
   const navigate = useNavigate();
-  const {address} = useWallet();
-  const {network} = useNetwork();
+  const {isConnected} = useWallet();
 
-  const favoritedDaos = useReactiveVar(favoriteDaosVar);
-  const loggedInAndHasFavoritedDaos =
-    address !== null && favoritedDaos.length > 0;
+  const [filterValue, setFilterValue] = useState<ExploreFilter>('favorite');
 
-  const [filterValue, setFilterValue] = useState<ExploreFilter>(() =>
-    loggedInAndHasFavoritedDaos ? 'favorite' : 'newest'
+  // conditional api queries
+  const fetchFavorited = filterValue === 'favorite';
+  const favoritedApi = useCachedDaosInfiniteQuery(fetchFavorited);
+  const daosApi = useDaosInfiniteQuery(fetchFavorited === false, {
+    sortBy: toDaoSortBy(filterValue),
+  });
+
+  // resulting api response
+  const exploreDaosApi = useMemo(
+    () =>
+      (fetchFavorited ? favoritedApi : daosApi) as UseInfiniteQueryResult<
+        AugmentedDaoListItem,
+        unknown
+      >,
+    [daosApi, favoritedApi, fetchFavorited]
   );
-  const filterRef = useRef(filterValue);
 
-  const [skip, setSkip] = useState(0);
-  const {data, isLoading} = useDaos(filterValue, PAGE_SIZE, skip);
-  const [displayedDaos, setDisplayedDaos] = useState(data);
+  // whether the connected wallet has favorited DAOS
+  const loggedInAndHasFavoritedDaos =
+    isConnected && (favoritedApi.data?.pages || []).length > 0;
 
-  useEffect(() => {
-    if (network && filterValue !== 'favorite') {
-      setDisplayedDaos([]);
-    }
-
-    // intentionally leaving filter value out
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [network]);
-
-  useEffect(() => {
-    if (data) {
-      if (filterRef.current !== filterValue) {
-        setDisplayedDaos(data);
-        filterRef.current = filterValue;
-      } else setDisplayedDaos(prev => [...prev, ...data]);
-    }
-
-    // NOTE: somewhere up the chain, changing login state is creating new instance
-    // of the data from useDaos hook. Patching by doing proper data comparison
-    // using JSON.stringify. Proper investigation needs to be done
-    // [FF - 01/16/2023]
-
-    // intentionally removing filterValue from the dependencies
-    // because the update to the ref needs to happen after data
-    // has changed only
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(data[0])]);
-
-  const filterWasChanged = filterRef.current !== filterValue;
-
-  const handleShowMoreClick = () => {
-    if (!isLoading) setSkip(prev => prev + PAGE_SIZE);
-  };
-
+  /*************************************************
+   *             Callbacks and Handlers            *
+   *************************************************/
   const handleFilterChange = (filterValue: string) => {
     if (isExploreFilter(filterValue)) {
       setFilterValue(filterValue);
-      setSkip(0);
     } else throw Error(`${filterValue} is not an acceptable filter value`);
-    return;
   };
 
+  const handleDaoClicked = (dao: string, chain: SupportedChainID) => {
+    navigate(
+      generatePath(Dashboard, {
+        network: getSupportedNetworkByChainId(chain),
+        dao,
+      })
+    );
+  };
+
+  /*************************************************
+   *                      Effects                  *
+   *************************************************/
+  useEffect(() => {
+    if (
+      favoritedApi.status === 'success' &&
+      loggedInAndHasFavoritedDaos === false
+    ) {
+      setFilterValue('newest');
+    }
+  }, [favoritedApi.status, loggedInAndHasFavoritedDaos]);
+
+  /*************************************************
+   *                     Render                    *
+   *************************************************/
   return (
     <Container>
       <MainContainer>
@@ -103,7 +102,7 @@ export const DaoExplorer = () => {
             <ButtonGroupContainer>
               <ButtonGroup
                 defaultValue={filterValue}
-                onChange={v => handleFilterChange(v)}
+                onChange={handleFilterChange}
                 bgWhite={false}
               >
                 <Option label={t('explore.explorer.myDaos')} value="favorite" />
@@ -115,52 +114,65 @@ export const DaoExplorer = () => {
           )}
         </HeaderWrapper>
         <CardsWrapper>
-          {filterWasChanged && isLoading ? (
+          {exploreDaosApi.isLoading ? (
             <Spinner size="default" />
           ) : (
-            displayedDaos.map((dao, index) => (
+            exploreDaosApi.data?.pages?.map(dao => (
               <DaoCard
+                key={dao.address}
                 name={dao.metadata.name}
                 ensName={toDisplayEns(dao.ensDomain)}
                 logo={dao.metadata.avatar}
                 description={dao.metadata.description}
-                chainId={dao.chain || CHAIN_METADATA[network].id} // Default to Goerli
+                chainId={dao.chain}
+                onClick={() => handleDaoClicked(dao.address, dao.chain)}
                 daoType={
                   (dao?.plugins?.[0]?.id as PluginTypes) ===
                   'token-voting.plugin.dao.eth'
                     ? 'token-based'
                     : 'wallet-based'
                 }
-                key={index}
-                onClick={() =>
-                  navigate(
-                    generatePath(Dashboard, {
-                      network: getSupportedNetworkByChainId(
-                        dao.chain || CHAIN_METADATA[network].id
-                      ),
-                      dao: dao.address,
-                    })
-                  )
-                }
               />
             ))
           )}
         </CardsWrapper>
       </MainContainer>
-      {data.length >= PAGE_SIZE && !filterWasChanged && (
+      {exploreDaosApi.hasNextPage && (
         <div>
           <ButtonText
             label={t('explore.explorer.showMore')}
-            iconRight={isLoading ? <Spinner size="xs" /> : <IconChevronDown />}
+            iconRight={
+              exploreDaosApi.isFetching && exploreDaosApi.isFetchingNextPage ? (
+                <Spinner size="xs" />
+              ) : (
+                <IconChevronDown />
+              )
+            }
             bgWhite
             mode="ghost"
-            onClick={handleShowMoreClick}
+            onClick={() => exploreDaosApi.fetchNextPage()}
           />
         </div>
       )}
     </Container>
   );
 };
+
+/**
+ * Map explore filter to SDK DAO sort by
+ * @param filter selected DAO category
+ * @returns the equivalent of the SDK enum
+ */
+function toDaoSortBy(filter: ExploreFilter) {
+  switch (filter) {
+    case 'popular':
+      return DaoSortBy.POPULARITY;
+    case 'newest':
+      return DaoSortBy.CREATED_AT;
+    default:
+      return DaoSortBy.CREATED_AT;
+  }
+}
 
 const ButtonGroupContainer = styled.div.attrs({
   className: 'flex',

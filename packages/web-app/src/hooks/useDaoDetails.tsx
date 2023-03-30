@@ -126,10 +126,11 @@ export function useDaoDetails(
                 );
               }
             }
-          } else {
-            // no DAO with given address found on network
-            setData(null);
           }
+          // else {
+          // no DAO with given address found on network
+          // setData(null);
+          // }
 
           // unless there is a pending DAO we are no longer waiting for subgraph
           setWaitingForSubgraph(false);

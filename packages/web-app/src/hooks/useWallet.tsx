@@ -5,7 +5,8 @@ import {BigNumber} from 'ethers';
 import {useEffect, useMemo, useState} from 'react';
 
 import {useNetwork} from 'context/network';
-import {CHAIN_METADATA, translateToNetworkishName} from 'utils/constants';
+import {CHAIN_METADATA} from 'utils/constants';
+import {translateToNetworkishName} from 'utils/library';
 
 export interface IUseWallet extends SignerValue {
   balance: BigNumber | null;
