@@ -12,7 +12,19 @@
     "help": "Help",
     "terms": "Terms of service",
     "privacy": "Privacy",
-    "settings": "Settings"
+    "settings": "Settings",
+    "exploreLinkLabel": "Explore",
+    "exploreLinkURL": "/",
+    "learnLinkLabel": "Learn",
+    "learnLinkURL": "https://aragon.org/education-portal",
+    "buildLinkLabel": "Build",
+    "buildLinkURL": "https://devs.aragon.org/",
+    "helpLinkLabel": "Help",
+    "helpLinkURL": "https://discord.gg/AhzsGmh7fK",
+    "termsLinkLabel": "Terms of service",
+    "termsLinkURL": "https://aragon.org/terms-and-conditions",
+    "privacyLinkLabel": "Privacy",
+    "privacyLinkURL": "https://aragon.org/privacy-policy"
   },
   "daoSwitcher": {
     "title": "Select your DAO",
@@ -106,8 +118,8 @@
     "support": "Support",
     "duration": "Duration",
     "communityToken": "Does your community have a token?",
-    "authorisedWallets": "Authorised Wallets / Addresses",
-    "addExistingToken": "Add existing Token",
+    "authorisedWallets": "Authorized wallets / addresses",
+    "addExistingToken": "Add existing token",
     "tokenName": "Name",
     "tokenSymbol": "Symbol",
     "supply": "Supply",
@@ -119,10 +131,10 @@
     "removeEntireAction": "Remove entire action",
     "deposit": "Deposit",
     "withdraw": "Withdraw",
-    "externalContract": "External Contract",
+    "externalContract": "External contract",
     "all": "All",
-    "daoTreasury": "DAO Treasury",
-    "treasuryValue": "Treasury Value",
+    "daoTreasury": "DAO treasury",
+    "treasuryValue": "Treasury value",
     "searchPlaceholder": "Type to search ...",
     "result": "1 result",
     "nResults": "{{count}} results",
@@ -149,19 +161,19 @@
     "review": {
       "blockchain": "Blockchain",
       "daoMetadata": "DAO details",
-      "voters": "voters",
+      "voters": "Voters",
       "votingParameters": "Voting parameters",
       "governance": "Governance",
       "network": "Network",
       "eligibleVoters": "Eligible voters",
       "distribution": "Distribution",
-      "distributionLink": "See all {{walletCount}} Addresses",
-      "minimumParticipation": "{{walletCount}} Wallets",
-      "proposalThreshold": "Proposal Threshold",
-      "tokenHoldersWithTkns": "Token Holders with ≥{{tokenAmount}} {{tokenSymbol}}",
-      "earlyExecution": "Early Execution",
-      "voteReplacement": "Vote Replacement",
-      "multisigMinimumApprovals": "of {{count}} Authorized Addresses"
+      "distributionLink": "See all {{walletCount}} addresses",
+      "minimumParticipation": "{{walletCount}} wallets",
+      "proposalThreshold": "Proposal threshold",
+      "tokenHoldersWithTkns": "Token holders with ≥ {{tokenAmount}} {{tokenSymbol}}",
+      "earlyExecution": "Early execution",
+      "voteReplacement": "Vote change",
+      "multisigMinimumApprovals": "of {{count}} authorized addresses"
     },
     "author": "Author",
     "sec": "sec",
@@ -211,14 +223,14 @@
     "ens": "ENS"
   },
   "placeHolders": {
-    "selectToken": "Select a Token ...",
-    "walletOrEns": "Type wallet address or ENS name...",
-    "searchTokens": "Type to search ...",
-    "searchTransfers": "Type to filter ...",
-    "daoName": "Type your DAOs name ...",
+    "selectToken": "Select a token …",
+    "walletOrEns": "Type wallet address or ENS …",
+    "searchTokens": "Type to search …",
+    "searchTransfers": "Type to filter …",
+    "daoName": "Type your DAO's name …",
     "ensName": "aragon",
-    "daoDescription": "Type your summary ...",
-    "addResource": "e.g. Website, Discord, etc"
+    "daoDescription": "Type your summary …",
+    "addResource": "Lens, Discord, etc."
   },
   "finance": {
     "tokenSection": "Tokens",
@@ -246,7 +258,7 @@
       "Pending": "Starts in {{timeDiff}}",
       "Active": "{{timeDiff}} left",
       "voteTitle": "Winning option",
-      "voteTitleMultisig": "Approval Progress",
+      "voteTitleMultisig": "Approval progress",
       "states": {
         "draft": "Draft",
         "pending": "Pending",
@@ -286,8 +298,8 @@
         "succeeded": "Proposal has passed and is ready to be executed",
         "executed": "Actions executed",
         "defeated": "Proposal defeated",
-        "expired": "Proposal expired",
-        "failed": " Execution failed"
+        "failed": " Execution failed",
+        "expired": "Proposal expired"
       }
     }
   },
@@ -333,7 +345,7 @@
     "totalSupplyZero": "Total token supply can not be 0",
     "requiredTokenAddressZero": "Required token amount can not be 0",
     "onlyAlphaNumeric": "{{field}} can only contain alphanumeric characters",
-    "ensDuplication": "DAO name is already taken. Try a different name.",
+    "ensDuplication": "ENS subdomain is already taken. Try a different name.",
     "ensNameInvalidFormat": "Please only use Lowercase letters, numbers, and the dash '-'",
     "ensNetworkIssue": "Failed to resolve ENS",
     "ensNameLength": "DAO name must be less than 128 characters",
@@ -413,12 +425,12 @@
     "tokenBasedMembers": "The DAO members listed here have interacted with the DAO at least once",
     "chip": {
       "removedLink": "Link removed",
-      "removedAddress": "address removed",
+      "removedAddress": "Address removed",
       "distributionReset": "Token distribution reset",
       "removedAllAddresses": "All addresses removed",
       "duplicateAction": "Action duplicated",
       "resetAction": "Action reset",
-      "resetAddress": "address reset",
+      "resetAddress": "Address reset",
       "resetAllAddresses": "All addresses reset",
       "removedAction": "Action removed",
       "addressAdded": "New address added",
@@ -774,12 +786,12 @@
       "succeeded": "Proposal passed",
       "executed": "Proposal executed",
       "defeated": "Proposal defeated",
-      "expired": "Proposal has expired",
       "active": "Voting ends in {{timeUntilEnd}}",
       "ineligibleWhitelist": "You had to be a member before the proposal was created to be able to vote",
       "ineligibleTokenBased": "You had to hold {{token}} when proposal was created to be able to vote",
       "voteSubmitted": "Vote submitted",
       "revote": "Revote",
+      "expired": "Proposal has expired",
       "approved": "Approved"
     },
     "voteOver": "Vote over",
@@ -815,6 +827,10 @@
       "aragonMembers": "Members in Aragon App DAOs",
       "activeProposals": "Active proposals",
       "securedByAragon": "Secured by Aragon OSx"
+    },
+    "learn": {
+      "linkLabel": "Learn about DAOs",
+      "linkURL": "https://aragon.org/education-portal"
     }
   },
   "privacyPolicy": {
@@ -879,8 +895,10 @@
     "proposalsTitle": "Proposals created",
     "emptyTransfers": {
       "title": "Initiate a token transfer",
-      "description": "Ready to distribute tokens or pay members? Initiate a token transfer here. For ideas on how to distribute your community's token, read our guide on token distribution.",
-      "buttonLabel": "Initiate Transfer"
+      "description": "Ready to distribute tokens or send funds? Initiate a token transfer here. For ideas on how to distribute your community's token, {{link}} on token distribution.",
+      "buttonLabel": "Initiate transfer",
+      "descriptionLinkLabel": "read our guide",
+      "descriptionLinkURL": "https://aragon.org/how-to-guides/how-to-distribute-a-dao-governance-token"
     },
     "emptyState": {
       "title": "We're building your DAO!",
@@ -922,5 +940,8 @@
       "linkLabel": "Give feedback",
       "linkURL": "https://form.typeform.com/to/apg4gHYO"
     }
+  },
+  "logo": {
+    "linkURL": "https://aragon.org/"
   }
 }
