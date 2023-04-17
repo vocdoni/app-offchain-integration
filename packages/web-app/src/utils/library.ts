@@ -2,25 +2,32 @@
 import {ApolloClient} from '@apollo/client';
 import {
   Client,
+  DaoDetails,
   Erc20TokenDetails,
   IMintTokenParams,
   MultisigClient,
+  MultisigVotingSettings,
+  SupportedNetworks as SdkSupportedNetworks,
   TokenVotingClient,
   VotingMode,
+  Context as SdkContext,
 } from '@aragon/sdk-client';
 import {resolveIpfsCid} from '@aragon/sdk-common';
 import {Address} from '@aragon/ui-components/dist/utils/addresses';
+import {NavigationDao} from 'context/apolloClient';
 import {BigNumber, BigNumberish, constants, ethers, providers} from 'ethers';
 import {TFunction} from 'react-i18next';
 
 import {fetchTokenData} from 'services/prices';
 import {
+  AVATAR_IPFS_URL,
   BIGINT_PATTERN,
   CHAIN_METADATA,
   ISO_DATE_PATTERN,
   SupportedNetworks,
 } from 'utils/constants';
 import {
+  Action,
   ActionAddAddress,
   ActionMintToken,
   ActionRemoveAddress,
@@ -127,10 +134,18 @@ export async function decodeWithdrawToAction(
   const address =
     decoded.type === 'native' ? constants.AddressZero : decoded?.tokenAddress;
   try {
-    const [response, apiResponse] = await Promise.all([
-      getTokenInfo(address, provider, CHAIN_METADATA[network].nativeCurrency),
-      fetchTokenData(address, apolloClient, network),
-    ]);
+    const response = await getTokenInfo(
+      address,
+      provider,
+      CHAIN_METADATA[network].nativeCurrency
+    );
+
+    const apiResponse = await fetchTokenData(
+      address,
+      apolloClient,
+      network,
+      response.symbol
+    );
 
     return {
       amount: Number(formatUnits(decoded.amount, response.decimals)),
@@ -142,6 +157,7 @@ export async function decodeWithdrawToAction(
       tokenName: response.name,
       tokenPrice: apiResponse?.price || 0,
       tokenSymbol: response.symbol,
+      tokenDecimals: response.decimals,
       isCustomToken: false,
     };
   } catch (error) {
@@ -159,6 +175,7 @@ export async function decodeMintTokensToAction(
   data: Uint8Array[] | undefined,
   client: TokenVotingClient | undefined,
   daoTokenAddress: Address,
+  totalVotingWeight: bigint,
   provider: providers.Provider,
   network: SupportedNetworks
 ): Promise<ActionMintToken | undefined> {
@@ -169,7 +186,7 @@ export async function decodeMintTokensToAction(
 
   try {
     // get token info
-    const {totalSupply, symbol, decimals} = await getTokenInfo(
+    const {symbol, decimals} = await getTokenInfo(
       daoTokenAddress,
       provider,
       CHAIN_METADATA[network].nativeCurrency
@@ -196,7 +213,7 @@ export async function decodeMintTokensToAction(
       },
       summary: {
         newTokens: Number(formatUnits(newTokens, decimals)),
-        tokenSupply: parseFloat(formatUnits(totalSupply, decimals)),
+        tokenSupply: parseFloat(formatUnits(totalVotingWeight, decimals)),
         newHoldersCount: decoded.length,
         daoTokenSymbol: symbol,
         daoTokenAddress: daoTokenAddress,
@@ -395,17 +412,22 @@ export function decodeVotingMode(mode: VotingMode): DecodedVotingMode {
 }
 
 /**
- * Get DAO avatar url given avatar IPFS cid
- * @param avatar - IPFS cid for DAO avatar
+ * Get DAO resolved IPFS CID URL for the DAO avatar
+ * @param avatar - avatar to be resolved. If it's an IPFS CID,
+ * the function will return a fully resolved URL.
  * @returns the url to the DAO avatar
  */
 export function resolveDaoAvatarIpfsCid(avatar?: string): string | undefined {
   if (avatar) {
-    try {
-      const logoCid = resolveIpfsCid(avatar);
-      return `https://ipfs.io/ipfs/${logoCid}`;
-    } catch (err) {
-      console.warn('Error resolving DAO avatar IPFS Cid', err);
+    if (/^ipfs/.test(avatar)) {
+      try {
+        const logoCid = resolveIpfsCid(avatar);
+        return `${AVATAR_IPFS_URL}/${logoCid}`;
+      } catch (err) {
+        console.warn('Error resolving DAO avatar IPFS Cid', err);
+      }
+    } else {
+      return avatar;
     }
   }
 }
@@ -419,4 +441,119 @@ export function readFile(file: Blob): Promise<ArrayBuffer> {
     fr.onerror = reject;
     fr.readAsArrayBuffer(file);
   });
+}
+
+/**
+ * Map a detailed DAO to a structure that can be favorited
+ * @param dao - Detailed DAO fetched from SDK
+ * @param network - network on which this DAO resides
+ * @returns the DAO in it's favorited form
+ */
+export function mapDetailedDaoToFavoritedDao(
+  dao: DaoDetails,
+  network: SupportedNetworks
+): NavigationDao {
+  return {
+    address: dao.address.toLocaleLowerCase(),
+    chain: CHAIN_METADATA[network].id,
+    ensDomain: dao.ensDomain,
+    plugins: dao.plugins,
+    metadata: {
+      name: dao.metadata.name,
+      avatar: dao.metadata.avatar,
+      description: dao.metadata.description,
+    },
+  };
+}
+
+/**
+ * Filters out action containing unchanged min approvals
+ * @param actions form actions
+ * @param pluginSettings DAO plugin settings
+ * @returns list of actions without update plugin settings action
+ * if Multisig DAO minimum approvals did not change
+ */
+export function removeUnchangedMinimumApprovalAction(
+  actions: Action[],
+  pluginSettings: MultisigVotingSettings
+) {
+  return actions.flatMap(action => {
+    if (
+      action.name === 'modify_multisig_voting_settings' &&
+      Number(action.inputs.minApprovals) === pluginSettings.minApprovals
+    )
+      return [];
+    else return action;
+  });
+}
+
+/**
+ * Sleep for given time before continuing
+ * @param time time in milliseconds
+ */
+export function sleepFor(time = 600) {
+  return new Promise(resolve => setTimeout(resolve, time));
+}
+
+/**
+ * Maps SDK network name to app network context network name
+ * @param sdkNetwork supported network returned by the SDK
+ * @returns translated equivalent app supported network
+ */
+export const translateToAppNetwork = (
+  sdkNetwork: SdkContext['network']
+): SupportedNetworks => {
+  if (typeof sdkNetwork !== 'string') {
+    return 'unsupported';
+  }
+
+  switch (sdkNetwork) {
+    case 'mainnet':
+      return 'ethereum';
+    case 'goerli':
+      return 'goerli';
+    case 'maticmum':
+      return 'mumbai';
+    case 'matic':
+      return 'polygon';
+  }
+  return 'unsupported';
+};
+
+/**
+ * Maps app network context name to SDK network name
+ * @param appNetwork supported network returned by the network context
+ * @returns translated equivalent SDK supported network
+ */
+export function translateToNetworkishName(
+  appNetwork: SupportedNetworks
+): SdkSupportedNetworks | 'unsupported' {
+  if (typeof appNetwork !== 'string') {
+    return 'unsupported';
+  }
+
+  switch (appNetwork) {
+    case 'polygon':
+      return 'matic';
+    case 'mumbai':
+      return 'maticmum';
+    case 'ethereum':
+      return 'mainnet';
+    case 'goerli':
+      return 'goerli';
+  }
+
+  return 'unsupported';
+}
+
+/**
+ * display ens names properly
+ * @param ensName ens name
+ * @returns ens name or empty string if ens name is null.dao.eth
+ */
+export function toDisplayEns(ensName?: string) {
+  if (ensName)
+    if (ensName === 'null.dao.eth') return '';
+    else return ensName;
+  else return '';
 }

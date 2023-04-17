@@ -1,19 +1,29 @@
-import {Client, Context as SdkContext, ContextParams} from '@aragon/sdk-client';
+import {
+  Client,
+  Context as SdkContext,
+  ContextParams,
+  LIVE_CONTRACTS,
+  SupportedNetworksArray,
+} from '@aragon/sdk-client';
+
 import {useNetwork} from 'context/network';
 import React, {createContext, useContext, useEffect, useState} from 'react';
+
 import {
   CHAIN_METADATA,
   IPFS_ENDPOINT_MAIN_0,
   IPFS_ENDPOINT_MAIN_1,
   IPFS_ENDPOINT_TEST,
   SUBGRAPH_API_URL,
+  SupportedNetworks,
 } from 'utils/constants';
-
+import {translateToAppNetwork, translateToNetworkishName} from 'utils/library';
 import {useWallet} from './useWallet';
 
 interface ClientContext {
   client?: Client;
   context?: SdkContext;
+  network?: SupportedNetworks;
 }
 
 const UseClientContext = createContext<ClientContext>({} as ClientContext);
@@ -25,6 +35,9 @@ export const useClient = () => {
       'useClient() can only be used on the descendants of <UseClientProvider />'
     );
   }
+  if (client.context) {
+    client.network = translateToAppNetwork(client.context.network);
+  }
   return client;
 };
 
@@ -35,6 +48,16 @@ export const UseClientProvider: React.FC = ({children}) => {
   const [context, setContext] = useState<SdkContext>();
 
   useEffect(() => {
+    const translatedNetwork = translateToNetworkishName(network);
+
+    // when network not supported by the SDK, don't set network
+    if (
+      translatedNetwork === 'unsupported' ||
+      !SupportedNetworksArray.includes(translatedNetwork)
+    ) {
+      return;
+    }
+
     let ipfsNodes = [
       {
         url: IPFS_ENDPOINT_MAIN_0,
@@ -59,9 +82,10 @@ export const UseClientProvider: React.FC = ({children}) => {
         },
       ];
     }
+
     const contextParams: ContextParams = {
-      //TODO: replace ethereum with mainnet for network
-      network: network === 'ethereum' ? 'mainnet' : network,
+      daoFactoryAddress: LIVE_CONTRACTS[translatedNetwork].daoFactory,
+      network: translatedNetwork,
       signer: signer || undefined,
       web3Providers: CHAIN_METADATA[network].rpc[0],
       ipfsNodes,

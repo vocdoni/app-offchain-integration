@@ -1,8 +1,12 @@
-import {useSigner, SignerValue} from 'use-signer';
-import {useEffect, useState} from 'react';
+import {LIVE_CONTRACTS, SupportedNetworks} from '@aragon/sdk-client';
+import {JsonRpcProvider} from '@ethersproject/providers';
+import {SignerValue, useSigner} from 'context/signer';
 import {BigNumber} from 'ethers';
+import {useEffect, useMemo, useState} from 'react';
+
 import {useNetwork} from 'context/network';
 import {CHAIN_METADATA} from 'utils/constants';
+import {translateToNetworkishName} from 'utils/library';
 
 export interface IUseWallet extends SignerValue {
   balance: BigNumber | null;
@@ -20,11 +24,31 @@ export interface IUseWallet extends SignerValue {
 
 export const useWallet = (): IUseWallet => {
   const {network} = useNetwork();
-  const {chainId, methods, signer, provider, address, status} = useSigner();
+  const {
+    chainId,
+    methods,
+    signer,
+    provider: signerProvider,
+    address,
+    status,
+  } = useSigner();
   const [balance, setBalance] = useState<BigNumber | null>(null);
   const [ensName, setEnsName] = useState<string>('');
   const [ensAvatarUrl, setEnsAvatarUrl] = useState<string>('');
   const [isConnected, setIsConnected] = useState<boolean>(false);
+
+  const provider = useMemo(() => {
+    if (['mumbai', 'polygon'].includes(network)) {
+      return new JsonRpcProvider(CHAIN_METADATA[network].rpc[0], {
+        chainId: CHAIN_METADATA[network].id,
+        name: translateToNetworkishName(network),
+        ensAddress:
+          LIVE_CONTRACTS[
+            translateToNetworkishName(network) as SupportedNetworks
+          ].ensRegistry,
+      });
+    } else return signerProvider;
+  }, [signerProvider, network]);
 
   // Update balance
   useEffect(() => {
@@ -56,7 +80,7 @@ export const useWallet = (): IUseWallet => {
     isConnected && CHAIN_METADATA[network].id !== chainId;
 
   return {
-    provider,
+    provider: signerProvider,
     signer,
     status,
     address,

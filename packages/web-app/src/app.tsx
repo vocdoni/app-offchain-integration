@@ -160,6 +160,9 @@ const NewSettingsWrapper: React.FC = () => {
       links: [{name: '', url: ''}],
       startSwitch: 'now',
       durationSwitch: 'duration',
+      durationDays: '1',
+      durationHours: '0',
+      durationMinutes: '0',
     },
   });
 
@@ -184,8 +187,10 @@ const NotFoundWrapper: React.FC = () => {
 
 const ExploreWrapper: React.FC = () => (
   <>
-    <ExploreNav />
-    <Outlet />
+    <div className="min-h-screen">
+      <ExploreNav />
+      <Outlet />
+    </div>
     <ExploreFooter />
   </>
 );

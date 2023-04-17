@@ -34,7 +34,7 @@ const ProposalSnapshot: React.FC<Props> = ({
 }) => {
   const {t} = useTranslation();
   const navigate = useNavigate();
-  const {network} = useNetwork();
+  const {network} = useNetwork(); // TODO ensure this is the dao network
 
   const {data: members, isLoading: areMembersLoading} = useDaoMembers(
     pluginAddress,
@@ -44,9 +44,9 @@ const ProposalSnapshot: React.FC<Props> = ({
   const mappedProposals = useMemo(
     () =>
       proposals.map(p =>
-        proposal2CardProps(p, members.members.length, network, navigate)
+        proposal2CardProps(p, members.members.length, network, navigate, t)
       ),
-    [proposals, network, navigate, members.members]
+    [proposals, members.members.length, network, navigate, t]
   );
 
   if (proposals.length === 0 || areMembersLoading) {

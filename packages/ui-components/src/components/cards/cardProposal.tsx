@@ -9,12 +9,12 @@ import {Link} from '../link';
 import {LinearProgress} from '../progress';
 import {Tag} from '../tag';
 
-type ProposalUsecase = 'list' | 'explore';
+type ProposalUseCase = 'list' | 'explore';
 
 export function isExploreProposal(
-  proposalUsecase: ProposalUsecase
-): proposalUsecase is 'explore' {
-  return proposalUsecase === 'explore';
+  proposalUseCase: ProposalUseCase
+): proposalUseCase is 'explore' {
+  return proposalUseCase === 'explore';
 }
 
 export type CardProposalProps = {
@@ -39,7 +39,7 @@ export type CardProposalProps = {
     | 'executed'
     | 'defeated';
   /** Indicates whether the proposal is in being used in list or in its special form (see explore page) */
-  type?: ProposalUsecase;
+  type?: ProposalUseCase;
   /** Url for the dao avatar */
   daoLogo?: 'string';
   /** The title that appears at the top of the progress bar */
@@ -48,6 +48,8 @@ export type CardProposalProps = {
   voteProgress?: number | string;
   /** Vote label that appears at bottom of the progress bar */
   voteLabel?: string;
+  /** Breakdown of the wining option */
+  winningOptionValue?: string;
   /** Proposal token amount */
   tokenAmount?: string;
   /** Proposal token symbol */
@@ -78,6 +80,7 @@ export const CardProposal: React.FC<CardProposalProps> = ({
   voteLabel,
   tokenAmount,
   tokenSymbol,
+  winningOptionValue,
   publishLabel,
   publisherAddress,
   explorer = 'https://etherscan.io/',
@@ -88,7 +91,7 @@ export const CardProposal: React.FC<CardProposalProps> = ({
   daoName,
   onClick,
 }: CardProposalProps) => {
-  const adressExploreUrl = `${explorer}address/${publisherAddress}`;
+  const addressExploreUrl = `${explorer}address/${publisherAddress}`;
 
   return (
     <Card data-testid="cardProposal" onClick={onClick}>
@@ -112,7 +115,7 @@ export const CardProposal: React.FC<CardProposalProps> = ({
 
           <Link
             external
-            href={adressExploreUrl}
+            href={addressExploreUrl}
             label={shortenAddress(
               (isExploreProposal(type) ? daoName : publisherAddress) || ''
             )}
@@ -120,13 +123,15 @@ export const CardProposal: React.FC<CardProposalProps> = ({
           />
         </Publisher>
       </TextContent>
-      {process === 'active' && (
+      {process === 'active' && voteProgress !== undefined && (
         <LoadingContent>
           <ProgressInfoWrapper>
             <ProgressTitle>{voteTitle}</ProgressTitle>
-            <TokenAmount>
-              {tokenAmount} {tokenSymbol}
-            </TokenAmount>
+            <Amount>
+              {tokenAmount && tokenSymbol
+                ? `${tokenAmount} ${tokenSymbol}`
+                : winningOptionValue}
+            </Amount>
           </ProgressInfoWrapper>
           <LinearProgress max={100} value={voteProgress} />
           <ProgressInfoWrapper>
@@ -239,8 +244,8 @@ const ProgressTitle = styled.h3.attrs({
   className: 'text-ui-800 ft-text-base font-bold',
 })``;
 
-const TokenAmount = styled.span.attrs({
-  className: 'text-ui-500 ft-text-sm',
+const Amount = styled.span.attrs({
+  className: 'text-ui-500 ft-text-base',
 })``;
 
 const Vote = styled.span.attrs({

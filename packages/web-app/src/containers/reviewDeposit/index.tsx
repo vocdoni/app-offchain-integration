@@ -31,7 +31,11 @@ const ReviewDeposit: React.FC = () => {
 
   useEffect(() => {
     async function getPrice() {
-      const tokenPrice = await fetchTokenPrice(values.tokenAddress, network);
+      const tokenPrice = await fetchTokenPrice(
+        values.tokenAddress,
+        network,
+        values.tokenSymbol
+      );
       if (tokenPrice) {
         setPrice(
           new Intl.NumberFormat('en-US', {
@@ -50,6 +54,7 @@ const ReviewDeposit: React.FC = () => {
     values.amount,
     values.isCustomToken,
     values.tokenAddress,
+    values.tokenSymbol,
   ]);
 
   return (

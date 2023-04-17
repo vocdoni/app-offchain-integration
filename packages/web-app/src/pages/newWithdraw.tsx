@@ -21,11 +21,15 @@ import {ActionsProvider} from 'context/actions';
 import {CreateProposalProvider} from 'context/createProposal';
 import {useNetwork} from 'context/network';
 import {useDaoBalances} from 'hooks/useDaoBalances';
+import {useDaoDetails} from 'hooks/useDaoDetails';
 import {useDaoParam} from 'hooks/useDaoParam';
+import {PluginTypes} from 'hooks/usePluginClient';
+import {usePluginSettings} from 'hooks/usePluginSettings';
 import {useWallet} from 'hooks/useWallet';
 import {generatePath} from 'react-router-dom';
 import {trackEvent} from 'services/analytics';
 import {fetchTokenPrice} from 'services/prices';
+import {MAX_TOKEN_DECIMALS} from 'utils/constants';
 import {getCanonicalUtcOffset} from 'utils/date';
 import {formatUnits} from 'utils/library';
 import {Finance} from 'utils/paths';
@@ -36,6 +40,7 @@ export type TokenFormData = {
   tokenSymbol: string;
   tokenImgUrl: string;
   tokenAddress: Address;
+  tokenDecimals: number;
   tokenBalance: string;
   tokenPrice?: number;
   isCustomToken: boolean;
@@ -77,6 +82,7 @@ export const defaultValues = {
       from: '',
       amount: '',
       tokenAddress: '',
+      tokenDecimals: MAX_TOKEN_DECIMALS,
       tokenSymbol: '',
       tokenName: '',
       tokenImgUrl: '',
@@ -86,10 +92,17 @@ export const defaultValues = {
 
 const NewWithdraw: React.FC = () => {
   const {t} = useTranslation();
-  const {data: dao, isLoading} = useDaoParam();
   const {network} = useNetwork();
   const {address} = useWallet();
   const [showTxModal, setShowTxModal] = useState(false);
+
+  const {data: dao} = useDaoParam();
+  const {data: balances} = useDaoBalances(dao);
+  const {data: daoDetails, isLoading: detailsLoading} = useDaoDetails(dao);
+  const {data: pluginSettings, isLoading: settingsLoading} = usePluginSettings(
+    daoDetails?.plugins[0].instanceAddress as string,
+    daoDetails?.plugins[0].id as PluginTypes
+  );
 
   const formMethods = useForm<WithdrawFormData>({
     defaultValues,
@@ -102,8 +115,6 @@ const NewWithdraw: React.FC = () => {
     name: ['actions.0.tokenAddress'],
     control: formMethods.control,
   });
-
-  const {data: balances} = useDaoBalances(dao);
 
   /*************************************************
    *             Callbacks and Handlers            *
@@ -130,12 +141,13 @@ const NewWithdraw: React.FC = () => {
     formMethods.setValue('actions.0.tokenName', token.name);
     formMethods.setValue('actions.0.tokenImgUrl', token.imgUrl);
     formMethods.setValue('actions.0.tokenAddress', token.address);
+    formMethods.setValue('actions.0.tokenDecimals', token.decimals);
     formMethods.setValue(
       'actions.0.tokenBalance',
       formatUnits(token.count, token.decimals)
     );
 
-    fetchTokenPrice(token.address, network).then(price => {
+    fetchTokenPrice(token.address, network, token.symbol).then(price => {
       formMethods.setValue('actions.0.tokenPrice', price);
     });
 
@@ -148,7 +160,7 @@ const NewWithdraw: React.FC = () => {
    *                    Render                     *
    *************************************************/
 
-  if (isLoading) {
+  if (detailsLoading || settingsLoading) {
     return <Loading />;
   }
 
@@ -225,7 +237,7 @@ const NewWithdraw: React.FC = () => {
                   next();
                 }}
               >
-                <SetupVotingForm />
+                <SetupVotingForm pluginSettings={pluginSettings} />
               </Step>
               <Step
                 wizardTitle={t('newWithdraw.defineProposal.heading')}

@@ -44,7 +44,7 @@ export const EditMvSettings: React.FC<EditMvSettingsProps> = ({
 }) => {
   const {t} = useTranslation();
   const navigate = useNavigate();
-  const {network} = useNetwork();
+  const {network} = useNetwork(); // TODO get network from daoDetails
   const {isMobile} = useScreen();
 
   const {setValue, control} = useFormContext();
@@ -166,12 +166,11 @@ export const EditMvSettings: React.FC<EditMvSettingsProps> = ({
   ]);
 
   // metadata setting changes
-  const isMetadataChanged =
-    daoDetails?.metadata.name &&
+  const isMetadataChanged = (daoDetails?.metadata.name &&
     (daoName !== daoDetails.metadata.name ||
       daoSummary !== daoDetails.metadata.description ||
       daoLogo !== daoDetails.metadata.avatar ||
-      !resourceLinksAreEqual);
+      !resourceLinksAreEqual)) as boolean;
 
   // governance
   const daoVotingMode = decodeVotingMode(
@@ -243,9 +242,9 @@ export const EditMvSettings: React.FC<EditMvSettingsProps> = ({
     setValue('earlyExecution', votingMode.earlyExecution);
     setValue('voteReplacement', votingMode.voteReplacement);
 
-    setValue('durationDays', days);
-    setValue('durationHours', hours);
-    setValue('durationMinutes', minutes);
+    setValue('durationDays', days?.toString());
+    setValue('durationHours', hours?.toString());
+    setValue('durationMinutes', minutes?.toString());
 
     // TODO: Alerts share will be added later
     setValue(
@@ -274,6 +273,15 @@ export const EditMvSettings: React.FC<EditMvSettingsProps> = ({
     setCurrentCommunity();
     setCurrentGovernance();
   };
+
+  useEffect(() => {
+    setValue('isMetadataChanged', isMetadataChanged);
+    setValue('areSettingsChanged', isCommunityChanged || isGovernanceChanged);
+
+    // intentionally using settingsUnchanged because it monitors all
+    // the setting changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settingsUnchanged, setValue]);
 
   useEffect(() => {
     setCurrentMetadata();

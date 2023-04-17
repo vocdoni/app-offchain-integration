@@ -15,12 +15,21 @@ import SetupVotingForm, {
 } from 'containers/setupVotingForm';
 import {useActionsContext} from 'context/actions';
 import {useNetwork} from 'context/network';
+import {useDaoDetails} from 'hooks/useDaoDetails';
 import {useDaoParam} from 'hooks/useDaoParam';
+import {PluginTypes} from 'hooks/usePluginClient';
+import {
+  isMultisigVotingSettings,
+  usePluginSettings,
+} from 'hooks/usePluginSettings';
 import {useWallet} from 'hooks/useWallet';
 import {trackEvent} from 'services/analytics';
 import {getCanonicalUtcOffset} from 'utils/date';
+import {removeUnchangedMinimumApprovalAction} from 'utils/library';
 import {Governance} from 'utils/paths';
+import {Action} from 'utils/types';
 import {actionsAreValid} from 'utils/validators';
+import {useGlobalModalContext} from 'context/globalModals';
 
 type ProposalStepperType = {
   enableTxModal: () => void;
@@ -29,13 +38,20 @@ type ProposalStepperType = {
 const ProposalStepper: React.FC<ProposalStepperType> = ({
   enableTxModal,
 }: ProposalStepperType) => {
-  const {data: dao, isLoading} = useDaoParam();
+  const {data: dao} = useDaoParam();
+  const {data: daoDetails, isLoading} = useDaoDetails(dao);
+  const {data: pluginSettings, isLoading: settingsLoading} = usePluginSettings(
+    daoDetails?.plugins[0].instanceAddress as string,
+    daoDetails?.plugins[0].id as PluginTypes
+  );
+
   const {actions} = useActionsContext();
+  const {open} = useGlobalModalContext();
 
   const {t} = useTranslation();
   const {network} = useNetwork();
-  const {trigger, control, getValues} = useFormContext();
-  const {address} = useWallet();
+  const {trigger, control, getValues, setValue} = useFormContext();
+  const {address, isConnected} = useWallet();
 
   const [formActions] = useWatch({
     name: ['actions'],
@@ -50,7 +66,7 @@ const ProposalStepper: React.FC<ProposalStepperType> = ({
    *                    Render                     *
    *************************************************/
 
-  if (isLoading) {
+  if (isLoading || settingsLoading) {
     return <Loading />;
   }
 
@@ -58,7 +74,7 @@ const ProposalStepper: React.FC<ProposalStepperType> = ({
     <FullScreenStepper
       wizardProcessName={t('newProposal.title')}
       navLabel={t('newProposal.title')}
-      returnPath={generatePath(Governance, {network, dao})}
+      returnPath={generatePath(Governance, {network, dao: dao})}
     >
       <Step
         wizardTitle={t('newWithdraw.defineProposal.heading')}
@@ -108,7 +124,7 @@ const ProposalStepper: React.FC<ProposalStepperType> = ({
           next();
         }}
       >
-        <SetupVotingForm />
+        <SetupVotingForm pluginSettings={pluginSettings} />
       </Step>
       <Step
         wizardTitle={t('newProposal.configureActions.heading')}
@@ -118,12 +134,19 @@ const ProposalStepper: React.FC<ProposalStepperType> = ({
           trigger('actions');
         }}
         onNextButtonClicked={next => {
+          if (isMultisigVotingSettings(pluginSettings)) {
+            setValue(
+              'actions',
+              removeUnchangedMinimumApprovalAction(formActions, pluginSettings)
+            );
+          }
+
           trackEvent('newProposal_nextBtn_clicked', {
             dao_address: dao,
             step: '3_configure_actions',
             settings: {
-              actions: actions.map(action => action.name),
-              actions_count: actions.length,
+              actions: formActions.map((action: Action) => action.name),
+              actions_count: formActions.length,
             },
           });
           next();
@@ -136,8 +159,12 @@ const ProposalStepper: React.FC<ProposalStepperType> = ({
         wizardDescription={t('newWithdraw.reviewProposal.description')}
         nextButtonLabel={t('labels.submitProposal')}
         onNextButtonClicked={() => {
-          trackEvent('newProposal_publishBtn_clicked', {dao_address: dao});
-          enableTxModal();
+          if (!isConnected) {
+            open('wallet');
+          } else {
+            trackEvent('newProposal_publishBtn_clicked', {dao_address: dao});
+            enableTxModal();
+          }
         }}
         fullWidth
       >

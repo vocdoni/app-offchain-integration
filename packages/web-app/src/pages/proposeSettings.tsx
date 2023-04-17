@@ -10,14 +10,16 @@ import {
 } from '@aragon/sdk-client';
 import {withTransaction} from '@elastic/apm-rum-react';
 import React, {useCallback, useEffect, useState} from 'react';
-import {useFormContext} from 'react-hook-form';
+import {useFormContext, useFormState} from 'react-hook-form';
 import {useTranslation} from 'react-i18next';
 import {generatePath, useNavigate} from 'react-router-dom';
 
 import {FullScreenStepper, Step} from 'components/fullScreenStepper';
 import {Loading} from 'components/temporary';
 import CompareSettings from 'containers/compareSettings';
-import DefineProposal from 'containers/defineProposal';
+import DefineProposal, {
+  isValid as defineProposalIsValid,
+} from 'containers/defineProposal';
 import ReviewProposal from 'containers/reviewProposal';
 import SetupVotingForm from 'containers/setupVotingForm';
 import PublishModal from 'containers/transactionModals/publishModal';
@@ -76,15 +78,51 @@ import {
 
 const ProposeSettings: React.FC = () => {
   const {t} = useTranslation();
-  const {data: daoId, isLoading: daoParamLoading} = useDaoParam();
   const {network} = useNetwork();
+
+  const {getValues, setValue, control} = useFormContext();
   const [showTxModal, setShowTxModal] = useState(false);
+  const {errors, dirtyFields} = useFormState({
+    control,
+  });
+
+  const {data: daoId} = useDaoParam();
+  const {data: daoDetails, isLoading} = useDaoDetails(daoId);
+  const {data: pluginSettings, isLoading: settingsLoading} = usePluginSettings(
+    daoDetails?.plugins[0].instanceAddress as string,
+    daoDetails?.plugins[0].id as PluginTypes
+  );
 
   const enableTxModal = () => {
     setShowTxModal(true);
   };
 
-  if (daoParamLoading) {
+  // filter actions making sure unchanged information is not bundled
+  // into the list of actions
+  const filterActions = useCallback(() => {
+    const [formActions, settingsChanged, metadataChanged] = getValues([
+      'actions',
+      'areSettingsChanged',
+      'isMetadataChanged',
+    ]);
+
+    // ignore every action that is not modifying the metadata and voting settings
+    const filteredActions = (formActions as Array<Action>).filter(action => {
+      if (action.name === 'modify_metadata' && metadataChanged) {
+        return action;
+      } else if (
+        (action.name === 'modify_token_voting_settings' ||
+          action.name === 'modify_multisig_voting_settings') &&
+        settingsChanged
+      ) {
+        return action;
+      }
+    });
+
+    setValue('actions', filteredActions);
+  }, [getValues, setValue]);
+
+  if (isLoading || settingsLoading) {
     return <Loading />;
   }
 
@@ -101,12 +139,17 @@ const ProposeSettings: React.FC = () => {
         <Step
           wizardTitle={t('settings.proposeSettings')}
           wizardDescription={t('settings.proposeSettingsSubtitle')}
+          onNextButtonClicked={next => {
+            filterActions();
+            next();
+          }}
         >
           <CompareSettings />
         </Step>
         <Step
           wizardTitle={t('newWithdraw.defineProposal.heading')}
           wizardDescription={t('newWithdraw.defineProposal.description')}
+          isNextButtonDisabled={!defineProposalIsValid(dirtyFields, errors)}
         >
           <DefineProposal />
         </Step>
@@ -114,7 +157,7 @@ const ProposeSettings: React.FC = () => {
           wizardTitle={t('newWithdraw.setupVoting.title')}
           wizardDescription={t('newWithdraw.setupVoting.description')}
         >
-          <SetupVotingForm />
+          <SetupVotingForm pluginSettings={pluginSettings} />
         </Step>
         <Step
           wizardTitle={t('newWithdraw.reviewProposal.heading')}
@@ -297,7 +340,10 @@ const ProposeSettingWrapper: React.FC<Props> = ({
         if (action.name === 'modify_metadata') {
           const preparedAction = {...action};
 
-          if (preparedAction.inputs.avatar) {
+          if (
+            preparedAction.inputs.avatar &&
+            typeof preparedAction.inputs.avatar !== 'string'
+          ) {
             try {
               const daoLogoBuffer = await readFile(
                 preparedAction.inputs.avatar as unknown as Blob

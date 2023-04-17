@@ -60,7 +60,7 @@ const defaultValues = {
   tokenName: '',
   tokenAddress: '',
   tokenSymbol: '',
-  tokenTotalSupply: 0,
+  tokenTotalSupply: 1,
   links: [{name: '', url: ''}],
 
   // Uncomment when DAO Treasury minting is supported
@@ -69,7 +69,7 @@ const defaultValues = {
   voteReplacement: false,
   membership: 'token',
   eligibilityType: 'token' as CreateDaoFormData['eligibilityType'],
-  eligibilityTokenAmount: 0,
+  eligibilityTokenAmount: 1,
   isCustomToken: true,
   durationDays: '1',
   durationHours: '0',
@@ -79,7 +79,7 @@ const defaultValues = {
 const CreateDAO: React.FC = () => {
   const {t} = useTranslation();
   const {chainId} = useWallet();
-  const {setNetwork} = useNetwork();
+  const {setNetwork, isL2Network} = useNetwork();
   const formMethods = useForm<CreateDaoFormData>({
     mode: 'onChange',
     defaultValues,
@@ -137,7 +137,8 @@ const CreateDAO: React.FC = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const daoMetadataIsValid = useMemo(() => {
     // required fields not dirty
-    if (!daoEnsName || !daoName || !dirtyFields.daoSummary) return false;
+    if (!isL2Network && !daoEnsName) return false;
+    if (!daoName || !dirtyFields.daoSummary) return false;
 
     return errors.daoEnsName ||
       errors.daoName ||
@@ -153,6 +154,7 @@ const CreateDAO: React.FC = () => {
     errors.daoName,
     errors.daoSummary,
     errors.links,
+    isL2Network,
   ]);
 
   const daoSetupCommunityIsValid = useMemo(() => {

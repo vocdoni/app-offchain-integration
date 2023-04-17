@@ -1,4 +1,4 @@
-import {AlertInline, Label, Link, TextInput} from '@aragon/ui-components';
+import {AlertInline, Label, TextInput} from '@aragon/ui-components';
 import React from 'react';
 import styled from 'styled-components';
 import {useTranslation} from 'react-i18next';
@@ -6,6 +6,7 @@ import {Controller, useFormContext} from 'react-hook-form';
 import AddWallets from 'components/addWallets';
 import {alphaNumericValidator} from 'utils/validators';
 import {SelectEligibility} from 'components/selectEligibility';
+import {htmlIn} from 'utils/htmlIn';
 
 const CreateNewToken: React.FC = () => {
   const {t} = useTranslation();
@@ -15,13 +16,11 @@ const CreateNewToken: React.FC = () => {
     <>
       <DescriptionContainer>
         <Title>{t('labels.mintToken')}</Title>
-        <Subtitle>
-          {t('createDAO.step3.createTokenHelptext')}
-          <Link
-            label={t('createDAO.step3.createTokenHelplink')}
-            href="https://aragon.org/how-to/mint-dao-governance-tokens"
-          />
-        </Subtitle>
+        <Subtitle
+          dangerouslySetInnerHTML={{
+            __html: htmlIn(t)('createDAO.step3.createTokenHelptext'),
+          }}
+        ></Subtitle>
       </DescriptionContainer>
       <FormItem>
         <Label

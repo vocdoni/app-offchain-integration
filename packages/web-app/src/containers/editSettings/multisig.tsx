@@ -40,7 +40,7 @@ export const EditMsSettings: React.FC<EditMsSettingsProps> = ({
 }) => {
   const {t} = useTranslation();
   const navigate = useNavigate();
-  const {network} = useNetwork();
+  const {network} = useNetwork(); // TODO get network from dao details
   const {isMobile} = useScreen();
 
   const {setValue, control} = useFormContext();
@@ -188,6 +188,15 @@ export const EditMsSettings: React.FC<EditMsSettingsProps> = ({
     setCurrentMetadata();
     setCurrentGovernance();
   };
+
+  useEffect(() => {
+    setValue('isMetadataChanged', isMetadataChanged);
+    setValue('areSettingsChanged', isGovernanceChanged);
+
+    // intentionally using settingsUnchanged because it monitors all
+    // the setting changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settingsUnchanged, setValue]);
 
   useEffect(() => {
     setCurrentMetadata();
