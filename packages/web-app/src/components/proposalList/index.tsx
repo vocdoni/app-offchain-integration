@@ -1,9 +1,10 @@
-import {CardProposal, CardProposalProps, Spinner} from '@aragon/ui-components';
-import React, {useMemo} from 'react';
-import {useTranslation} from 'react-i18next';
-import {generatePath, NavigateFunction, useNavigate} from 'react-router-dom';
-
 import {MultisigProposalListItem} from '@aragon/sdk-client';
+import {CardProposal, CardProposalProps, Spinner} from '@aragon/ui-components';
+import {BigNumber} from 'ethers';
+import React, {useMemo} from 'react';
+import {TFunction, useTranslation} from 'react-i18next';
+import {NavigateFunction, generatePath, useNavigate} from 'react-router-dom';
+
 import {useNetwork} from 'context/network';
 import {useDaoMembers} from 'hooks/useDaoMembers';
 import {PluginTypes} from 'hooks/usePluginClient';
@@ -14,18 +15,27 @@ import {
   SupportedNetworks,
 } from 'utils/constants';
 import {translateProposalDate} from 'utils/date';
-import {formatUnits} from 'utils/library';
 import {Proposal} from 'utils/paths';
-import {isErc20VotingProposal} from 'utils/proposals';
-import {abbreviateTokenAmount} from 'utils/tokens';
+import {
+  TokenVotingOptions,
+  getErc20Results,
+  isErc20VotingProposal,
+} from 'utils/proposals';
 import {ProposalListItem} from 'utils/types';
-import {i18n} from '../../../i18n.config';
 
 type ProposalListProps = {
   proposals: Array<ProposalListItem>;
   pluginAddress: string;
   pluginType: PluginTypes;
   isLoading?: boolean;
+};
+
+type OptionResult = {
+  [K in TokenVotingOptions]: {
+    value: string | number;
+    percentage: number;
+    option: K;
+  };
 };
 
 function isMultisigProposalListItem(
@@ -53,9 +63,9 @@ const ProposalList: React.FC<ProposalListProps> = ({
   const mappedProposals: ({id: string} & CardProposalProps)[] = useMemo(
     () =>
       proposals.map(p =>
-        proposal2CardProps(p, members.members.length, network, navigate)
+        proposal2CardProps(p, members.members.length, network, navigate, t)
       ),
-    [proposals, network, navigate, members.members]
+    [proposals, members.members.length, network, navigate, t]
   );
 
   if (isLoading || areMembersLoading) {
@@ -102,9 +112,10 @@ export type CardViewProposal = Omit<CardProposalProps, 'onClick'> & {
  */
 export function proposal2CardProps(
   proposal: ProposalListItem,
-  membersCount: number,
+  memberCount: number,
   network: SupportedNetworks,
-  navigate: NavigateFunction
+  navigate: NavigateFunction,
+  t: TFunction
 ): {id: string} & CardProposalProps {
   const props = {
     id: proposal.id,
@@ -112,7 +123,7 @@ export function proposal2CardProps(
     description: proposal.metadata.summary,
     explorer: CHAIN_METADATA[network].explorer,
     publisherAddress: proposal.creatorAddress,
-    publishLabel: i18n.t('governance.proposals.publishedBy'),
+    publishLabel: t('governance.proposals.publishedBy'),
     process: proposal.status.toLowerCase() as CardProposalProps['process'],
     onClick: () => {
       trackEvent('governance_viewProposal_clicked', {
@@ -130,13 +141,8 @@ export function proposal2CardProps(
   };
 
   if (isErc20VotingProposal(proposal)) {
-    const totalVoteCount =
-      Number(proposal.result.abstain) +
-      Number(proposal.result.yes) +
-      Number(proposal.result.no);
-
     const specificProps = {
-      voteTitle: i18n.t('governance.proposals.voteTitle'),
+      voteTitle: t('governance.proposals.voteTitle'),
       stateLabel: PROPOSAL_STATE_LABELS,
 
       alertMessage: translateProposalDate(
@@ -145,30 +151,73 @@ export function proposal2CardProps(
         proposal.endDate
       ),
     };
-    if (proposal.status.toLowerCase() === 'active') {
-      const activeProps = {
-        voteProgress: relativeVoteCount(
-          Number(proposal.result.yes) || 0,
-          totalVoteCount
-        ),
-        voteLabel: i18n.t('labels.yes'),
 
-        tokenSymbol: proposal.token.symbol,
-        tokenAmount: abbreviateTokenAmount(
-          parseFloat(
-            Number(
-              formatUnits(proposal.result.yes, proposal.token.decimals)
-            ).toFixed(2)
-          ).toString()
-        ),
-      };
-      return {...props, ...specificProps, ...activeProps};
+    const proposalProps = {...props, ...specificProps};
+
+    // calculate winning option for active proposal
+    if (proposal.status.toLowerCase() === 'active') {
+      const results = getErc20Results(
+        proposal.result,
+        proposal.token.decimals,
+        proposal.totalVotingWeight
+      );
+
+      // The winning option is the outcome of the proposal if duration was to be reached
+      // as is. Note that the "yes" option can only be "winning" if it has met the support
+      // threshold criteria (N_yes / (N_yes + N_no)) > supportThreshold
+      let winningOption: OptionResult[TokenVotingOptions] | undefined;
+
+      const yesNoCount = BigNumber.from(proposal.result.yes).add(
+        proposal.result.no
+      );
+
+      // if there are any votes find the winning option
+      if (yesNoCount.gt(0)) {
+        if (
+          BigNumber.from(proposal.result.yes).div(yesNoCount).toNumber() >
+          proposal.settings.supportThreshold
+        ) {
+          winningOption = {...results.yes, option: 'yes'};
+        } else {
+          // technically abstain never "wins" the vote, but showing on UI
+          // if there are more 'abstain' votes than 'no' votes
+          winningOption = BigNumber.from(proposal.result.no).gte(
+            proposal.result.abstain
+          )
+            ? {...results.no, option: 'no'}
+            : {...results.abstain, option: 'abstain'};
+        }
+      } else {
+        if (BigNumber.from(proposal.result.abstain).gt(0))
+          winningOption = {...results.abstain, option: 'abstain'};
+      }
+
+      // show winning vote option
+      if (winningOption) {
+        const options: {[k in TokenVotingOptions]: string} = {
+          yes: t('votingTerminal.yes'),
+          no: t('votingTerminal.no'),
+          abstain: t('votingTerminal.abstain'),
+        };
+
+        const activeProps = {
+          voteProgress: winningOption.percentage,
+          voteLabel: options[winningOption.option],
+          tokenSymbol: proposal.token.symbol,
+          tokenAmount: winningOption.value.toString(),
+        };
+        return {...proposalProps, ...activeProps};
+      }
+
+      // don't show any voting options if neither of them has greater than
+      // defined support threshold
+      return proposalProps;
     } else {
-      return {...props, ...specificProps};
+      return proposalProps;
     }
   } else if (isMultisigProposalListItem(proposal)) {
     const specificProps = {
-      voteTitle: i18n.t('governance.proposals.voteTitleMultisig'),
+      voteTitle: t('votingTerminal.approvedBy'),
       stateLabel: PROPOSAL_STATE_LABELS,
       alertMessage: translateProposalDate(
         proposal.status,
@@ -178,11 +227,11 @@ export function proposal2CardProps(
     };
     if (proposal.status.toLowerCase() === 'active') {
       const activeProps = {
-        voteProgress: relativeVoteCount(
-          proposal.approvals.length,
-          membersCount
-        ),
-        voteLabel: i18n.t('votingTerminal.approvedBy'),
+        voteProgress: relativeVoteCount(proposal.approvals.length, memberCount),
+        winningOptionValue: `${proposal.approvals.length} ${t(
+          'votingTerminal.ofMemberCount',
+          {memberCount}
+        )}`,
       };
       return {...props, ...specificProps, ...activeProps};
     } else {
