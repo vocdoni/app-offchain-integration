@@ -6,6 +6,7 @@ import {
   IconChevronDown,
   Option,
   Spinner,
+  IllustrationHuman,
 } from '@aragon/ui-components';
 import {withTransaction} from '@elastic/apm-rum-react';
 import React, {useEffect, useState} from 'react';
@@ -19,14 +20,16 @@ import {PageWrapper} from 'components/wrappers';
 import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 import {PluginTypes} from 'hooks/usePluginClient';
 import {useProposals} from 'hooks/useProposals';
-import NoProposals from 'public/noProposals.svg';
 import {trackEvent} from 'services/analytics';
-import {htmlIn} from 'utils/htmlIn';
 import {ProposalListItem} from 'utils/types';
+import PageEmptyState from 'containers/pageEmptyState';
 import {toDisplayEns} from 'utils/library';
+import useScreen from 'hooks/useScreen';
+import {htmlIn} from 'utils/htmlIn';
 
 const Governance: React.FC = () => {
   const {data: daoDetails, isLoading: isDaoLoading} = useDaoDetailsQuery();
+  const {isMobile} = useScreen();
 
   // The number of proposals displayed on each page
   const PROPOSALS_PER_PAGE = 6;
@@ -79,34 +82,31 @@ const Governance: React.FC = () => {
     filterValue === 'All'
   ) {
     return (
-      <>
-        <Container>
-          <EmptyStateContainer>
-            <ImageContainer src={NoProposals} />
-            <EmptyStateHeading>
-              {t('governance.emptyState.title')}
-            </EmptyStateHeading>
-            <span
-              className="mt-1.5 lg:w-1/2 text-center"
-              dangerouslySetInnerHTML={{
-                __html: htmlIn(t)('governance.emptyState.subtitle'),
-              }}
-            ></span>
-            <ButtonText
-              size="large"
-              label="New Proposal"
-              iconLeft={<IconAdd />}
-              className="mt-4"
-              onClick={() => {
-                trackEvent('governance_newProposalBtn_clicked', {
-                  dao_address: daoDetails?.address,
-                });
-                navigate('new-proposal');
-              }}
-            />
-          </EmptyStateContainer>
-        </Container>
-      </>
+      <PageEmptyState
+        title={t('governance.emptyState.title')}
+        subtitle={htmlIn(t)('governance.emptyState.subtitle')}
+        Illustration={
+          <IllustrationHuman
+            {...{
+              body: 'voting',
+              expression: 'smile',
+              hair: 'middle',
+              accessory: 'earrings_rhombus',
+              sunglass: 'big_rounded',
+            }}
+            {...(isMobile
+              ? {height: 165, width: 295}
+              : {height: 225, width: 400})}
+          />
+        }
+        buttonLabel={t('newProposal.title')}
+        onClick={() => {
+          trackEvent('governance_newProposalBtn_clicked', {
+            dao_address: daoDetails?.address as string,
+          });
+          navigate('new-proposal');
+        }}
+      />
     );
   }
   return (
@@ -193,17 +193,4 @@ const ButtonGroupContainer = styled.div.attrs({
 
 const ListWrapper = styled.div.attrs({
   className: 'mt-3',
-})``;
-
-export const EmptyStateContainer = styled.div.attrs({
-  className:
-    'flex flex-col w-full items-center py-4 px-3 tablet:py-12 tablet:px-6 mx-auto mt-3 tablet:mt-5 text-lg bg-white rounded-xl text-ui-500',
-})``;
-
-const ImageContainer = styled.img.attrs({
-  className: 'object-cover w-1/2',
-})``;
-
-export const EmptyStateHeading = styled.h1.attrs({
-  className: 'mt-4 text-2xl font-bold text-ui-800 text-center',
 })``;
