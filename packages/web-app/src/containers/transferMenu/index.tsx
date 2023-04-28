@@ -9,7 +9,7 @@ import {useGlobalModalContext} from 'context/globalModals';
 import {useNetwork} from 'context/network';
 import {useWallet} from 'hooks/useWallet';
 import {trackEvent} from 'services/analytics';
-import {NewDeposit, NewWithDraw} from 'utils/paths';
+import {NewWithDraw} from 'utils/paths';
 
 type Action = 'deposit_assets' | 'withdraw_assets';
 
@@ -30,7 +30,7 @@ const TransferMenu: React.FC = () => {
     if (!isConnected) {
       open('wallet');
     } else if (action === 'deposit_assets') {
-      navigate(generatePath(NewDeposit, {network: network, dao: dao}));
+      open('deposit');
     } else {
       navigate(generatePath(NewWithDraw, {network: network, dao: dao}));
     }
@@ -41,18 +41,18 @@ const TransferMenu: React.FC = () => {
     <ModalBottomSheetSwitcher
       isOpen={isTransferOpen}
       onClose={() => close('default')}
-      title={t('TransferModal.newTransfer') as string}
+      title={t('TransferModal.newTransfer')}
     >
       <Container>
         <ListItemAction
-          title={t('TransferModal.item1Title') as string}
-          subtitle={t('TransferModal.item1Subtitle') as string}
+          title={t('modal.deposit.headerTitle')}
+          subtitle={t('modal.deposit.headerDescription')}
           iconRight={<IconChevronRight />}
           onClick={() => handleClick('deposit_assets')}
         />
         <ListItemAction
-          title={t('TransferModal.item2Title') as string}
-          subtitle={t('TransferModal.item2Subtitle') as string}
+          title={t('TransferModal.item2Title')}
+          subtitle={t('TransferModal.item2Subtitle')}
           iconRight={<IconChevronRight />}
           onClick={() => handleClick('withdraw_assets')}
         />

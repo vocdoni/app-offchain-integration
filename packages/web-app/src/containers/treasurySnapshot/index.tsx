@@ -39,16 +39,16 @@ const TreasurySnapshot: React.FC<Props> = ({
   if (transfers.length === 0) {
     return (
       <StateEmpty
-        type="Human"
+        type="both"
         mode="card"
-        body={'correct'}
-        expression={'surprised'}
-        hair={'cool'}
-        sunglass={'thuglife'}
-        title={t('dashboard.emptyTransfers.title')}
-        description={htmlIn(t)('dashboard.emptyTransfers.description')}
+        body={'chart'}
+        expression={'excited'}
+        hair={'bun'}
+        object={'wallet'}
+        title={t('finance.emptyState.title')}
+        description={htmlIn(t)('finance.emptyState.description')}
         primaryButton={{
-          label: t('dashboard.emptyTransfers.buttonLabel'),
+          label: t('finance.emptyState.buttonLabel'),
           onClick: () => open(),
         }}
         renderHtml

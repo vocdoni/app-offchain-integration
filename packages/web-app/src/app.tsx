@@ -27,6 +27,7 @@ import {FormProvider, useForm} from 'react-hook-form';
 import {identifyUser, trackPage} from 'services/analytics';
 import {NotFound} from 'utils/paths';
 import '../i18n.config';
+import DepositModal from 'containers/transactionModals/DepositModal';
 
 const DemoSCCPage = lazy(() => import('pages/demoScc'));
 const ExplorePage = lazy(() => import('pages/explore'));
@@ -42,7 +43,6 @@ const ProposeSettingsPage = lazy(() => import('pages/proposeSettings'));
 
 const TokensPage = lazy(() => import('pages/tokens'));
 const TransfersPage = lazy(() => import('pages/transfers'));
-const NewDepositPage = lazy(() => import('pages/newDeposit'));
 const NewWithdrawPage = lazy(() => import('pages/newWithdraw'));
 
 const NewProposalPage = lazy(() => import('pages/newProposal'));
@@ -94,7 +94,6 @@ function App() {
             <Route element={<DaoWrapper />}>
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="finance" element={<FinancePage />} />
-              <Route path="finance/new-deposit" element={<NewDepositPage />} />
               <Route path="finance/tokens" element={<TokensPage />} />
               <Route path="finance/transfers" element={<TransfersPage />} />
               <Route element={<ProtectedRoute />}>
@@ -201,6 +200,7 @@ const DaoWrapper: React.FC = () => {
         <GridLayout>
           <Outlet />
           <TransferMenu />
+          <DepositModal />
           {daoDetails && isOpen && (
             <TransactionDetail
               daoAddress={daoDetails.address}
