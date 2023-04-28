@@ -13,7 +13,7 @@ import {generatePath, useNavigate} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {DaoCard} from 'components/daoCard';
-import {useCachedDaosInfiniteQuery} from 'hooks/useCachedDaos';
+import {useFavoritedDaosInfiniteQuery} from 'hooks/useFavoritedDaos';
 import {
   AugmentedDaoListItem,
   ExploreFilter,
@@ -41,7 +41,7 @@ export const DaoExplorer = () => {
 
   // conditional api queries
   const fetchFavorited = filterValue === 'favorite';
-  const favoritedApi = useCachedDaosInfiniteQuery(fetchFavorited);
+  const favoritedApi = useFavoritedDaosInfiniteQuery(fetchFavorited);
   const daosApi = useDaosInfiniteQuery(fetchFavorited === false, {
     sortBy: toDaoSortBy(filterValue),
   });
@@ -125,7 +125,12 @@ export const DaoExplorer = () => {
                 logo={dao.metadata.avatar}
                 description={dao.metadata.description}
                 chainId={dao.chain}
-                onClick={() => handleDaoClicked(dao.address, dao.chain)}
+                onClick={() =>
+                  handleDaoClicked(
+                    toDisplayEns(dao.ensDomain) || dao.address,
+                    dao.chain
+                  )
+                }
                 daoType={
                   (dao?.plugins?.[0]?.id as PluginTypes) ===
                   'token-voting.plugin.dao.eth'

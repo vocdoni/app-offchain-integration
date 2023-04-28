@@ -6,6 +6,7 @@ import {
   IconChevronDown,
   Option,
   Spinner,
+  IllustrationHuman,
 } from '@aragon/ui-components';
 import {withTransaction} from '@elastic/apm-rum-react';
 import React, {useEffect, useState} from 'react';
@@ -16,21 +17,19 @@ import styled from 'styled-components';
 import ProposalList from 'components/proposalList';
 import {Loading} from 'components/temporary';
 import {PageWrapper} from 'components/wrappers';
-import {useDaoParam} from 'hooks/useDaoParam';
+import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 import {PluginTypes} from 'hooks/usePluginClient';
 import {useProposals} from 'hooks/useProposals';
-import NoProposals from 'public/noProposals.svg';
-import {erc20VotingProposals_erc20VotingProposals} from 'queries/__generated__/erc20VotingProposals';
 import {trackEvent} from 'services/analytics';
 import {ProposalListItem} from 'utils/types';
+import PageEmptyState from 'containers/pageEmptyState';
+import {toDisplayEns} from 'utils/library';
+import useScreen from 'hooks/useScreen';
 import {htmlIn} from 'utils/htmlIn';
 
 const Governance: React.FC = () => {
-  const {
-    data: dao,
-    daoDetails: daoDetails,
-    isLoading: isDaoLoading,
-  } = useDaoParam();
+  const {data: daoDetails, isLoading: isDaoLoading} = useDaoDetailsQuery();
+  const {isMobile} = useScreen();
 
   // The number of proposals displayed on each page
   const PROPOSALS_PER_PAGE = 6;
@@ -83,34 +82,31 @@ const Governance: React.FC = () => {
     filterValue === 'All'
   ) {
     return (
-      <>
-        <Container>
-          <EmptyStateContainer>
-            <ImageContainer src={NoProposals} />
-            <EmptyStateHeading>
-              {t('governance.emptyState.title')}
-            </EmptyStateHeading>
-            <span
-              className="mt-1.5 lg:w-1/2 text-center"
-              dangerouslySetInnerHTML={{
-                __html: htmlIn(t)('governance.emptyState.subtitle'),
-              }}
-            ></span>
-            <ButtonText
-              size="large"
-              label="New Proposal"
-              iconLeft={<IconAdd />}
-              className="mt-4"
-              onClick={() => {
-                trackEvent('governance_newProposalBtn_clicked', {
-                  dao_address: dao,
-                });
-                navigate('new-proposal');
-              }}
-            />
-          </EmptyStateContainer>
-        </Container>
-      </>
+      <PageEmptyState
+        title={t('governance.emptyState.title')}
+        subtitle={htmlIn(t)('governance.emptyState.subtitle')}
+        Illustration={
+          <IllustrationHuman
+            {...{
+              body: 'voting',
+              expression: 'smile',
+              hair: 'middle',
+              accessory: 'earrings_rhombus',
+              sunglass: 'big_rounded',
+            }}
+            {...(isMobile
+              ? {height: 165, width: 295}
+              : {height: 225, width: 400})}
+          />
+        }
+        buttonLabel={t('newProposal.title')}
+        onClick={() => {
+          trackEvent('governance_newProposalBtn_clicked', {
+            dao_address: daoDetails?.address as string,
+          });
+          navigate('new-proposal');
+        }}
+      />
     );
   }
   return (
@@ -122,7 +118,7 @@ const Governance: React.FC = () => {
           iconLeft: <IconAdd />,
           onClick: () => {
             trackEvent('governance_newProposalBtn_clicked', {
-              dao_address: dao,
+              dao_address: daoDetails?.address,
             });
             navigate('new-proposal');
           },
@@ -149,6 +145,10 @@ const Governance: React.FC = () => {
         </ButtonGroupContainer>
         <ListWrapper>
           <ProposalList
+            daoAddressOrEns={
+              toDisplayEns(daoDetails?.ensDomain) ||
+              (daoDetails?.address as string)
+            }
             proposals={displayedProposals}
             pluginAddress={daoDetails?.plugins[0].instanceAddress as string}
             pluginType={daoDetails?.plugins[0].id as PluginTypes}
@@ -194,64 +194,3 @@ const ButtonGroupContainer = styled.div.attrs({
 const ListWrapper = styled.div.attrs({
   className: 'mt-3',
 })``;
-
-export const EmptyStateContainer = styled.div.attrs({
-  className:
-    'flex flex-col w-full items-center py-4 px-3 tablet:py-12 tablet:px-6 mx-auto mt-3 tablet:mt-5 text-lg bg-white rounded-xl text-ui-500',
-})``;
-
-const ImageContainer = styled.img.attrs({
-  className: 'object-cover w-1/2',
-})``;
-
-export const EmptyStateHeading = styled.h1.attrs({
-  className: 'mt-4 text-2xl font-bold text-ui-800 text-center',
-})``;
-
-export interface CategorizedProposal
-  extends erc20VotingProposals_erc20VotingProposals {
-  type: 'draft' | 'pending' | 'active' | 'succeeded' | 'executed' | 'defeated';
-}
-
-/**
- * Takes and uncategorized proposal and categorizes it according to definitions.
- * @param uncategorizedProposal
- * @returns categorized proposal (i.e., uncategorizedProposal with additional
- * type field)
- */
-export function categorizeProposal(
-  uncategorizedProposal: erc20VotingProposals_erc20VotingProposals
-): CategorizedProposal {
-  const now = Date.now();
-  //onchain data coming in as seconds. Convert to milliseconds to compare with now.
-  const start =
-    Number.parseInt(uncategorizedProposal.startDate as string) * 1000;
-  const end = Number.parseInt(uncategorizedProposal.endDate as string) * 1000;
-
-  if (start >= now) {
-    return {
-      ...uncategorizedProposal,
-      type: 'pending',
-    };
-  } else if (end >= now) {
-    return {
-      ...uncategorizedProposal,
-      type: 'active',
-    };
-  } else if (uncategorizedProposal.executed) {
-    return {
-      ...uncategorizedProposal,
-      type: 'executed',
-    };
-  } else if (uncategorizedProposal.yea > uncategorizedProposal.nay) {
-    return {
-      ...uncategorizedProposal,
-      type: 'succeeded',
-    };
-  } else {
-    return {
-      ...uncategorizedProposal,
-      type: 'defeated',
-    };
-  }
-}

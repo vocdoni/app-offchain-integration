@@ -45,6 +45,7 @@ export const useDaoProposal = (
   pluginAddress: string,
   intervalInMills?: number
 ): HookData<DetailedProposal | undefined> => {
+  // TODO: please remove daoAddress when refactoring to react-query based query
   const [data, setData] = useState<DetailedProposal>();
   const [error, setError] = useState<Error>();
   const [isLoading, setIsLoading] = useState(false);
@@ -187,7 +188,7 @@ export const useDaoProposal = (
       }
     };
 
-    if (proposalGuid) getDaoProposal(proposalGuid);
+    if (proposalGuid && daoAddress) getDaoProposal(proposalGuid);
   }, [
     daoAddress,
     getCachedProposalData,
