@@ -16,6 +16,7 @@ typechain
 # misc
 .vscode
 .yarn
+.yarnrc
 .DS_Store
 *.pem
 
