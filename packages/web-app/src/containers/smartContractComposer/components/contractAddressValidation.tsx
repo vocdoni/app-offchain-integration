@@ -21,12 +21,22 @@ import styled from 'styled-components';
 import ModalBottomSheetSwitcher from 'components/modalBottomSheetSwitcher';
 import {useAlertContext} from 'context/alert';
 import {useNetwork} from 'context/network';
+import {useWallet} from 'hooks/useWallet';
 import {SccFormData} from 'pages/demoScc';
+import {addVerifiedSmartContract} from 'services/cache';
 import {CHAIN_METADATA, TransactionState} from 'utils/constants';
 import {handleClipboardActions} from 'utils/library';
 import {EtherscanContractResponse} from 'utils/types';
-import {validateContract} from 'utils/validators';
 import ModalHeader from './modalHeader';
+import {fetchTokenData} from 'services/prices';
+import {useApolloClient} from '@apollo/client';
+import {getTokenInfo} from 'utils/tokens';
+import {useProviders} from 'context/providers';
+import {getEtherscanVerifiedContract} from 'services/contractVerification';
+
+type AugmentedEtherscanContractResponse = EtherscanContractResponse & {
+  logo?: string;
+};
 
 type Props = {
   isOpen: boolean;
@@ -47,15 +57,17 @@ const icons = {
 const ContractAddressValidation: React.FC<Props> = props => {
   const {t} = useTranslation();
   const {alert} = useAlertContext();
+  const client = useApolloClient();
+  const {address} = useWallet();
   const {network} = useNetwork();
+  const {infura: provider} = useProviders();
 
   const [verificationState, setVerificationState] = useState<TransactionState>(
     TransactionState.WAITING
   );
 
-  const {control, setValue, resetField, setError} =
+  const {control, resetField, setValue, setError} =
     useFormContext<SccFormData>();
-
   const {errors} = useFormState({control});
   const [addressField, contracts] = useWatch({
     name: ['contractAddress', 'contracts'],
@@ -73,28 +85,65 @@ const ContractAddressValidation: React.FC<Props> = props => {
     [TransactionState.ERROR]: '',
   };
 
-  const setContractValid = useCallback(
-    (value: EtherscanContractResponse) => {
+  const setVerifiedContract = useCallback(
+    (value: AugmentedEtherscanContractResponse) => {
       if (value) {
         setVerificationState(TransactionState.SUCCESS);
-        setValue('contracts', [
-          ...contracts,
-          {
-            actions: JSON.parse(value.ABI),
-            address: addressField,
-            name: value.ContractName,
-          },
-        ]);
+
+        const verifiedContract = {
+          actions: JSON.parse(value.ABI),
+          address: addressField,
+          name: value.ContractName,
+          logo: value.logo,
+        };
+
+        setValue('contracts', [...contracts, verifiedContract]);
+
+        // add to storage
+        addVerifiedSmartContract(
+          verifiedContract,
+          address,
+          CHAIN_METADATA[network].id
+        );
       } else {
         setVerificationState(TransactionState.WAITING);
         setError('contractAddress', {
           type: 'validate',
-          message: t('errors.notValidContractAddress') as string,
+          message: t('errors.notValidContractAddress'),
         });
       }
     },
-    [addressField, contracts, setError, setValue, t]
+    [address, addressField, contracts, network, setError, setValue, t]
   );
+
+  const handleContractValidation = useCallback(async () => {
+    setVerificationState(TransactionState.LOADING);
+
+    // TODO: pick up contract logo from different source;
+    // currently this is getting token logos from Coingecko
+    // only.
+
+    // Getting token info so that Goerli contracts can use the logos
+    // of mainnet ones
+    const [tokenData, validatedContract] = await Promise.all([
+      getTokenInfo(
+        addressField,
+        provider,
+        CHAIN_METADATA[network].nativeCurrency
+      ).then(value => {
+        return fetchTokenData(addressField, client, network, value.symbol);
+      }),
+      getEtherscanVerifiedContract(addressField, network),
+    ]);
+
+    if (validatedContract) {
+      const verifiedContract = {
+        ...validatedContract,
+        logo: tokenData?.imgUrl,
+      };
+      setVerifiedContract(verifiedContract);
+    }
+  }, [addressField, client, network, provider, setVerifiedContract]);
 
   // clear field when there is a value, else paste
   const handleAdornmentClick = useCallback(
@@ -118,7 +167,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
 
     // check if address is valid address string
     if (isAddress(value)) return true;
-    else return t('errors.invalidAddress') as string;
+    else return t('errors.invalidAddress');
   };
 
   const adornmentText = useMemo(() => {
@@ -136,7 +185,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
   return (
     <ModalBottomSheetSwitcher isOpen={props.isOpen} onClose={props.onClose}>
       <ModalHeader
-        title={t('scc.addressValidation.modalTitle') as string}
+        title={t('scc.addressValidation.modalTitle')}
         onClose={() => {
           // clear contract address field
           resetField('contractAddress');
@@ -159,7 +208,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
             {t('scc.addressValidation.description')}{' '}
             <Link
               external
-              label={t('labels.etherscan') as string}
+              label={t('labels.etherscan')}
               href={`${CHAIN_METADATA[network].explorer}`}
             />
           </Description>
@@ -167,7 +216,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
         <Controller
           name="contractAddress"
           rules={{
-            required: t('errors.required.tokenAddress') as string,
+            required: t('errors.required.tokenAddress'),
             validate: addressValidator,
           }}
           control={control}
@@ -197,11 +246,8 @@ const ContractAddressValidation: React.FC<Props> = props => {
           )}
         />
         <ButtonText
-          label={label[verificationState] as string}
-          onClick={async () => {
-            setVerificationState(TransactionState.LOADING);
-            setContractValid(await validateContract(addressField, network));
-          }}
+          label={label[verificationState]}
+          onClick={handleContractValidation}
           iconLeft={
             isTransactionLoading ? (
               <Spinner size="xs" color="white" />
@@ -216,12 +262,10 @@ const ContractAddressValidation: React.FC<Props> = props => {
         {isTransactionSuccessful && (
           <AlertInlineContainer>
             <AlertInline
-              label={
-                t('scc.addressValidation.successLabel', {
-                  contractName: contracts[contracts.length - 1]?.name,
-                }) as string
-              }
               mode="success"
+              label={t('scc.addressValidation.successLabel', {
+                contractName: contracts[contracts.length - 1]?.name,
+              })}
             />
           </AlertInlineContainer>
         )}

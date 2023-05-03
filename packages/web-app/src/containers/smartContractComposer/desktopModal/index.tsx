@@ -1,22 +1,17 @@
-import {
-  ButtonText,
-  IconMenuVertical,
-  ListItemAction,
-  Modal,
-} from '@aragon/ui-components';
+import {ButtonText, IconMenuVertical, Modal} from '@aragon/ui-components';
 import React from 'react';
+import {useWatch} from 'react-hook-form';
 import {useTranslation} from 'react-i18next';
 import styled from 'styled-components';
-import {useWatch} from 'react-hook-form';
 
 import {StateEmpty} from 'components/stateEmpty';
 import {SmartContract, SmartContractAction} from 'utils/types';
+import ActionListGroup from '../components/actionListGroup';
+import {ListItemContract} from '../components/listItemContract';
 import SmartContractListGroup from '../components/smartContractListGroup';
 import Header from './header';
-import ActionListGroup from '../components/actionListGroup';
 
 type DesktopModalProps = {
-  contracts: Array<SmartContract>;
   isOpen: boolean;
   onClose: () => void;
   onConnect: () => void;
@@ -37,10 +32,11 @@ const DesktopModal: React.FC<DesktopModalProps> = props => {
         <Aside>
           {selectedSC ? (
             <>
-              <ListItemAction
+              <ListItemContract
                 key={selectedSC.address}
                 title={selectedSC.name}
                 subtitle={`${selectedSC.actions.length} Actions to compose`}
+                logo={selectedSC.logo}
                 bgWhite
                 iconRight={<IconMenuVertical />}
               />
@@ -55,7 +51,7 @@ const DesktopModal: React.FC<DesktopModalProps> = props => {
             </>
           ) : (
             <>
-              <SmartContractListGroup contracts={props.contracts} />
+              <SmartContractListGroup />
               <ButtonText
                 mode="secondary"
                 size="large"

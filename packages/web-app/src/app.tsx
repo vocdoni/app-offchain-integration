@@ -1,41 +1,33 @@
-import React, {lazy, Suspense, useEffect} from 'react';
-
 // FIXME: Change route to ApmRoute once package has been updated to be
 // compatible with react-router-dom v6
-import {
-  Navigate,
-  Outlet,
-  Route,
-  Routes,
-  useLocation,
-  useParams,
-} from 'react-router-dom';
-
-import Navbar from 'containers/navbar';
-import {WalletMenu} from 'containers/walletMenu';
-import {identifyUser, trackPage} from 'services/analytics';
-import '../i18n.config';
+import React, {lazy, Suspense, useEffect} from 'react';
+import {Navigate, Outlet, Route, Routes, useLocation} from 'react-router-dom';
 
 // HACK: All pages MUST be exported with the withTransaction function
 // from the '@elastic/apm-rum-react' package in order for analytics to
 // work properly on the pages.
 import {GridLayout} from 'components/layout';
+import ProtectedRoute from 'components/protectedRoute';
 import {Loading} from 'components/temporary/loading';
 import ExploreFooter from 'containers/exploreFooter';
+import Footer from 'containers/footer';
+import Navbar from 'containers/navbar';
 import DaoSelectMenu from 'containers/navbar/daoSelectMenu';
 import ExploreNav from 'containers/navbar/exploreNav';
 import NetworkErrorMenu from 'containers/networkErrorMenu';
 import TransactionDetail from 'containers/transactionDetail';
 import TransferMenu from 'containers/transferMenu';
+import {WalletMenu} from 'containers/walletMenu';
 import {ProposalTransactionProvider} from 'context/proposalTransaction';
-import {useDaoDetails} from 'hooks/useDaoDetails';
+import {useTransactionDetailContext} from 'context/transactionDetail';
+import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 import {useWallet} from 'hooks/useWallet';
 import CreateDAO from 'pages/createDAO';
 import {FormProvider, useForm} from 'react-hook-form';
+import {identifyUser, trackPage} from 'services/analytics';
 import {NotFound} from 'utils/paths';
-import ProtectedRoute from 'components/protectedRoute';
-import {useTransactionDetailContext} from 'context/transactionDetail';
-import Footer from 'containers/footer';
+import '../i18n.config';
+import DepositModal from 'containers/transactionModals/DepositModal';
 
 const DemoSCCPage = lazy(() => import('pages/demoScc'));
 const ExplorePage = lazy(() => import('pages/explore'));
@@ -51,7 +43,6 @@ const ProposeSettingsPage = lazy(() => import('pages/proposeSettings'));
 
 const TokensPage = lazy(() => import('pages/tokens'));
 const TransfersPage = lazy(() => import('pages/transfers'));
-const NewDepositPage = lazy(() => import('pages/newDeposit'));
 const NewWithdrawPage = lazy(() => import('pages/newWithdraw'));
 
 const NewProposalPage = lazy(() => import('pages/newProposal'));
@@ -103,7 +94,6 @@ function App() {
             <Route element={<DaoWrapper />}>
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="finance" element={<FinancePage />} />
-              <Route path="finance/new-deposit" element={<NewDepositPage />} />
               <Route path="finance/tokens" element={<TokensPage />} />
               <Route path="finance/transfers" element={<TransfersPage />} />
               <Route element={<ProtectedRoute />}>
@@ -196,8 +186,7 @@ const ExploreWrapper: React.FC = () => (
 );
 
 const DaoWrapper: React.FC = () => {
-  const {dao} = useParams();
-  const {data: daoDetails} = useDaoDetails(dao!);
+  const {data: daoDetails} = useDaoDetailsQuery();
 
   // using isOpen to conditionally render TransactionDetail so that
   // api call is not made on mount regardless of whether the user
@@ -211,9 +200,11 @@ const DaoWrapper: React.FC = () => {
         <GridLayout>
           <Outlet />
           <TransferMenu />
+          <DepositModal />
           {daoDetails && isOpen && (
             <TransactionDetail
               daoAddress={daoDetails.address}
+              daoEns={daoDetails.ensDomain}
               daoName={daoDetails.metadata.name}
               daoPlugin={daoDetails.plugins[0]}
             />
