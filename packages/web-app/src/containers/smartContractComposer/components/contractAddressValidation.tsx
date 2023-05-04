@@ -22,7 +22,7 @@ import ModalBottomSheetSwitcher from 'components/modalBottomSheetSwitcher';
 import {useAlertContext} from 'context/alert';
 import {useNetwork} from 'context/network';
 import {useWallet} from 'hooks/useWallet';
-import {SccFormData} from 'pages/demoScc';
+import {SccFormData} from 'containers/smartContractComposer';
 import {addVerifiedSmartContract} from 'services/cache';
 import {CHAIN_METADATA, TransactionState} from 'utils/constants';
 import {handleClipboardActions} from 'utils/library';
@@ -40,6 +40,7 @@ type AugmentedEtherscanContractResponse = EtherscanContractResponse & {
 
 type Props = {
   isOpen: boolean;
+  onVerificationSuccess: () => void;
   onClose: () => void;
   onBackButtonClicked: () => void;
 };
@@ -69,6 +70,8 @@ const ContractAddressValidation: React.FC<Props> = props => {
   const {control, resetField, setValue, setError} =
     useFormContext<SccFormData>();
   const {errors} = useFormState({control});
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   const [addressField, contracts] = useWatch({
     name: ['contractAddress', 'contracts'],
     control,
@@ -247,7 +250,13 @@ const ContractAddressValidation: React.FC<Props> = props => {
         />
         <ButtonText
           label={label[verificationState]}
-          onClick={handleContractValidation}
+          onClick={async () => {
+            if (verificationState === TransactionState.SUCCESS) {
+              props.onVerificationSuccess();
+            } else {
+              handleContractValidation();
+            }
+          }}
           iconLeft={
             isTransactionLoading ? (
               <Spinner size="xs" color="white" />
