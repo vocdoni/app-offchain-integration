@@ -372,11 +372,36 @@ export type EtherscanContractResponse = {
   SourceCode: string;
 };
 
+export type SourcifyContractResponse = {
+  output: {
+    abi: SmartContractAction[];
+    devdoc: {
+      title: string;
+      methods: {
+        // contract write method name with its input params
+        [key: string]: {
+          // description for each method
+          details: string;
+          params: {
+            // contract method input params
+            [key: string]: string;
+          };
+          returns: {
+            // contract method output params
+            [key: string]: string;
+          };
+        };
+      };
+    };
+  };
+};
+
 export type SmartContractAction = {
   name: string;
   type: string;
   stateMutability: string;
   inputs: Input[];
+  notice?: string;
 };
 
 export interface Input {
@@ -385,6 +410,7 @@ export interface Input {
   indexed?: boolean;
   components?: Input[];
   internalType?: string;
+  notice?: string;
 }
 
 export type SmartContract = {
