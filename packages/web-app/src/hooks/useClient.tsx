@@ -13,7 +13,6 @@ import {
   CHAIN_METADATA,
   IPFS_ENDPOINT_MAIN_0,
   IPFS_ENDPOINT_MAIN_1,
-  IPFS_ENDPOINT_TEST,
   SUBGRAPH_API_URL,
   SupportedNetworks,
 } from 'utils/constants';
@@ -58,7 +57,7 @@ export const UseClientProvider: React.FC = ({children}) => {
       return;
     }
 
-    let ipfsNodes = [
+    const ipfsNodes = [
       {
         url: IPFS_ENDPOINT_MAIN_0,
         headers: {
@@ -72,6 +71,7 @@ export const UseClientProvider: React.FC = ({children}) => {
         },
       },
     ];
+    /*
     if (network !== 'ethereum') {
       ipfsNodes = [
         {
@@ -82,6 +82,7 @@ export const UseClientProvider: React.FC = ({children}) => {
         },
       ];
     }
+    */
 
     const contextParams: ContextParams = {
       daoFactoryAddress: LIVE_CONTRACTS[translatedNetwork].daoFactory,

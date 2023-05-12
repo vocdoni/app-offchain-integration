@@ -403,13 +403,13 @@
     "multisig": {
       "proposalMinDuration": "One hour is the minimum expiration time.",
       "proposalMaxDuration": "To keep your DAO secure, it's not recommended to have an expiration time longer than 2 weeks. ",
-      "accepTableProposalDuration": "It’s recommended to have an expiration time of five days, so you have a clean proposal list.",
+      "accepTableProposalDuration": "It's recommended to have an expiration time of five days, so you have a clean proposal list.",
       "dateTimeMinDuration": "Duration cannot be less than one hour."
     },
     "durationAlert": "We recommend a minimum duration of at least one day so members have time to vote. You can always lengthen the duration when posting a proposal.",
     "maxDurationAlert": "The maximum duration is 365 days.",
     "minDurationAlert": "The minimum duration is one hour.",
-    "startDateInPastAlert": "Start time can’t be in the past. ",
+    "startDateInPastAlert": "Start time can't be in the past. ",
     "wrongWalletNetwork": "Wrong wallet network",
     "wrongNetwork": {
       "title": "Wrong network",
