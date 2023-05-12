@@ -13,7 +13,6 @@ import {
   CHAIN_METADATA,
   IPFS_ENDPOINT_MAIN_0,
   IPFS_ENDPOINT_MAIN_1,
-  IPFS_ENDPOINT_TEST,
   SUBGRAPH_API_URL,
   SupportedNetworks,
 } from 'utils/constants';
