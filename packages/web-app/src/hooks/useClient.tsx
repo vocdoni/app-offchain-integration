@@ -58,7 +58,7 @@ export const UseClientProvider: React.FC = ({children}) => {
       return;
     }
 
-    let ipfsNodes = [
+    const ipfsNodes = [
       {
         url: IPFS_ENDPOINT_MAIN_0,
         headers: {
@@ -72,6 +72,7 @@ export const UseClientProvider: React.FC = ({children}) => {
         },
       },
     ];
+    /*
     if (network !== 'ethereum') {
       ipfsNodes = [
         {
@@ -82,6 +83,7 @@ export const UseClientProvider: React.FC = ({children}) => {
         },
       ];
     }
+    */
 
     const contextParams: ContextParams = {
       daoFactoryAddress: LIVE_CONTRACTS[translatedNetwork].daoFactory,
