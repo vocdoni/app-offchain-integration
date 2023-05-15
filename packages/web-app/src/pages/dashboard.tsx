@@ -55,7 +55,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const {network} = useNetwork();
   const {dao: urlAddressOrEns} = useParams();
-  const {open} = useGlobalModalContext();
+  // const {open} = useGlobalModalContext();
 
   const [pollInterval, setPollInterval] = useState(0);
   const [daoCreationState, setDaoCreationState] = useState<DaoCreationState>(
