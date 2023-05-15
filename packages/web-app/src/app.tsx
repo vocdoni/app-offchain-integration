@@ -28,8 +28,8 @@ import {identifyUser, trackPage} from 'services/analytics';
 import {NotFound} from 'utils/paths';
 import '../i18n.config';
 import DepositModal from 'containers/transactionModals/DepositModal';
+import PoapClaimModal from 'containers/poapClaiming/PoapClaimModal';
 
-const DemoSCCPage = lazy(() => import('pages/demoScc'));
 const ExplorePage = lazy(() => import('pages/explore'));
 const NotFoundPage = lazy(() => import('pages/notFound'));
 
@@ -82,8 +82,6 @@ function App() {
       {/* TODO: replace with loading indicator */}
       <Suspense fallback={<Loading />}>
         <Routes>
-          <Route path="/scc" element={<DemoSCCPage />} />
-
           <Route element={<ExploreWrapper />}>
             <Route path="/" element={<ExplorePage />} />
           </Route>
@@ -138,6 +136,7 @@ function App() {
       </Suspense>
       <DaoSelectMenu />
       <WalletMenu />
+      <PoapClaimModal />
       <NetworkErrorMenu />
     </>
   );
