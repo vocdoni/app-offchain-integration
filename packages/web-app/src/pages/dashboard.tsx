@@ -39,7 +39,7 @@ import {
   EmptyStateContainer,
   EmptyStateHeading,
 } from 'containers/pageEmptyState';
-import {useGlobalModalContext} from 'context/globalModals';
+//import {useGlobalModalContext} from 'context/globalModals';
 
 enum DaoCreationState {
   ASSEMBLING_DAO,
