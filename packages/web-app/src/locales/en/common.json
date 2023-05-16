@@ -281,6 +281,9 @@
         "edit": "Edit proposal",
         "readFullProposal": "Read full proposal",
         "closeFullProposal": "Close full proposal"
+      },
+      "alert": {
+        "voted": "You have already voted."
       }
     },
     "settings": {
