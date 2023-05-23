@@ -116,7 +116,7 @@ export function scanNatspecBlock(
  * text may be quite long. Includes superClasses property for a contract to allow
  * retrieval of natspec data for functions which have the @inheritdoc tag.
  */
-export function extractNatspec(source: string) {
+export function extractNatSpec(source: string) {
   let pos = 0,
     posEnd = 0;
   let match = '';
@@ -254,4 +254,18 @@ export const skipWhitespace = (str: string, start: number) => {
   let pos = start;
   while (' \t\n\r\v'.indexOf(str[pos]) > -1 && pos < str.length) pos++;
   return pos;
+};
+
+export const flattenNatSpecTags = (
+  NatSpec: Record<string, NatspecContract>
+) => {
+  const flatTags: Record<string, unknown> = {};
+
+  Object.values(NatSpec).map(contract => {
+    Object.values(contract.details).map(
+      details => (flatTags[details.name] = details.tags)
+    );
+  });
+
+  return flatTags;
 };

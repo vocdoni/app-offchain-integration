@@ -1,5 +1,6 @@
 import {
   ButtonText,
+  IconSuccess,
   NumberInput,
   TextInput,
   WalletInput,
@@ -15,6 +16,7 @@ import {
   useFormContext,
   useWatch,
 } from 'react-hook-form';
+import {useTranslation} from 'react-i18next';
 import {useParams} from 'react-router-dom';
 import {trackEvent} from 'services/analytics';
 import styled from 'styled-components';
@@ -34,6 +36,7 @@ const InputForm: React.FC<InputFormProps> = ({
   actionIndex,
   onComposeButtonClicked,
 }) => {
+  const {t} = useTranslation();
   const [selectedAction, selectedSC, sccActions]: [
     SmartContractAction,
     SmartContract,
@@ -47,18 +50,30 @@ const InputForm: React.FC<InputFormProps> = ({
 
   if (!selectedAction) {
     return (
-      <div className="p-6 min-h-full bg-white">
+      <div className="desktop:p-6 min-h-full bg-ui-50 desktop:bg-white">
         Sorry, no public Write functions were found for this contract.
       </div>
     );
   }
 
   return (
-    <div className="p-6 min-h-full bg-white">
-      <ActionName>{selectedAction.name}</ActionName>
+    <div className="desktop:p-6 min-h-full bg-ui-50 desktop:bg-white">
+      <div className="desktop:flex items-baseline space-x-3">
+        <ActionName>{selectedAction.name}</ActionName>
+        <div className="hidden desktop:flex items-center space-x-1 text-primary-600">
+          <p className="text-sm font-bold text-primary-500">
+            {selectedSC.name}
+          </p>
+          <IconSuccess />
+        </div>
+      </div>
       <ActionDescription>{selectedAction.notice}</ActionDescription>
+      <div className="flex desktop:hidden items-center mt-1 space-x-1 text-primary-600">
+        <p className="text-sm font-bold text-primary-500">{selectedSC.name}</p>
+        <IconSuccess />
+      </div>
       {selectedAction.inputs.length > 0 ? (
-        <div className="p-3 mt-5 space-y-2 bg-ui-50 rounded-xl border-ui-100 shadow-100">
+        <div className="p-3 mt-5 space-y-2 bg-white desktop:bg-ui-50 rounded-xl border border-ui-100 shadow-100">
           {selectedAction.inputs.map(input => (
             <div key={input.name}>
               <div className="text-base font-bold text-ui-800 capitalize">
@@ -81,8 +96,8 @@ const InputForm: React.FC<InputFormProps> = ({
       ) : null}
 
       <ButtonText
-        label="Compose"
-        className="mt-5"
+        label={t('scc.detailContract.ctaLabel')}
+        className="mt-5 w-full desktop:w-max"
         onClick={() => {
           removeAction(actionIndex);
           addAction({
