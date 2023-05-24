@@ -52,8 +52,9 @@ import {useQueryClient} from '@tanstack/react-query';
 import {htmlIn} from 'utils/htmlIn';
 import {trackEvent} from 'services/analytics';
 import {useParams} from 'react-router-dom';
+import {attachEtherNotice} from 'utils/contract';
 
-type AugmentedEtherscanContractResponse = EtherscanContractResponse &
+export type AugmentedEtherscanContractResponse = EtherscanContractResponse &
   SourcifyContractResponse & {
     logo?: string;
   };
@@ -173,10 +174,16 @@ const ContractAddressValidation: React.FC<Props> = props => {
           };
           setContractName(value.output.devdoc.title as string);
         } else {
+          const actions = attachEtherNotice(
+            value.SourceCode,
+            value.ContractName,
+            JSON.parse(value?.ABI || '')
+          );
+
           verifiedContract = {
-            actions: JSON.parse(value?.ABI || ''),
+            actions: actions,
             address: addressField,
-            name: value?.ContractName,
+            name: value.ContractName,
             logo,
           };
           setContractName(value?.ContractName);
