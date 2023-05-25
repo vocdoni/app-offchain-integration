@@ -199,8 +199,8 @@
     "noResources": "No resources were added",
     "newTokens": "New tokens",
     "newHolders": "New holders",
-    "totalTokens": "Total tokens",
-    "totalHolders": "Total holders",
+    "totalTokens": "Total new token supply",
+    "totalHolders": "Total new holders",
     "mintable": "Mintable",
     "new": "New",
     "pendingTransaction": "Pending transaction …",
@@ -226,7 +226,12 @@
     "addWalletsDescriptionLinkLabel": "read our guide",
     "addWalletsDescription": "Wallets can create proposals, propose to send funds in and out of the treasury, and vote in your DAO.",
     "daoEnsName": "ENS Subdomain",
-    "ens": "ENS"
+    "ens": "ENS",
+    "currentTokenSupply": "Current token supply",
+    "helptext": {
+      "snapshot": "Based on this proposal snapshot"
+    },
+    "currentHolders": "Current holders"
   },
   "placeHolders": {
     "selectToken": "Select a token …",
@@ -532,7 +537,7 @@
     "mintTokensSubtitle": "Mint more DAO tokens and distribute to wallets.",
     "withdrawAssetsSubtitle": "Create a proposal to withdraw assets to a wallet.",
     "withdrawAssetsActionSubtitle": "Withdraw assets from the DAO treasury",
-    "externalContract": "Interact with a contract",
+    "externalContract": "Smart contract composer",
     "externalContractSubtitle": "Interact with an external contract on the chain your DAO is deployed on.",
     "changeMinimumApproval": "Change minimum approval",
     "changeMinimumApprovalSubtitle": "Modify minimum approval of this DAO."
@@ -1039,7 +1044,7 @@
       "title": "No smart contract added",
       "description": "Add a smart contract to interact with it. To learn more, read {{link}}.",
       "modalTitle": "Smart contract composer",
-      "descriptionLinkURL": "https://",
+      "descriptionLinkURL": "https://aragon.org/how-to/interact-with-external-contracts-from-your-dao",
       "descriptionLinkLabel": "our guide"
     },
     "abi": {
@@ -1082,5 +1087,12 @@
     "ensAlertWarning": "This network does not support ENS domains",
     "ensAlertCirtical": "Invalid ENS",
     "addressAlertCritical": "Invalid address"
+  },
+  "modalWarning": {
+    "mintToken": {
+      "title": "Another proposal is active",
+      "description": "Beware of another proposal that mints additional tokens. This implies that the token supply may not be the final one and that it may affect future votes.",
+      "ctaLabel": "OK, understood"
+    }
   }
 }
