@@ -6,17 +6,22 @@ import ContractAddressValidation from 'containers/smartContractComposer/componen
 import SmartContractList from 'containers/smartContractComposer/contractListModal';
 import EmptyState from 'containers/smartContractComposer/emptyStateModal/emptyState';
 import {SmartContract, SmartContractAction} from 'utils/types';
-import {getVerifiedSmartContracts} from 'services/cache';
+import {
+  getVerifiedSmartContracts,
+  removeVerifiedSmartContract,
+} from 'services/cache';
 import {useWallet} from 'hooks/useWallet';
 import {CHAIN_METADATA} from 'utils/constants';
 import {useActionsContext} from 'context/actions';
+import {useAlertContext} from 'context/alert';
 
 // TODO please move to types
 export type SccFormData = {
   contractAddress: string;
   contracts: SmartContract[];
-  selectedSC: SmartContract;
+  selectedSC: SmartContract | null;
   selectedAction: SmartContractAction;
+  ABIInput: string;
 };
 
 type SCC = {
@@ -31,9 +36,10 @@ const SCC: React.FC<SCC> = ({actionIndex}) => {
   const [addressValidationIsOpen, setAddressValidationIsOpen] = useState(false);
 
   const {network} = useNetwork();
-  const {setValue, resetField} = useFormContext();
+  const {setValue, getValues, resetField} = useFormContext();
   const connectedContracts = useWatch({name: 'contracts'});
-  const {removeAction} = useActionsContext();
+  const {addAction, removeAction} = useActionsContext();
+  const {alert} = useAlertContext();
 
   useEffect(() => {
     if (address) {
@@ -78,10 +84,35 @@ const SCC: React.FC<SCC> = ({actionIndex}) => {
           resetField('sccActions');
           removeAction(actionIndex);
         }}
-        onComposeButtonClicked={() => {
-          setContractListIsOpen(false);
+        onComposeButtonClicked={(another: boolean) => {
+          if (!another) setContractListIsOpen(false);
+          // CrowdIn needed
+          if (another) {
+            alert('Smart contract action added successfully');
+            addAction({
+              name: 'external_contract_modal',
+            });
+          }
           setValue('selectedSC', null);
           setValue('selectedAction', null);
+        }}
+        onRemoveContract={scAddress => {
+          setValue('selectedSC', null);
+          setValue('selectedAction', null);
+          resetField('sccActions');
+          removeVerifiedSmartContract(
+            scAddress,
+            address,
+            CHAIN_METADATA[network].id
+          );
+          const currentContracts = getValues('contracts') as SmartContract[];
+          const removeIdx = currentContracts.findIndex(
+            ({address}) => address === scAddress
+          );
+          if (removeIdx !== -1) {
+            currentContracts.splice(removeIdx, 1);
+            setValue('contracts', currentContracts);
+          }
         }}
       />
 
@@ -91,8 +122,14 @@ const SCC: React.FC<SCC> = ({actionIndex}) => {
           setEmptyStateIsOpen(false);
           setAddressValidationIsOpen(true);
         }}
-        onClose={() => setEmptyStateIsOpen(false)}
-        onBackButtonClicked={() => setEmptyStateIsOpen(false)}
+        onClose={() => {
+          setEmptyStateIsOpen(false);
+          removeAction(actionIndex);
+        }}
+        onBackButtonClicked={() => {
+          setEmptyStateIsOpen(false);
+          removeAction(actionIndex);
+        }}
       />
 
       <ContractAddressValidation
@@ -101,8 +138,14 @@ const SCC: React.FC<SCC> = ({actionIndex}) => {
           setAddressValidationIsOpen(false);
           setContractListIsOpen(true);
         }}
-        onClose={() => setAddressValidationIsOpen(false)}
-        onBackButtonClicked={() => setAddressValidationIsOpen(false)}
+        onClose={() => {
+          setAddressValidationIsOpen(false);
+          removeAction(actionIndex);
+        }}
+        onBackButtonClicked={() => {
+          setAddressValidationIsOpen(false);
+          removeAction(actionIndex);
+        }}
       />
     </>
   );

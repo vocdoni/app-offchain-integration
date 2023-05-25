@@ -49,7 +49,11 @@ import {
   minutesToMills,
   offsetToMills,
 } from 'utils/date';
-import {customJSONReplacer, toDisplayEns} from 'utils/library';
+import {
+  customJSONReplacer,
+  getDefaultPayableAmountInputName,
+  toDisplayEns,
+} from 'utils/library';
 import {Proposal} from 'utils/paths';
 import {
   CacheProposalParams,
@@ -237,7 +241,19 @@ const CreateProposalProvider: React.FC<Props> = ({
             etherscanData.status === '1' &&
             etherscanData.result[0].ABI !== 'Contract source code not verified'
           ) {
-            const functionParams = action.inputs.map(input => input.value);
+            const functionParams = action.inputs
+              .filter(
+                // ignore payable value
+                input => input.name !== getDefaultPayableAmountInputName(t)
+              )
+              .map(input => {
+                const param = input.value;
+
+                if (typeof param === 'string' && param.indexOf('[') === 0) {
+                  return JSON.parse(param);
+                }
+                return param;
+              });
 
             const iface = new ethers.utils.Interface(
               etherscanData.result[0].ABI
@@ -250,7 +266,7 @@ const CreateProposalProvider: React.FC<Props> = ({
             actions.push(
               Promise.resolve({
                 to: action.contractAddress,
-                value: BigInt(0),
+                value: ethers.utils.parseEther(action.value || '0').toBigInt(),
                 data: hexToBytes(hexData),
               })
             );
@@ -269,6 +285,7 @@ const CreateProposalProvider: React.FC<Props> = ({
     pluginAddress,
     pluginSettings,
     network,
+    t,
   ]);
 
   // Because getValues does NOT get updated on each render, leaving this as
@@ -315,16 +332,22 @@ const CreateProposalProvider: React.FC<Props> = ({
       const ipfsUri = await pluginClient?.methods.pinMetadata(metadata);
 
       // getting dates
-      let startDateTime =
-        startSwitch === 'now'
-          ? new Date(
-              `${getCanonicalDate()}T${getCanonicalTime({
-                minutes: 10,
-              })}:00${getCanonicalUtcOffset()}`
-            )
-          : new Date(
-              `${startDate}T${startTime}:00${getCanonicalUtcOffset(startUtc)}`
-            );
+      let startDateTime: Date;
+      const startMinutesDelay = isMultisigVotingSettings(pluginSettings)
+        ? 0
+        : 10;
+
+      if (startSwitch === 'now') {
+        startDateTime = new Date(
+          `${getCanonicalDate()}T${getCanonicalTime({
+            minutes: startMinutesDelay,
+          })}:00${getCanonicalUtcOffset()}`
+        );
+      } else {
+        startDateTime = new Date(
+          `${startDate}T${startTime}:00${getCanonicalUtcOffset(startUtc)}`
+        );
+      }
 
       // End date
       let endDateTime;
@@ -347,12 +370,14 @@ const CreateProposalProvider: React.FC<Props> = ({
       }
 
       if (startSwitch === 'now') {
-        endDateTime = new Date(endDateTime.getTime() + minutesToMills(10));
+        endDateTime = new Date(
+          endDateTime.getTime() + minutesToMills(startMinutesDelay)
+        );
       } else {
         if (startDateTime.valueOf() < new Date().valueOf()) {
           startDateTime = new Date(
             `${getCanonicalDate()}T${getCanonicalTime({
-              minutes: 10,
+              minutes: startMinutesDelay,
             })}:00${getCanonicalUtcOffset()}`
           );
         }
@@ -375,11 +400,22 @@ const CreateProposalProvider: React.FC<Props> = ({
         }
       }
 
+      /**
+       * For multisig proposals, in case "now" as start time is selected, we want
+       * to keep startDate undefined, so it's automatically evaluated.
+       * If we just provide "Date.now()", than after user still goes through the flow
+       * it's going to be date from the past. And SC-call evaluation will fail.
+       */
+      const finalStartDate =
+        startSwitch === 'now' && isMultisigVotingSettings(pluginSettings)
+          ? undefined
+          : startDateTime;
+
       // Ignore encoding if the proposal had no actions
       return {
         pluginAddress,
         metadataUri: ipfsUri || '',
-        startDate: startDateTime,
+        startDate: finalStartDate,
         endDate: endDateTime,
         actions,
       };
@@ -391,6 +427,7 @@ const CreateProposalProvider: React.FC<Props> = ({
       minMinutes,
       pluginAddress,
       pluginClient?.methods,
+      pluginSettings,
     ]);
 
   const estimateCreationFees = useCallback(async () => {
@@ -463,7 +500,10 @@ const CreateProposalProvider: React.FC<Props> = ({
         daoAddress: daoDetails?.address,
         daoName: daoDetails?.metadata.name,
         proposalGuid,
-        proposalParams: proposalCreationData,
+        proposalParams: {
+          ...proposalCreationData,
+          startDate: proposalCreationData.startDate || new Date(), // important to fallback to avoid passing undefined
+        },
         metadata: {
           title,
           summary,
@@ -550,12 +590,6 @@ const CreateProposalProvider: React.FC<Props> = ({
     const proposalIterator =
       pluginClient.methods.createProposal(proposalCreationData);
 
-    trackEvent('newProposal_transaction_signed', {
-      dao_address: daoDetails?.address,
-      network: network,
-      wallet_provider: provider?.connection.url,
-    });
-
     if (creationProcessState === TransactionState.SUCCESS) {
       handleCloseModal();
       return;
@@ -578,6 +612,11 @@ const CreateProposalProvider: React.FC<Props> = ({
         switch (step.key) {
           case ProposalCreationSteps.CREATING:
             console.log(step.txHash);
+            trackEvent('newProposal_transaction_signed', {
+              dao_address: daoDetails?.address,
+              network: network,
+              wallet_provider: provider?.connection.url,
+            });
             break;
           case ProposalCreationSteps.DONE: {
             //TODO: replace with step.proposal id when SDK returns proper format

@@ -2,22 +2,24 @@
 import {ApolloClient} from '@apollo/client';
 import {
   Client,
+  DaoAction,
   DaoDetails,
   Erc20TokenDetails,
   IMintTokenParams,
   MultisigClient,
   MultisigVotingSettings,
+  Context as SdkContext,
   SupportedNetworks as SdkSupportedNetworks,
   TokenVotingClient,
   VotingMode,
-  Context as SdkContext,
 } from '@aragon/sdk-client';
-import {resolveIpfsCid} from '@aragon/sdk-common';
+import {bytesToHex, resolveIpfsCid} from '@aragon/sdk-common';
 import {Address} from '@aragon/ui-components/dist/utils/addresses';
 import {NavigationDao} from 'context/apolloClient';
 import {BigNumber, BigNumberish, constants, ethers, providers} from 'ethers';
 import {TFunction} from 'react-i18next';
 
+import {getEtherscanVerifiedContract} from 'services/etherscanAPI';
 import {fetchTokenData} from 'services/prices';
 import {
   AVATAR_IPFS_URL,
@@ -31,12 +33,15 @@ import {
   ActionAddAddress,
   ActionMintToken,
   ActionRemoveAddress,
+  ActionSCC,
   ActionUpdateMetadata,
   ActionUpdateMultisigPluginSettings,
   ActionUpdatePluginSettings,
   ActionWithdraw,
+  Input,
 } from 'utils/types';
 import {i18n} from '../../i18n.config';
+import {addABI, decodeMethod} from './abiDecoder';
 import {getTokenInfo} from './tokens';
 
 export function formatUnits(amount: BigNumberish, decimals: number) {
@@ -350,6 +355,63 @@ export async function decodeMetadataToAction(
   }
 }
 
+/**
+ * Decodes the provided DAO action into a smart contract compatible action.
+ *
+ * @param action - A DAO action to decode.
+ * @param network - The network on which the action is to be performed.
+ *
+ * @returns A promise that resolves to the decoded action
+ * or undefined if the action could not be decoded.
+ */
+export async function decodeSCCToAction(
+  action: DaoAction,
+  network: SupportedNetworks,
+  t: TFunction
+): Promise<ActionSCC | undefined> {
+  try {
+    const etherscanData = await getEtherscanVerifiedContract(
+      action.to,
+      network
+    );
+
+    // Check if the contract data was fetched successfully and if the contract has a verified source code
+    if (
+      etherscanData.status === '1' &&
+      etherscanData.result[0].ABI !== 'Contract source code not verified'
+    ) {
+      addABI(JSON.parse(etherscanData.result[0].ABI));
+      const decodedData = decodeMethod(bytesToHex(action.data));
+
+      // Check if the action data was decoded successfully
+      if (decodedData) {
+        const actionSCC: ActionSCC = {
+          name: 'external_contract_action',
+          contractAddress: action.to,
+          contractName: etherscanData.result[0].ContractName,
+          functionName: decodedData.name,
+          inputs: decodedData.params,
+        };
+
+        // Conditionally add PAYABLE_VALUE_INPUT if action.value is greater than zero
+        if (BigNumber.from(action.value).gt(0)) {
+          actionSCC.inputs.push({
+            ...getDefaultPayableAmountInput(t, network),
+            value: formatUnits(
+              action.value,
+              CHAIN_METADATA[network].nativeCurrency.decimals
+            ),
+          });
+        }
+
+        return actionSCC;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to decode SCC DAO action:', error);
+  }
+}
+
 const FLAG_TYPED_ARRAY = 'FLAG_TYPED_ARRAY';
 /**
  *  Custom serializer that includes fix for BigInt type
@@ -503,12 +565,8 @@ export function sleepFor(time = 600) {
 export const translateToAppNetwork = (
   sdkNetwork: SdkContext['network']
 ): SupportedNetworks => {
-  if (typeof sdkNetwork !== 'string') {
-    return 'unsupported';
-  }
-
-  switch (sdkNetwork) {
-    case 'mainnet':
+  switch (sdkNetwork.name) {
+    case 'homestead':
       return 'ethereum';
     case 'goerli':
       return 'goerli';
@@ -538,7 +596,7 @@ export function translateToNetworkishName(
     case 'mumbai':
       return 'maticmum';
     case 'ethereum':
-      return 'mainnet';
+      return 'homestead';
     case 'goerli':
       return 'goerli';
   }
@@ -556,4 +614,21 @@ export function toDisplayEns(ensName?: string) {
 
   if (!ensName.includes('.dao.eth')) return `${ensName}.dao.eth`;
   return ensName;
+}
+
+export function getDefaultPayableAmountInput(
+  t: TFunction,
+  network: SupportedNetworks
+): Input {
+  return {
+    name: getDefaultPayableAmountInputName(t),
+    type: 'uint256',
+    notice: t('scc.inputPayableAmount.description', {
+      tokenSymbol: CHAIN_METADATA[network].nativeCurrency.symbol,
+    }),
+  };
+}
+
+export function getDefaultPayableAmountInputName(t: TFunction) {
+  return t('scc.inputPayableAmount.label');
 }

@@ -1,22 +1,31 @@
-import {ButtonText, IconFeedback, Link, Modal} from '@aragon/ui-components';
+import {
+  ButtonIcon,
+  ButtonText,
+  IconChevronLeft,
+  IconClose,
+  IconFeedback,
+  IconHome,
+  Link,
+} from '@aragon/ui-components';
 import React, {useEffect, useState} from 'react';
 import {useFormContext, useWatch} from 'react-hook-form';
 import {useTranslation} from 'react-i18next';
 import styled from 'styled-components';
 
-import {StateEmpty} from 'components/stateEmpty';
+import BottomSheet from 'components/bottomSheet';
 import {SmartContract} from 'utils/types';
 import ActionListGroup from '../components/actionListGroup';
 import SmartContractListGroup from '../components/smartContractListGroup';
-import Header from './header';
-import InputForm from '../components/inputForm';
+import {ActionSearchInput} from '../desktopModal/header';
 import {trackEvent} from 'services/analytics';
 import {useParams} from 'react-router-dom';
-import {actionsFilter} from 'utils/contract';
-import {ListHeaderContract} from '../components/listHeaderContract';
+import InputForm from '../components/inputForm';
 import {SccFormData} from '..';
+import {ListHeaderContract} from '../components/listHeaderContract';
+import {actionsFilter} from 'utils/contract';
+import {StateEmpty} from 'components/stateEmpty';
 
-type DesktopModalProps = {
+type Props = {
   isOpen: boolean;
   actionIndex: number;
   onClose: () => void;
@@ -26,15 +35,16 @@ type DesktopModalProps = {
   onRemoveContract: (address: string) => void;
 };
 
-const DesktopModal: React.FC<DesktopModalProps> = props => {
+const MobileModal: React.FC<Props> = props => {
   const {t} = useTranslation();
   const {dao: daoAddressOrEns} = useParams();
+  const [isActionSelected, setIsActionSelected] = useState(false);
+
   const [selectedSC]: [SmartContract] = useWatch({
     name: ['selectedSC'],
   });
   const [search, setSearch] = useState('');
-  const {getValues, setValue} = useFormContext<SccFormData>();
-  const [isActionSelected, setIsActionSelected] = useState(false);
+  const {setValue, getValues} = useFormContext<SccFormData>();
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
@@ -46,16 +56,27 @@ const DesktopModal: React.FC<DesktopModalProps> = props => {
   }, [autoSelectedContract, setValue]);
 
   return (
-    <StyledModal isOpen={props.isOpen} onClose={props.onClose}>
-      <Header
+    <BottomSheet isOpen={props.isOpen} onClose={props.onClose}>
+      <CustomMobileHeader
         onClose={props.onClose}
-        selectedContract={selectedSC?.name}
+        onBackButtonClicked={() => {
+          if (isActionSelected) {
+            //eslint-disable-next-line
+            //@ts-ignore
+            setValue('selectedAction', null);
+            setIsActionSelected(false);
+          } else if (selectedSC !== null) {
+            setValue('selectedSC', null);
+          } else {
+            props.onBackButtonClicked();
+          }
+        }}
         onSearch={setSearch}
       />
-      <Wrapper>
-        <Aside>
-          {selectedSC ? (
-            <>
+      <Content>
+        {!isActionSelected ? (
+          selectedSC ? (
+            <div>
               <ListHeaderContract
                 key={selectedSC.address}
                 sc={selectedSC}
@@ -65,10 +86,14 @@ const DesktopModal: React.FC<DesktopModalProps> = props => {
                 actions={selectedSC.actions.filter(actionsFilter(search))}
                 onActionSelected={() => setIsActionSelected(true)}
               />
-            </>
+            </div>
           ) : (
             <>
-              <SmartContractListGroup />
+              {contracts.length === 0 ? (
+                <MobileModalEmptyState />
+              ) : (
+                <SmartContractListGroup />
+              )}
               <div>
                 <ButtonText
                   mode="secondary"
@@ -92,27 +117,23 @@ const DesktopModal: React.FC<DesktopModalProps> = props => {
                 />
               </div>
             </>
-          )}
-        </Aside>
-
-        <Main>
-          {selectedSC && isActionSelected ? (
+          )
+        ) : (
+          selectedSC && (
             <InputForm
               actionIndex={props.actionIndex}
               onComposeButtonClicked={props.onComposeButtonClicked}
             />
-          ) : (
-            <DesktopModalEmptyState />
-          )}
-        </Main>
-      </Wrapper>
-    </StyledModal>
+          )
+        )}
+      </Content>
+    </BottomSheet>
   );
 };
 
-export default DesktopModal;
+export default MobileModal;
 
-const DesktopModalEmptyState: React.FC = () => {
+const MobileModalEmptyState: React.FC = () => {
   const {t} = useTranslation();
 
   return (
@@ -128,37 +149,60 @@ const DesktopModalEmptyState: React.FC = () => {
   );
 };
 
-const Wrapper = styled.div.attrs({className: 'flex flex-1 overflow-auto'})``;
-
-const Aside = styled.div.attrs({
-  className:
-    'flex flex-col justify-between overflow-auto p-3 w-40 bg-ui-50 border-r border-ui-100',
-})``;
-
-const Main = styled.div.attrs({
-  className: 'overflow-auto flex-1',
-})``;
-
 const Container = styled.div.attrs({
+  'data-test-id': 'empty-container',
   className: 'flex h-full bg-ui-0 p-6 pt-0 justify-center items-center',
 })``;
 
-const StyledModal = styled(Modal).attrs({
-  style: {
-    position: 'fixed',
-    display: 'flex',
-    flexDirection: 'column',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    borderRadius: 12,
-    width: '898px',
-    height: '708px',
-    outline: 'none',
-    overflow: 'auto',
-    boxShadow: `0px 24px 32px rgba(31, 41, 51, 0.04), 
-       0px 16px 24px rgba(31, 41, 51, 0.04),
-       0px 4px 8px rgba(31, 41, 51, 0.04),
-       0px 0px 1px rgba(31, 41, 51, 0.04)`,
-  },
-})``;
+type CustomHeaderProps = {
+  onBackButtonClicked: () => void;
+  onClose?: () => void;
+  onSearch: (search: string) => void;
+};
+const CustomMobileHeader: React.FC<CustomHeaderProps> = props => {
+  const {t} = useTranslation();
+  const selectedSC: SmartContract = useWatch({name: 'selectedSC'});
+
+  return (
+    <Header>
+      {selectedSC ? (
+        <ButtonIcon
+          mode="secondary"
+          size="small"
+          icon={<IconChevronLeft />}
+          bgWhite
+          onClick={props.onBackButtonClicked}
+        />
+      ) : (
+        <ButtonIcon mode="secondary" size="small" icon={<IconHome />} bgWhite />
+      )}
+
+      <ActionSearchInput
+        type="text"
+        placeholder={t('scc.labels.searchPlaceholder')}
+        onChange={ev => props.onSearch(ev.target.value)}
+      />
+
+      <ButtonIcon
+        mode="secondary"
+        size="small"
+        icon={<IconClose />}
+        onClick={props.onClose}
+        bgWhite
+      />
+    </Header>
+  );
+};
+
+const Header = styled.div.attrs({
+  className: 'flex items-center rounded-xl space-x-2 p-2 bg-ui-0',
+})`
+  box-shadow: 0px 4px 8px rgba(31, 41, 51, 0.04),
+    0px 0px 2px rgba(31, 41, 51, 0.06), 0px 0px 1px rgba(31, 41, 51, 0.04);
+`;
+
+const Content = styled.div.attrs({
+  className: 'py-3 px-2 space-y-3 overflow-auto',
+})`
+  max-height: 70vh;
+`;

@@ -173,7 +173,13 @@
       "tokenHoldersWithTkns": "Token holders with ≥ {{tokenAmount}} {{tokenSymbol}}",
       "earlyExecution": "Early execution",
       "voteReplacement": "Vote change",
-      "multisigMinimumApprovals": "of {{count}} authorized addresses"
+      "multisigMinimumApprovals": "of {{count}} authorized addresses",
+      "existingTokens": {
+        "currentHolders": "Current Holders"
+      },
+      "distributionLinkLabel": "View on block explorer",
+      "no": "No",
+      "yes": "Yes"
     },
     "author": "Author",
     "sec": "sec",
@@ -193,8 +199,8 @@
     "noResources": "No resources were added",
     "newTokens": "New tokens",
     "newHolders": "New holders",
-    "totalTokens": "Total tokens",
-    "totalHolders": "Total holders",
+    "totalTokens": "Total new token supply",
+    "totalHolders": "Total new holders",
     "mintable": "Mintable",
     "new": "New",
     "pendingTransaction": "Pending transaction …",
@@ -220,7 +226,12 @@
     "addWalletsDescriptionLinkLabel": "read our guide",
     "addWalletsDescription": "Wallets can create proposals, propose to send funds in and out of the treasury, and vote in your DAO.",
     "daoEnsName": "ENS Subdomain",
-    "ens": "ENS"
+    "ens": "ENS",
+    "currentTokenSupply": "Current token supply",
+    "helptext": {
+      "snapshot": "Based on this proposal snapshot"
+    },
+    "currentHolders": "Current holders"
   },
   "placeHolders": {
     "selectToken": "Select a token …",
@@ -281,6 +292,9 @@
         "edit": "Edit proposal",
         "readFullProposal": "Read full proposal",
         "closeFullProposal": "Close full proposal"
+      },
+      "alert": {
+        "voted": "You have already voted."
       }
     },
     "settings": {
@@ -403,13 +417,13 @@
     "multisig": {
       "proposalMinDuration": "One hour is the minimum expiration time.",
       "proposalMaxDuration": "To keep your DAO secure, it's not recommended to have an expiration time longer than 2 weeks. ",
-      "accepTableProposalDuration": "It's recommended to have an expiration time of five days, so you have a clean proposal list.",
+      "accepTableProposalDuration": "It’s recommended to have an expiration time of five days, so you have a clean proposal list.",
       "dateTimeMinDuration": "Duration cannot be less than one hour."
     },
     "durationAlert": "We recommend a minimum duration of at least one day so members have time to vote. You can always lengthen the duration when posting a proposal.",
     "maxDurationAlert": "The maximum duration is 365 days.",
     "minDurationAlert": "The minimum duration is one hour.",
-    "startDateInPastAlert": "Start time can't be in the past. ",
+    "startDateInPastAlert": "Start time can’t be in the past. ",
     "wrongWalletNetwork": "Wrong wallet network",
     "wrongNetwork": {
       "title": "Wrong network",
@@ -523,7 +537,7 @@
     "mintTokensSubtitle": "Mint more DAO tokens and distribute to wallets.",
     "withdrawAssetsSubtitle": "Create a proposal to withdraw assets to a wallet.",
     "withdrawAssetsActionSubtitle": "Withdraw assets from the DAO treasury",
-    "externalContract": "Interact with a contract",
+    "externalContract": "Smart contract composer",
     "externalContractSubtitle": "Interact with an external contract on the chain your DAO is deployed on.",
     "changeMinimumApproval": "Change minimum approval",
     "changeMinimumApprovalSubtitle": "Modify minimum approval of this DAO."
@@ -548,7 +562,8 @@
       "amountSubtitle": "Amount is calculated in number of tokens, not dollar value",
       "utcMenu": {
         "title": "Select a UTC timezone"
-      }
+      },
+      "ctaAddAnother": "Add another withdraw"
     },
     "setupVoting": {
       "title": "Initiate the vote",
@@ -589,6 +604,9 @@
     "reviewProposal": {
       "heading": "Review proposal",
       "description": "Check to make sure everything is correct before putting it to vote. You can't edit a proposal once it's published."
+    },
+    "daoAddress": {
+      "alertCritical": "You can't withdraw money to your own DAO treasury."
     }
   },
   "createDAO": {
@@ -628,7 +646,25 @@
       "warningTitle": "Changing the list",
       "warningSubtitle": "If you want to add addresses after creating your DAO, you will need to create a proposal to be voted by the members.",
       "newTokenSubtitle": "No, I would like to create a token.",
-      "existingToken": "Yes",
+      "existingToken": {
+        "title": "Use an existing token",
+        "description": "Use an ERC20 token that is already issued. To learn more about what it’s important if you use an existing Token, read first {{link}}.",
+        "descriptionLinkLabel": "our guide",
+        "questionLabel": "Does your community already have an ERC20 token?",
+        "answerNegative": "No",
+        "answerPositive": "Yes",
+        "inputLabel": "Contract address",
+        "inputDescription": "Enter the contract address. We recommend pasting it directly from a block explorer.",
+        "verificationLabelStandard": "Standard",
+        "verificationLabelSupply": "Total supply",
+        "verificationLabelHolders": "Current holders",
+        "verificationLabelGovernance": "Governance",
+        "verificationLinkLabel": "View details",
+        "verificationAlertSuccessTitle": "Compatible for governance",
+        "verificationAlertSuccessDescription": "This token can be used for direct use of onchain governance (support of ERC20Votes standard).",
+        "verificationGovernanceSuccess": "Supported",
+        "verificationLoading": "Verifying governance compatibility …"
+      },
       "existingTokenSubtitle": "Yes, we already have a token.",
       "tokenMembership": "Token holders",
       "multisigMembership": "Multisig members",
@@ -805,6 +841,9 @@
       "titleSearch": "No result found for {{query}}",
       "title": "No voters yet",
       "subtitle": "Search for another wallet address or ENS"
+    },
+    "label": {
+      "in": "In"
     }
   },
   "explore": {
@@ -935,24 +974,24 @@
       "titleProposalCreation": "Exit proposal creation",
       "titleDaoCreation": "Exit DAO creation"
     },
-    "mintTokensToTreasury": {
-      "title": "Minting tokens to DAO treasury",
-      "description": "If you are minting tokens for your DAO treasury, you may brick your DAO because you will never again reach minimum participation and thus be unable to execute any proposal actions.",
-      "alertTitle": "Potential risk for your DAO",
-      "alertDescription": "Aragon doesn’t recommend to mint tokens to your DAO treasury. You are always able to make a proposal to distribute new tokens to new members.",
-      "step1CtaLabel": "OK, I have understood the risk",
-      "step1CancelLabel": "I want to proceed",
-      "inputLabel": "Confirm with DAO address",
-      "inputHelptext": "To confirm, fill the DAO contract address below.",
-      "step2CtaLabel": "Add DAO treasury now",
-      "step2CancelLabel": "Cancel now",
-      "alertChipCritical": "DAO treasury removed",
-      "alertChipSuccess": "DAO treasury added"
-    },
     "claimPoap": {
       "ctaLabel": "Claim POAP now",
       "ctaURL": "https://poap-claim-app.aragon.org/",
       "title": "Claim your DAO Builder POAP"
+    },
+    "mintTokensToTreasury": {
+      "title": "Minting tokens to the DAO treasury",
+      "description": "The DAO cannot cast votes. Beware of minting too many tokens to your DAO treasury, because you may not be able to reach minimum participation and thus will be unable to execute any proposal actions.",
+      "alertTitle": "Potential risk for your DAO",
+      "alertDescription": "Instead of minting tokens to your DAO treasury, consider minting them to a member's wallet address so the tokens can be used for voting. ",
+      "step1CtaLabel": "Back to token minting",
+      "step1CancelLabel": "Proceed with DAO address",
+      "inputLabel": "Confirm with DAO address",
+      "inputHelptext": "To confirm, fill in the DAO contract address below.",
+      "step2CtaLabel": "Confirm",
+      "step2CancelLabel": "Cancel",
+      "alertChipSuccess": "DAO treasury removed",
+      "alertChipCritical": "DAO treasury added"
     }
   },
   "scc": {
@@ -1001,12 +1040,11 @@
       "explorerLinkPolyscanURL": "https://polygonscan.com/address/{contractAddress}#code"
     },
     "emptyState": {
-      "modalTitle": "Smart contract composer",
-      "title": "No smart contract",
-      "description": "Add a smart contract to interact with its actions",
-      "primaryBtnLabel": "Connect smart contract",
       "ctaLabel": "Connect smart contract",
-      "descriptionLinkURL": "https://",
+      "title": "No smart contract added",
+      "description": "Add a smart contract to interact with it. To learn more, read {{link}}.",
+      "modalTitle": "Smart contract composer",
+      "descriptionLinkURL": "https://aragon.org/how-to/interact-with-external-contracts-from-your-dao",
       "descriptionLinkLabel": "our guide"
     },
     "abi": {
@@ -1028,15 +1066,33 @@
       "contractAmountActions": "{{amount}} actions",
       "ctaLabel": "Connect smart contract",
       "learnLinkLabel": "Learn more",
-      "learnLinkURL": "https://"
+      "learnLinkURL": "https://aragon.org/how-to/interact-with-external-contracts-from-your-dao"
     },
     "detailContract": {
       "dropdownExplorerLinkLabel": "See on block explorer",
-      "dropdownExplorerLinkURL": "https://",
       "dropdownCopyLabel": "Copy contract address",
       "dropdownRemoveLabel": "Remove smart contract",
       "ctaLabel": "Add action",
       "checkboxMultipleLabel": "Add another action"
+    },
+    "inputPayableAmount": {
+      "description": "Enter the required amount of {{tokenSymbol}} to be paid.",
+      "label": "Payable Amount"
+    }
+  },
+  "inputWallet": {
+    "placeholder": "ENS or 0x…",
+    "ensAlertSuccess": "ENS resolved successfully",
+    "addressAlertSuccess": "Address resolved successfully",
+    "ensAlertWarning": "This network does not support ENS domains",
+    "ensAlertCirtical": "Invalid ENS",
+    "addressAlertCritical": "Invalid address"
+  },
+  "modalWarning": {
+    "mintToken": {
+      "title": "Another proposal is active",
+      "description": "Beware of another proposal that mints additional tokens. This implies that the token supply may not be the final one and that it may affect future votes.",
+      "ctaLabel": "OK, understood"
     }
   }
 }
