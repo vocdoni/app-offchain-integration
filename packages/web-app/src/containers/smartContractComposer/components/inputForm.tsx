@@ -26,10 +26,8 @@ import {useNetwork} from 'context/network';
 import {trackEvent} from 'services/analytics';
 import {getEtherscanVerifiedContract} from 'services/etherscanAPI';
 import {
-  PAYABLE_VALUE_INPUT,
-  PAYABLE_VALUE_INPUT_NAME,
-} from 'utils/constants/scc';
-import {
+  getDefaultPayableAmountInput,
+  getDefaultPayableAmountInputName,
   getUserFriendlyWalletLabel,
   handleClipboardActions,
 } from 'utils/library';
@@ -65,9 +63,12 @@ const InputForm: React.FC<InputFormProps> = ({
   // add payable input to the selected action if it is a payable method
   const actionInputs = useMemo(() => {
     return selectedAction.stateMutability === 'payable'
-      ? [...selectedAction.inputs, {...PAYABLE_VALUE_INPUT}]
+      ? [
+          ...selectedAction.inputs,
+          {...getDefaultPayableAmountInput(t, network)},
+        ]
       : selectedAction.inputs;
-  }, [selectedAction.inputs, selectedAction.stateMutability]);
+  }, [network, selectedAction.inputs, selectedAction.stateMutability, t]);
 
   const composeAction = useCallback(async () => {
     setFormError(false);
@@ -115,7 +116,7 @@ const InputForm: React.FC<InputFormProps> = ({
         // and keep it on the form
         actionInputs?.map((input, index) => {
           // add the payable value to the action value directly
-          if (input.name === PAYABLE_VALUE_INPUT_NAME) {
+          if (input.name === getDefaultPayableAmountInputName(t)) {
             setValue(
               `actions.${actionIndex}.value`,
               sccActions[selectedSC.address][selectedAction.name][input.name]
@@ -148,6 +149,7 @@ const InputForm: React.FC<InputFormProps> = ({
   }, [
     another,
     actionIndex,
+    actionInputs,
     addAction,
     daoAddressOrEns,
     network,
@@ -158,10 +160,10 @@ const InputForm: React.FC<InputFormProps> = ({
     selectedAction.inputs,
     selectedAction.name,
     selectedAction.notice,
-    actionInputs,
     selectedSC.address,
     selectedSC.name,
     setValue,
+    t,
   ]);
 
   if (!selectedAction) {
@@ -188,9 +190,9 @@ const InputForm: React.FC<InputFormProps> = ({
         <p className="text-sm font-bold text-primary-500">{selectedSC.name}</p>
         <IconSuccess />
       </div>
-      {selectedAction.inputs.length > 0 ? (
+      {actionInputs.length > 0 ? (
         <div className="p-3 mt-5 space-y-2 bg-white desktop:bg-ui-50 rounded-xl border border-ui-100 shadow-100">
-          {selectedAction.inputs.map(input => (
+          {actionInputs.map(input => (
             <div key={input.name}>
               <div className="text-base font-bold text-ui-800 capitalize">
                 {input.name}
