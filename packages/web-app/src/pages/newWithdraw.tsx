@@ -1,4 +1,3 @@
-import {Address} from '@aragon/ui-components/dist/utils/addresses';
 import {withTransaction} from '@elastic/apm-rum-react';
 import React, {useState} from 'react';
 import {FormProvider, useForm} from 'react-hook-form';
@@ -9,12 +8,13 @@ import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 import {PluginTypes} from 'hooks/usePluginClient';
 import {usePluginSettings} from 'hooks/usePluginSettings';
 import WithdrawStepper from 'containers/withdrawStepper';
+import {InputValue} from '@aragon/ui-components';
 
 export type TokenFormData = {
   tokenName: string;
   tokenSymbol: string;
   tokenImgUrl: string;
-  tokenAddress: Address;
+  tokenAddress: string;
   tokenDecimals: number;
   tokenBalance: string;
   tokenPrice?: number;
@@ -22,8 +22,8 @@ export type TokenFormData = {
 };
 
 export type WithdrawAction = TokenFormData & {
-  to: Address;
-  from: Address;
+  to: InputValue;
+  from: string;
   amount: string;
   name: string; // This indicates the type of action; Deposit is NOT an action
 };

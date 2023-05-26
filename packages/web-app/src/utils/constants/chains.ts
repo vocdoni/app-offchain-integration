@@ -11,6 +11,8 @@ export function isSupportedChainId(
   return SUPPORTED_CHAIN_ID.some(id => id === chainId);
 }
 
+export const ENS_SUPPORTED_NETWORKS = ['ethereum', 'goerli'];
+
 const SUPPORTED_NETWORKS = [
   'ethereum',
   'goerli',
@@ -76,6 +78,7 @@ export type ChainData = {
   etherscanApiKey?: string;
   alchemyApi: string;
   supportsEns: boolean;
+  lookupURL?: string;
 };
 
 const etherscanApiKey = import.meta.env.VITE_ETHERSCAN_API_KEY;
@@ -116,6 +119,7 @@ export const CHAIN_METADATA: ChainList = {
       symbol: 'ETH',
       decimals: 18,
     },
+    lookupURL: 'https://etherscan.io/name-lookup-search?id=',
     etherscanApi: 'https://api.etherscan.io/api',
     etherscanApiKey: etherscanApiKey,
     alchemyApi: 'https://eth-mainnet.g.alchemy.com/v2',
