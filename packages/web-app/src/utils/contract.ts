@@ -147,6 +147,7 @@ export function extractNatSpec(source: string) {
       '/*',
       '//',
       'contract ',
+      'interface ',
       'function ',
       'error ',
       'event ',
@@ -173,7 +174,8 @@ export function extractNatSpec(source: string) {
           [match, pos] = scanFirst(source, pos, ['\n']);
         }
         break;
-      case 'contract ': {
+      case 'contract ':
+      case 'interface ': {
         pos = skipWhitespace(source, pos);
         let name: string;
         [pos, name] = scanWord(source, pos);
@@ -221,6 +223,42 @@ export function extractNatSpec(source: string) {
   }
 
   return natspec;
+}
+
+/**
+ * Collapse inheritance tree of a map of NatspecContracts into a single NatspecDetails object.
+ * @param natspec The map of NatspecContracts to collapse.
+ * @param contract The name of the contract to collapse.
+ * @returns The contract with the NatspecDetails added for all inherited functions.
+ */
+export function collapseNatspec(
+  natspec: Record<string, NatspecContract>,
+  contract: string
+): NatspecContract {
+  const collapsed = {...natspec[contract]};
+  for (const superClass of collapsed.superClasses) {
+    if (!natspec[superClass]) continue;
+    const superNatspec = collapseNatspec(natspec, superClass);
+    collapsed.details = Object.fromEntries(
+      Object.entries(collapsed.details).map(([name, details]) => {
+        if (details.tags['inheritdoc'] !== undefined) {
+          const inheritDetails =
+            natspec[details.tags['inheritdoc'] as string]?.details[name];
+          if (inheritDetails !== undefined) {
+            delete details.tags['inheritdoc'];
+            details.tags = {...inheritDetails.tags, ...details.tags};
+          }
+        }
+        if (Object.keys(details.tags).length === 0) {
+          const superDetails = superNatspec.details[name];
+          return [name, superDetails !== undefined ? superDetails : details];
+        }
+        return [name, details];
+      })
+    );
+    collapsed.details = {...superNatspec.details, ...collapsed.details};
+  }
+  return collapsed;
 }
 
 /** Starts scanning str at start to find the first match from searches. If multiple matches complete at the
@@ -284,20 +322,6 @@ export function parseSourceCode(input: string) {
   }
 }
 
-export const flattenNatSpecTags = (
-  NatSpec: Record<string, NatspecContract>
-) => {
-  const flatTags: Record<string, unknown> = {};
-
-  Object.values(NatSpec).map(contract => {
-    Object.values(contract.details).map(
-      details => (flatTags[details.name] = details.tags)
-    );
-  });
-
-  return flatTags;
-};
-
 export function attachEtherNotice(
   SourceCode: AugmentedEtherscanContractResponse['SourceCode'],
   ContractName: string,
@@ -305,11 +329,18 @@ export function attachEtherNotice(
 ): SmartContractAction[] {
   const parsedSourceCode = parseSourceCode(SourceCode);
   const EtherNotice = extractNatSpec(parsedSourceCode);
-  const notices = EtherNotice[ContractName]?.details;
+  const collapsedNatspec = collapseNatspec(EtherNotice, ContractName);
+  const notices = collapsedNatspec.details;
 
   return ABI.map(action => {
     if (action.type === 'function' && notices?.[action.name]) {
       action.notice = notices[action.name].tags.notice as string;
+      action.inputs.forEach(
+        input =>
+          (input.notice = (
+            notices[action.name].tags['param'] as Record<string, string>
+          )?.[input.name] as string)
+      );
     }
 
     return action;
