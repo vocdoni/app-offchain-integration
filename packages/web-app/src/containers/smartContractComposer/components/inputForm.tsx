@@ -4,7 +4,7 @@ import {
   CheckboxListItem,
   NumberInput,
   TextInput,
-  WalletInput,
+  WalletInputLegacy,
 } from '@aragon/ui-components';
 import {ethers} from 'ethers';
 import {t} from 'i18next';
@@ -279,7 +279,7 @@ export const ComponentForType: React.FC<ComponentForTypeProps> = ({
             field: {name, value, onBlur, onChange},
             fieldState: {error},
           }) => (
-            <WalletInput
+            <WalletInputLegacy
               mode={error ? 'critical' : 'default'}
               name={name}
               value={getUserFriendlyWalletLabel(value, t)}
@@ -390,7 +390,7 @@ export const ComponentForTypeWithFormProvider: React.FC<
 };
 
 const ActionName = styled.p.attrs({
-  className: 'text-lg font-bold text-ui-800 capitalize',
+  className: 'text-lg font-bold text-ui-800 capitalize truncate',
 })``;
 
 const ActionDescription = styled.p.attrs({
