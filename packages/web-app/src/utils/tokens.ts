@@ -7,6 +7,7 @@ import {formatUnits} from 'utils/library';
 import {NativeTokenData, TimeFilter, TOKEN_AMOUNT_REGEX} from './constants';
 import {add} from 'date-fns';
 import {TokenType, Transfer, TransferType} from '@aragon/sdk-client';
+import {ownableABI} from 'abis/ownableABI';
 import {votesUpgradeableABI} from 'abis/governanceWrappedERC20TokenABI';
 import {erc1155TokenABI} from 'abis/erc1155TokenABI';
 import {erc721TokenABI} from 'abis/erc721TokenABI';
@@ -67,6 +68,24 @@ export function filterTokens(tokens: TokenWithMetadata[], searchTerm: string) {
   if (!searchTerm) return tokens;
 
   return tokens.filter(t => tokenInfoMatches(t, searchTerm));
+}
+
+/**
+ * Gets the owner of a contract or null if the contract is not ownable
+ * @param address Address of the contract
+ * @param provider Ethers provider to use
+ * @returns address of the owner or null if the contract is not ownable
+ */
+export async function getOwner(
+  address: string,
+  provider: EthersProviders.Provider
+) {
+  const contract = new ethers.Contract(address, ownableABI, provider);
+  try {
+    return (await contract.owner()) as string;
+  } catch (err) {
+    return null;
+  }
 }
 
 /**
