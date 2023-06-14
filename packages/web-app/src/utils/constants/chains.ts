@@ -79,6 +79,7 @@ export type ChainData = {
   alchemyApi: string;
   supportsEns: boolean;
   lookupURL?: string;
+  ipfs?: string;
 };
 
 const etherscanApiKey = import.meta.env.VITE_ETHERSCAN_API_KEY;
@@ -102,6 +103,7 @@ export const CHAIN_METADATA: ChainList = {
     etherscanApi: 'https://api.arbiscan.io/api',
     alchemyApi: 'https://arb-mainnet.g.alchemy.com/v2',
     supportsEns: false,
+    ipfs: 'https://prod.ipfs.aragon.network',
   },
   ethereum: {
     id: 1,
@@ -124,6 +126,7 @@ export const CHAIN_METADATA: ChainList = {
     etherscanApiKey: etherscanApiKey,
     alchemyApi: 'https://eth-mainnet.g.alchemy.com/v2',
     supportsEns: true,
+    ipfs: 'https://prod.ipfs.aragon.network',
   },
   polygon: {
     id: 137,
@@ -145,6 +148,7 @@ export const CHAIN_METADATA: ChainList = {
     etherscanApiKey: polygonscanApiKey,
     alchemyApi: 'https://polygon-mainnet.g.alchemy.com/v2',
     supportsEns: false,
+    ipfs: 'https://prod.ipfs.aragon.network',
   },
   'arbitrum-test': {
     id: 421613,
@@ -162,6 +166,7 @@ export const CHAIN_METADATA: ChainList = {
     etherscanApi: 'https://api-goerli.arbiscan.io/api',
     alchemyApi: 'https://arb-goerli.g.alchemy.com/v2',
     supportsEns: false,
+    ipfs: 'https://test.ipfs.aragon.network',
   },
   goerli: {
     id: 5,
@@ -183,6 +188,7 @@ export const CHAIN_METADATA: ChainList = {
     etherscanApiKey: etherscanApiKey,
     alchemyApi: 'https://eth-goerli.g.alchemy.com/v2',
     supportsEns: true,
+    ipfs: 'https://test.ipfs.aragon.network',
   },
   mumbai: {
     id: 80001,
@@ -204,6 +210,7 @@ export const CHAIN_METADATA: ChainList = {
     etherscanApiKey: polygonscanApiKey,
     alchemyApi: 'https://polygon-mumbai.g.alchemy.com/v2',
     supportsEns: false,
+    ipfs: 'https://test.ipfs.aragon.network',
   },
   unsupported: {
     id: 1,
@@ -221,6 +228,7 @@ export const CHAIN_METADATA: ChainList = {
     etherscanApi: '',
     alchemyApi: '',
     supportsEns: false,
+    ipfs: '',
   },
 };
 
