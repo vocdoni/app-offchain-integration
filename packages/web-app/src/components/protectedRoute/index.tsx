@@ -18,7 +18,7 @@ import {fetchBalance} from 'utils/tokens';
 
 const ProtectedRoute: React.FC = () => {
   const {open, close, isGatingOpen} = useGlobalModalContext();
-  const {address, status, isOnWrongNetwork} = useWallet();
+  const {address, status, isOnWrongNetwork, isModalOpen} = useWallet();
   const {data: daoDetails, isLoading: detailsAreLoading} = useDaoDetailsQuery();
 
   const [pluginType, pluginAddress] = useMemo(
@@ -107,17 +107,17 @@ const ProtectedRoute: React.FC = () => {
       if (isOnWrongNetwork) open('network');
       else close('network');
     }
-  }, [address, close, isOnWrongNetwork, open, status]);
+  }, [address, close, isModalOpen, isOnWrongNetwork, open, status]);
 
   // close the wallet modal when the wallet is connected
   useEffect(() => {
     if (
-      (status === 'connecting' || address) &&
+      ((status === 'connecting' && isModalOpen === true) || address) &&
       userWentThroughLoginFlow.current === false
     ) {
       close('wallet');
     }
-  }, [address, close, isOnWrongNetwork, status]);
+  }, [address, close, isModalOpen, isOnWrongNetwork, status]);
 
   // wallet connected and on right network, authenticate
   useEffect(() => {
