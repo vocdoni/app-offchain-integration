@@ -4,6 +4,7 @@ import React, {useCallback, useEffect} from 'react';
 import {Controller, useFormContext, useWatch} from 'react-hook-form';
 import {useTranslation} from 'react-i18next';
 import styled from 'styled-components';
+import {SelectEligibility} from 'components/selectEligibility';
 
 import VerificationCard from 'components/verificationCard';
 import {WrappedWalletInput} from 'components/wrappedWalletInput';
@@ -21,8 +22,8 @@ const AddExistingToken: React.FC = () => {
   const {control, trigger, clearErrors, setValue, resetField} =
     useFormContext();
 
-  const [tokenAddress, blockchain] = useWatch({
-    name: ['tokenAddress', 'blockchain'],
+  const [tokenAddress, blockchain, tokenType] = useWatch({
+    name: ['tokenAddress', 'blockchain', 'tokenType'],
   });
 
   const provider = useSpecificProvider(blockchain.id);
@@ -82,6 +83,9 @@ const AddExistingToken: React.FC = () => {
     [clearErrors, network, provider, resetField, setValue]
   );
 
+  const isAllowedToConfigureVotingEligibility =
+    tokenType === 'ERC-20' || tokenType === 'governance-ERC20';
+
   return (
     <>
       <DescriptionContainer>
@@ -130,6 +134,17 @@ const AddExistingToken: React.FC = () => {
           )}
         />
       </FormItem>
+      {isAllowedToConfigureVotingEligibility && (
+        <FormItem>
+          <DescriptionContainer>
+            <Label
+              label={t('labels.proposalCreation')}
+              helpText={t('createDAO.step3.proposalCreationHelpertext')}
+            />
+          </DescriptionContainer>
+          <SelectEligibility />
+        </FormItem>
+      )}
     </>
   );
 };

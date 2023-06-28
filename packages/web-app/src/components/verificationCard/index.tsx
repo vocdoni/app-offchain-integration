@@ -1,11 +1,11 @@
 import React, {useMemo, useEffect} from 'react';
 import {useTranslation} from 'react-i18next';
 import styled from 'styled-components';
-import {AlertCard, Label, Spinner, shortenAddress} from '@aragon/ui-components';
+import {AlertCard, Spinner, shortenAddress} from '@aragon/ui-components';
 
 import {Dd, Dl} from 'components/descriptionList';
 import {useFormContext, useWatch} from 'react-hook-form';
-import {SelectEligibility} from 'components/selectEligibility';
+import {gTokenSymbol} from 'utils/tokens';
 import {getTotalHolders} from 'services/covalentAPI';
 import {useNetwork} from 'context/network';
 import {QueryClient} from '@tanstack/react-query';
@@ -60,7 +60,11 @@ const VerificationCard: React.FC<TransferListProps> = ({tokenAddress}) => {
               'createDAO.step3.existingToken.verificationAlertWarningTitle'
             )}
             helpText={t(
-              'createDAO.step3.existingToken.verificationAlertWarningDescription'
+              'createDAO.step3.existingToken.verificationAlertWarningDescription',
+              {
+                tokenSymbol,
+                gTokenSymbol: gTokenSymbol(tokenSymbol),
+              }
             )}
           />
         );
@@ -104,7 +108,7 @@ const VerificationCard: React.FC<TransferListProps> = ({tokenAddress}) => {
       default:
         return null;
     }
-  }, [t, tokenType]);
+  }, [t, tokenSymbol, tokenType]);
 
   if (!tokenType)
     return (
@@ -121,7 +125,7 @@ const VerificationCard: React.FC<TransferListProps> = ({tokenAddress}) => {
     <VerifyWrapper>
       <VerifyContainer>
         <VerifyTitle>
-          {tokenName !== ''
+          {tokenName !== '' && tokenType !== 'Unknown'
             ? `${tokenName} (${tokenSymbol})`
             : shortenAddress(tokenAddress)}
         </VerifyTitle>
@@ -150,30 +154,9 @@ const VerificationCard: React.FC<TransferListProps> = ({tokenAddress}) => {
               </Dl>
             </>
           )}
-          {tokenType !== 'governance-ERC20' && (
-            <Dl>
-              <Dt>
-                {t('createDAO.step3.existingToken.verificationLabelGovernance')}
-              </Dt>
-              <Dd>
-                {t(
-                  'createDAO.step3.existingToken.verificationValueGovernanceNegative'
-                )}
-              </Dd>
-            </Dl>
-          )}
         </VerifyItemsWrapper>
         {Alert}
       </VerifyContainer>
-      {tokenType === 'governance-ERC20' && (
-        <div>
-          <Label
-            label={t('labels.proposalCreation')}
-            helpText={t('createDAO.step3.proposalCreationHelpertext')}
-          />
-          <SelectEligibility />
-        </div>
-      )}
     </VerifyWrapper>
   );
 };
