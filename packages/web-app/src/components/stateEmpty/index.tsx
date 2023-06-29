@@ -19,6 +19,7 @@ type BaseProps = {
   secondaryButton?: Omit<ButtonTextProps, 'mode' | 'size'>;
   renderHtml?: boolean;
   actionsColumn?: boolean;
+  customCardPaddingClassName?: string;
 };
 
 type StateEmptyProps =
@@ -42,7 +43,11 @@ type StateEmptyProps =
 
 export const StateEmpty: React.FC<StateEmptyProps> = props => {
   return (
-    <Card mode={props.mode} type={props.type}>
+    <Card
+      mode={props.mode}
+      type={props.type}
+      customCardPaddingClassName={props.customCardPaddingClassName}
+    >
       <div className="flex">
         <RenderIllustration {...props} />
       </div>
@@ -121,22 +126,23 @@ const RenderIllustration: React.FC<StateEmptyProps> = props => {
   );
 };
 
-const Card = styled.div.attrs<Pick<StateEmptyProps, 'mode' | 'type'>>(
-  ({mode, type}) => {
-    let className = 'flex flex-col items-center rounded-xl w-full ';
+const Card = styled.div.attrs<
+  Pick<StateEmptyProps, 'mode' | 'type' | 'customCardPaddingClassName'>
+>(({mode, type, customCardPaddingClassName}) => {
+  let className = 'flex flex-col items-center rounded-xl w-full ';
 
-    if (mode === 'card') {
-      className += 'border bg-ui-0 p-3 tablet:p-6 ';
+  if (mode === 'card') {
+    className += 'border bg-ui-0 ';
+    className += `${customCardPaddingClassName || 'p-3 tablet:p-6'} `;
 
-      if (type === 'Object') className += 'gap-y-1 ';
-    } else {
-      className += 'bg-ui-transparent ';
-    }
-
-    if (type === 'Human' || type === 'both') className += 'gap-y-3 ';
-    return {className};
+    if (type === 'Object') className += 'gap-y-1 ';
+  } else {
+    className += 'bg-ui-transparent ';
   }
-)<Pick<StateEmptyProps, 'mode' | 'type'>>``;
+
+  if (type === 'Human' || type === 'both') className += 'gap-y-3 ';
+  return {className};
+})<Pick<StateEmptyProps, 'mode' | 'type' | 'customCardPaddingClassName'>>``;
 
 const ContentWrapper = styled.div.attrs({className: 'space-y-3 w-full'})``;
 

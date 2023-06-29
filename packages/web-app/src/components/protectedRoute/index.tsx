@@ -4,6 +4,7 @@ import {Outlet, useNavigate} from 'react-router-dom';
 
 import {Loading} from 'components/temporary';
 import {GatingMenu} from 'containers/gatingMenu';
+import {LoginRequired} from 'containers/walletMenu/LoginRequired';
 import {useGlobalModalContext} from 'context/globalModals';
 import {useNetwork} from 'context/network';
 import {useSpecificProvider} from 'context/providers';
@@ -13,9 +14,8 @@ import {PluginTypes} from 'hooks/usePluginClient';
 import {usePluginSettings} from 'hooks/usePluginSettings';
 import {useWallet} from 'hooks/useWallet';
 import {CHAIN_METADATA} from 'utils/constants';
-import {formatUnits, toDisplayEns} from 'utils/library';
+import {formatUnits} from 'utils/library';
 import {fetchBalance} from 'utils/tokens';
-import {LoginRequired} from 'containers/walletMenu/LoginRequired';
 
 const ProtectedRoute: React.FC = () => {
   const navigate = useNavigate();
@@ -165,11 +165,9 @@ const ProtectedRoute: React.FC = () => {
       {!isGatingOpen && userWentThroughLoginFlow.current && <Outlet />}
       {daoDetails && (
         <GatingMenu
-          daoAddressOrEns={
-            toDisplayEns(daoDetails.ensDomain) || daoDetails.address
-          }
+          daoDetails={daoDetails}
           pluginType={pluginType}
-          tokenName={daoToken?.name}
+          daoToken={daoToken}
         />
       )}
       <LoginRequired isOpen={showLoginModal} onClose={handleCloseLoginModal} />
