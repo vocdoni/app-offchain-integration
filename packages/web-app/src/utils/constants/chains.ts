@@ -126,7 +126,9 @@ export const CHAIN_METADATA: ChainList = {
     etherscanApiKey: etherscanApiKey,
     alchemyApi: 'https://eth-mainnet.g.alchemy.com/v2',
     supportsEns: true,
-    ipfs: 'https://prod.ipfs.aragon.network',
+    //TODO: revert back when issue is fixed
+    // ipfs: 'https://prod.ipfs.aragon.network',
+    ipfs: 'https://test.ipfs.aragon.network',
   },
   polygon: {
     id: 137,
@@ -148,7 +150,9 @@ export const CHAIN_METADATA: ChainList = {
     etherscanApiKey: polygonscanApiKey,
     alchemyApi: 'https://polygon-mainnet.g.alchemy.com/v2',
     supportsEns: false,
-    ipfs: 'https://prod.ipfs.aragon.network',
+    //TODO: revert back when issue is fixed
+    // ipfs: 'https://prod.ipfs.aragon.network',
+    ipfs: 'https://test.ipfs.aragon.network',
   },
   'arbitrum-test': {
     id: 421613,
