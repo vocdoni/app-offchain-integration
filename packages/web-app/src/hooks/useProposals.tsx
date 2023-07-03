@@ -29,6 +29,7 @@ import {
   addVoteToProposal,
   augmentProposalWithCachedExecution,
   isMultisigProposal,
+  isTokenBasedProposal,
 } from 'utils/proposals';
 import {
   DetailedProposal,
@@ -37,6 +38,8 @@ import {
   ProposalListItem,
 } from 'utils/types';
 import {PluginTypes, usePluginClient} from './usePluginClient';
+import {useDaoDetailsQuery} from './useDaoDetails';
+import {useDaoToken} from './useDaoToken';
 
 /**
  * Retrieves list of proposals from SDK
@@ -57,6 +60,11 @@ export function useProposals(
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const {data: daoDetails} = useDaoDetailsQuery();
+  const {data: daoToken} = useDaoToken(
+    daoDetails?.plugins[0].instanceAddress || ''
+  );
 
   const client = usePluginClient(type);
   const {preferences} = usePrivacyContext();
@@ -216,7 +224,16 @@ export function useProposals(
          * of prioritizing the active state over the successful one
          * when the end date has not yet been reached
          */
-        const proposals = response?.map(proposal => {
+        const proposals = response?.map(proposalEntity => {
+          let proposal = proposalEntity;
+
+          if (isTokenBasedProposal(proposal)) {
+            proposal = {
+              ...proposal,
+              token: proposal.token || daoToken || null,
+            };
+          }
+
           if (proposal.status === ProposalStatus.SUCCEEDED) {
             // prioritize active state over succeeded one if end time has yet
             // to be met
@@ -243,11 +260,14 @@ export function useProposals(
       }
     }
 
-    if (daoAddress && client?.methods) getDaoProposals();
+    if (daoAddress && client?.methods && daoToken) {
+      getDaoProposals();
+    }
   }, [
     augmentProposalsWithCache,
     client?.methods,
     daoAddress,
+    daoToken,
     limit,
     skip,
     status,
