@@ -20,6 +20,9 @@ import {
   ManageMembersProposal,
   MintTokensProposal,
 } from 'utils/paths';
+import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
+import {useExistingToken} from 'hooks/useExistingToken';
+import {useGovTokensWrapping} from 'context/govTokensWrapping';
 
 type Props = {
   daoAddressOrEns: string;
@@ -38,12 +41,20 @@ export const MembershipSnapshot: React.FC<Props> = ({
   const navigate = useNavigate();
   const {network} = useNetwork(); // TODO ensure this is the dao network
   const {isDesktop} = useScreen();
+  const {handleOpenModal} = useGovTokensWrapping();
 
   const {
     data: {members, daoToken},
     isLoading,
   } = useDaoMembers(pluginAddress, pluginType);
   const totalMemberCount = members.length;
+
+  const {data: daoDetails} = useDaoDetailsQuery();
+
+  const {isDAOTokenWrapped, isTokenMintable} = useExistingToken({
+    daoToken,
+    daoDetails,
+  });
 
   const walletBased = pluginType === 'multisig.plugin.dao.eth';
 
@@ -52,9 +63,13 @@ export const MembershipSnapshot: React.FC<Props> = ({
       ? navigate(
           generatePath(ManageMembersProposal, {network, dao: daoAddressOrEns})
         )
-      : navigate(
+      : isDAOTokenWrapped
+      ? handleOpenModal()
+      : isTokenMintable
+      ? navigate(
           generatePath(MintTokensProposal, {network, dao: daoAddressOrEns})
-        );
+        )
+      : navigate(generatePath(Community, {network, dao: daoAddressOrEns}));
   };
 
   if (isLoading) return <Loading />;
@@ -72,7 +87,13 @@ export const MembershipSnapshot: React.FC<Props> = ({
                 : t('explore.explorer.tokenBased')
             }
             buttonText={
-              walletBased ? t('labels.manageMember') : t('labels.addMember')
+              walletBased
+                ? t('labels.manageMember')
+                : isDAOTokenWrapped
+                ? t('community.ctaMain.wrappedLabel')
+                : isTokenMintable
+                ? t('labels.addMember')
+                : t('labels.seeCommunity')
             }
             orientation="vertical"
             onClick={headerButtonHandler}
@@ -107,7 +128,13 @@ export const MembershipSnapshot: React.FC<Props> = ({
             : t('explore.explorer.tokenBased')
         }
         buttonText={
-          walletBased ? t('labels.manageMember') : t('labels.addMember')
+          walletBased
+            ? t('labels.manageMember')
+            : isDAOTokenWrapped
+            ? t('community.ctaMain.wrappedLabel')
+            : isTokenMintable
+            ? t('labels.addMember')
+            : t('labels.seeCommunity')
         }
         orientation="vertical"
         onClick={headerButtonHandler}

@@ -1,9 +1,10 @@
 import {MultisigVotingSettings, VotingSettings} from '@aragon/sdk-client';
-import React, {useCallback, useEffect, useMemo, useRef} from 'react';
-import {Outlet} from 'react-router-dom';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {Outlet, useNavigate} from 'react-router-dom';
 
 import {Loading} from 'components/temporary';
 import {GatingMenu} from 'containers/gatingMenu';
+import {LoginRequired} from 'containers/walletMenu/LoginRequired';
 import {useGlobalModalContext} from 'context/globalModals';
 import {useNetwork} from 'context/network';
 import {useSpecificProvider} from 'context/providers';
@@ -13,13 +14,16 @@ import {PluginTypes} from 'hooks/usePluginClient';
 import {usePluginSettings} from 'hooks/usePluginSettings';
 import {useWallet} from 'hooks/useWallet';
 import {CHAIN_METADATA} from 'utils/constants';
-import {formatUnits, toDisplayEns} from 'utils/library';
+import {formatUnits} from 'utils/library';
 import {fetchBalance} from 'utils/tokens';
 
 const ProtectedRoute: React.FC = () => {
+  const navigate = useNavigate();
   const {open, close, isGatingOpen} = useGlobalModalContext();
   const {address, status, isOnWrongNetwork, isModalOpen} = useWallet();
   const {data: daoDetails, isLoading: detailsAreLoading} = useDaoDetailsQuery();
+
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const [pluginType, pluginAddress] = useMemo(
     () => [
@@ -45,6 +49,13 @@ const ProtectedRoute: React.FC = () => {
   /*************************************************
    *             Callbacks and Handlers            *
    *************************************************/
+  const handleCloseLoginModal = useCallback(() => {
+    setShowLoginModal(false);
+
+    // navigate back to the page the user came from
+    navigate(-1);
+  }, [navigate]);
+
   const gateTokenBasedProposal = useCallback(async () => {
     if (daoToken && address && filteredMembers.length === 0) {
       const balance = await fetchBalance(
@@ -102,7 +113,11 @@ const ProtectedRoute: React.FC = () => {
     // no lasting consequences considering status will be checked upon proposal creation
     // If we want to keep user logged in (I'm in favor of), remove ref throughout component
     // Fabrice F. - [12/07/2022]
-    if (!address && userWentThroughLoginFlow.current === false) open('wallet');
+    if (
+      (!address && isModalOpen === false) ||
+      (!address && userWentThroughLoginFlow.current === false)
+    )
+      open('wallet');
     else {
       if (isOnWrongNetwork) open('network');
       else close('network');
@@ -115,7 +130,7 @@ const ProtectedRoute: React.FC = () => {
       ((status === 'connecting' && isModalOpen === true) || address) &&
       userWentThroughLoginFlow.current === false
     ) {
-      close('wallet');
+      setShowLoginModal(false);
     }
   }, [address, close, isModalOpen, isOnWrongNetwork, status]);
 
@@ -150,13 +165,12 @@ const ProtectedRoute: React.FC = () => {
       {!isGatingOpen && userWentThroughLoginFlow.current && <Outlet />}
       {daoDetails && (
         <GatingMenu
-          daoAddressOrEns={
-            toDisplayEns(daoDetails.ensDomain) || daoDetails.address
-          }
+          daoDetails={daoDetails}
           pluginType={pluginType}
-          tokenName={daoToken?.name}
+          daoToken={daoToken}
         />
       )}
+      <LoginRequired isOpen={showLoginModal} onClose={handleCloseLoginModal} />
     </>
   );
 };

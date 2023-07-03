@@ -3,15 +3,17 @@ import {
   CreateDaoParams,
   DaoCreationSteps,
   DaoMetadata,
-  IPluginInstallItem,
-  ITokenVotingPluginInstall,
+  TokenVotingPluginInstall,
   MultisigClient,
   MultisigPluginInstallParams,
   TokenVotingClient,
   VotingMode,
   VotingSettings,
-  SupportedNetworks as sdkSupportedNetworks,
 } from '@aragon/sdk-client';
+import {
+  PluginInstallItem,
+  SupportedNetwork as sdkSupportedNetworks,
+} from '@aragon/sdk-client-common';
 import {parseUnits} from 'ethers/lib/utils';
 import React, {createContext, useCallback, useContext, useState} from 'react';
 import {useFormContext} from 'react-hook-form';
@@ -36,6 +38,8 @@ import {readFile, translateToNetworkishName} from 'utils/library';
 import {Dashboard} from 'utils/paths';
 import {useGlobalModalContext} from './globalModals';
 import {useNetwork} from './network';
+
+const DEFAULT_TOKEN_DECIMALS = 18;
 
 type CreateDaoContextType = {
   /** Prepares the creation data and awaits user confirmation to start process */
@@ -176,6 +180,8 @@ const CreateDaoProvider: React.FC = ({children}) => {
       eligibilityTokenAmount,
       voteReplacement,
       earlyExecution,
+      isCustomToken,
+      tokenDecimals,
     } = getValues();
 
     let votingMode;
@@ -189,6 +195,12 @@ const CreateDaoProvider: React.FC = ({children}) => {
       blockchain.label?.toLowerCase() as SupportedNetworks
     ) as sdkSupportedNetworks;
 
+    let decimals = DEFAULT_TOKEN_DECIMALS;
+
+    if (!isCustomToken) {
+      decimals = tokenDecimals;
+    }
+
     return [
       {
         minDuration: getSecondsFromDHM(
@@ -200,36 +212,68 @@ const CreateDaoProvider: React.FC = ({children}) => {
         supportThreshold: parseInt(minimumApproval) / 100,
         minProposerVotingPower:
           eligibilityType === 'token' && eligibilityTokenAmount !== undefined
-            ? parseUnits(eligibilityTokenAmount.toString(), 18).toBigInt()
+            ? parseUnits(eligibilityTokenAmount.toString(), decimals).toBigInt()
             : eligibilityType === 'multisig'
             ? BigInt(0)
-            : parseUnits('1', 18).toBigInt(),
+            : parseUnits('1', decimals).toBigInt(),
         votingMode,
       },
       translatedNetwork,
     ];
   }, [getValues]);
 
-  const getErc20PluginParams =
-    useCallback((): ITokenVotingPluginInstall['newToken'] => {
+  const getNewErc20PluginParams =
+    useCallback((): TokenVotingPluginInstall['newToken'] => {
       const {tokenName, tokenSymbol, wallets} = getValues();
+
       return {
         name: tokenName,
         symbol: tokenSymbol,
-        decimals: 18,
+        decimals: DEFAULT_TOKEN_DECIMALS,
         // minter: '0x...', // optionally, define a minter
         balances: wallets?.map(wallet => ({
           address: wallet.address,
-          balance: parseUnits(wallet.amount, 18).toBigInt(),
+          balance: parseUnits(wallet.amount, DEFAULT_TOKEN_DECIMALS).toBigInt(),
         })),
+      };
+    }, [getValues]);
+
+  const getErc20PluginParams =
+    useCallback((): TokenVotingPluginInstall['useToken'] => {
+      const {tokenAddress, tokenName, tokenSymbol, tokenType} = getValues();
+
+      let name, symbol;
+
+      if (tokenType === 'ERC-20') {
+        name = `Governance ${tokenName}`;
+        symbol = `g${tokenSymbol}`;
+      } else {
+        // considering this is called only when token type is
+        // erc20 or governance erc20 we can assume here to be
+        // type governance erc20
+        name = tokenName;
+        symbol = tokenSymbol;
+      }
+
+      return {
+        tokenAddress: tokenAddress.address, // contract address of underlying token
+        wrappedToken: {name, symbol},
       };
     }, [getValues]);
 
   // Get dao setting configuration for creation process
   const getDaoSettings = useCallback(async (): Promise<CreateDaoParams> => {
-    const {membership, daoName, daoEnsName, daoSummary, daoLogo, links} =
-      getValues();
-    const plugins: IPluginInstallItem[] = [];
+    const {
+      membership,
+      daoName,
+      daoEnsName,
+      daoSummary,
+      daoLogo,
+      tokenType,
+      isCustomToken,
+      links,
+    } = getValues();
+    const plugins: PluginInstallItem[] = [];
     switch (membership) {
       case 'multisig': {
         const [params, network] = getMultisigPluginInstallParams();
@@ -242,11 +286,16 @@ const CreateDaoProvider: React.FC = ({children}) => {
       }
       case 'token': {
         const [votingSettings, network] = getVoteSettings();
+
         const tokenVotingPlugin =
           TokenVotingClient.encoding.getPluginInstallItem(
             {
               votingSettings: votingSettings,
-              newToken: getErc20PluginParams(),
+              ...((tokenType === 'governance-ERC20' || // token can be used as is
+                tokenType === 'ERC-20') && // token can/will be wrapped
+              !isCustomToken // not a new token (existing token)
+                ? {useToken: getErc20PluginParams()}
+                : {newToken: getNewErc20PluginParams()}),
             },
             network
           );
@@ -291,9 +340,10 @@ const CreateDaoProvider: React.FC = ({children}) => {
     client?.ipfs,
     client?.methods,
     getErc20PluginParams,
+    getMultisigPluginInstallParams,
+    getNewErc20PluginParams,
     getValues,
     getVoteSettings,
-    getMultisigPluginInstallParams,
   ]);
 
   // estimate creation fees

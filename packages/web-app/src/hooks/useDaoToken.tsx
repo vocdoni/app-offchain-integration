@@ -1,13 +1,19 @@
 import {useEffect, useState} from 'react';
-import {TokenVotingClient, Erc20TokenDetails} from '@aragon/sdk-client';
+import {
+  TokenVotingClient,
+  Erc20TokenDetails,
+  Erc20WrapperTokenDetails,
+} from '@aragon/sdk-client';
 
 import {HookData} from 'utils/types';
 import {usePluginClient} from './usePluginClient';
 
 export function useDaoToken(
   pluginAddress: string
-): HookData<Erc20TokenDetails | undefined> {
-  const [data, setData] = useState<Erc20TokenDetails>();
+): HookData<Erc20TokenDetails | Erc20WrapperTokenDetails | undefined> {
+  const [data, setData] = useState<
+    Erc20TokenDetails | Erc20WrapperTokenDetails
+  >();
   const [error, setError] = useState<Error>();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -21,7 +27,20 @@ export function useDaoToken(
         setIsLoading(true);
 
         const response = await pluginClient?.methods.getToken(pluginAddress);
-        if (response) setData(response as Erc20TokenDetails);
+        if (response) {
+          const underlyingToken = (
+            response as Erc20WrapperTokenDetails | undefined
+          )?.underlyingToken;
+
+          const finalResponse = response as Erc20TokenDetails;
+
+          setData({
+            ...finalResponse,
+            decimals: underlyingToken
+              ? underlyingToken.decimals
+              : finalResponse.decimals,
+          });
+        }
       } catch (err) {
         console.error(err);
         setError(err as Error);

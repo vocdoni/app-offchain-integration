@@ -4,6 +4,7 @@ import {
   IconLinkExternal,
   Pagination,
   SearchInput,
+  IllustrationHuman,
 } from '@aragon/ui-components';
 import {withTransaction} from '@elastic/apm-rum-react';
 import React, {useState} from 'react';
@@ -21,6 +22,12 @@ import {useDaoMembers} from 'hooks/useDaoMembers';
 import {useDebouncedState} from 'hooks/useDebouncedState';
 import {PluginTypes} from 'hooks/usePluginClient';
 import {CHAIN_METADATA} from 'utils/constants';
+import PageEmptyState from 'containers/pageEmptyState';
+import {htmlIn} from 'utils/htmlIn';
+import useScreen from 'hooks/useScreen';
+import {useGovTokensWrapping} from 'context/govTokensWrapping';
+import {useExistingToken} from 'hooks/useExistingToken';
+import {Erc20WrapperTokenDetails} from '@aragon/sdk-client';
 
 const MEMBERS_PER_PAGE = 20;
 
@@ -28,6 +35,8 @@ const Community: React.FC = () => {
   const {t} = useTranslation();
   const {network} = useNetwork();
   const navigate = useNavigate();
+  const {isMobile} = useScreen();
+  const {handleOpenModal} = useGovTokensWrapping();
 
   const [page, setPage] = useState(1);
   const [debouncedTerm, searchTerm, setSearchTerm] = useDebouncedState('');
@@ -41,6 +50,11 @@ const Community: React.FC = () => {
     daoDetails?.plugins[0].id as PluginTypes,
     debouncedTerm
   );
+
+  const {isDAOTokenWrapped, isTokenMintable} = useExistingToken({
+    daoToken,
+    daoDetails,
+  });
 
   const totalMemberCount = members.length;
   const filteredMemberCount = filteredMembers.length;
@@ -68,7 +82,9 @@ const Community: React.FC = () => {
   const handlePrimaryClick = () => {
     if (walletBased) {
       navigate('manage-members');
-    } else {
+    } else if (isDAOTokenWrapped) {
+      handleOpenModal();
+    } else if (isTokenMintable) {
       navigate('mint-tokens');
     }
   };
@@ -77,6 +93,37 @@ const Community: React.FC = () => {
    *                     Render                    *
    *************************************************/
   if (detailsAreLoading || membersLoading) return <Loading />;
+
+  if (!totalMemberCount) {
+    return (
+      <PageEmptyState
+        title={t('community.emptyState.title')}
+        subtitle={htmlIn(t)('community.emptyState.desc', {
+          tokenSymbol:
+            (daoToken as Erc20WrapperTokenDetails)?.underlyingToken?.symbol ||
+            daoToken?.symbol,
+        })}
+        Illustration={
+          <div className="flex">
+            <IllustrationHuman
+              {...{
+                body: 'elevating',
+                expression: 'smile_wink',
+                hair: 'middle',
+                sunglass: 'big_rounded',
+                accessory: 'buddha',
+              }}
+              {...(isMobile
+                ? {height: 165, width: 295}
+                : {height: 225, width: 400})}
+            />
+          </div>
+        }
+        buttonLabel={t('community.emptyState.ctaLabel')}
+        onClick={handleOpenModal}
+      />
+    );
+  }
 
   return (
     <PageWrapper
@@ -89,13 +136,35 @@ const Community: React.FC = () => {
               onClick: handlePrimaryClick,
             },
           }
-        : {
+        : isDAOTokenWrapped
+        ? {
+            description: t('explore.explorer.tokenBased'),
+            primaryBtnProps: {
+              label: t('community.ctaMain.wrappedLabel'),
+              onClick: handlePrimaryClick,
+            },
+            secondaryBtnProps: {
+              label: t('labels.seeAllHolders'),
+              iconLeft: <IconLinkExternal />,
+              onClick: handleSecondaryButtonClick,
+            },
+          }
+        : isTokenMintable
+        ? {
             description: t('explore.explorer.tokenBased'),
             primaryBtnProps: {
               label: t('labels.mintTokens'),
               iconLeft: <IconAdd />,
               onClick: handlePrimaryClick,
             },
+            secondaryBtnProps: {
+              label: t('labels.seeAllHolders'),
+              iconLeft: <IconLinkExternal />,
+              onClick: handleSecondaryButtonClick,
+            },
+          }
+        : {
+            description: t('explore.explorer.tokenBased'),
             secondaryBtnProps: {
               label: t('labels.seeAllHolders'),
               iconLeft: <IconLinkExternal />,

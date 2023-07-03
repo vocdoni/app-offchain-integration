@@ -14,14 +14,13 @@ import {
   Erc20TokenDetails,
   MultisigProposal,
   MultisigProposalListItem,
-  ProposalMetadata,
-  ProposalStatus,
   TokenVotingProposal,
   TokenVotingProposalResult,
   VoteValues,
   VotingMode,
   VotingSettings,
 } from '@aragon/sdk-client';
+import {ProposalMetadata, ProposalStatus} from '@aragon/sdk-client-common';
 import {ModeType, ProgressStatusProps, VoterType} from '@aragon/ui-components';
 import Big from 'big.js';
 import {format, formatDistanceToNow, Locale} from 'date-fns';
@@ -78,7 +77,7 @@ export const MappedVotes: {
 
 // this type guard will need to evolve when there are more types
 export function isTokenBasedProposal(
-  proposal: SupportedProposals | undefined
+  proposal: SupportedProposals | undefined | null
 ): proposal is TokenVotingProposal {
   if (!proposal) return false;
   return 'token' in proposal;
