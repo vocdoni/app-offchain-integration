@@ -52,8 +52,8 @@ export default defineConfig(({mode}) => {
           analyze({
             stdout: true,
             summaryOnly: true,
-          }),
-          production && uglify(),
+          })
+          //production && uglify(),
         ],
         output: {
           manualChunks: {
