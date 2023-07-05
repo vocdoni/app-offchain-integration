@@ -1,7 +1,7 @@
 const images = require('@rollup/plugin-image');
 const postcss = require('rollup-plugin-postcss');
 const replace = require('@rollup/plugin-replace');
-const { uglify } = require('rollup-plugin-uglify');
+const {uglify} = require('rollup-plugin-uglify');
 
 module.exports = {
   rollup(config, opts) {
@@ -15,8 +15,8 @@ module.exports = {
         : plugin
     );
 
-    // postcss config
-    config.plugins.push(
+    config.plugins = [
+      // postcss config
       postcss({
         config: {
           path: './postcss.config.js',
@@ -26,16 +26,16 @@ module.exports = {
         inject: {
           insertAt: 'top',
         },
-      })
-    );
+      }),
 
-    // plugin for bundling images
-    config.plugins = [
+      // plugin for bundling images
       images({include: ['**/*.png', '**/*.jpg', '**/*.svg']}),
+
+      // uglify code
+      uglify(),
+
       ...config.plugins,
     ];
-
-    config.plugins.push(uglify());
 
     return config;
   },
