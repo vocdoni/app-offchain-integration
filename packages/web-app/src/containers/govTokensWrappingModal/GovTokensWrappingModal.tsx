@@ -23,7 +23,6 @@ import {
 import {StateEmpty} from 'components/stateEmpty';
 import {Erc20TokenDetails} from '@aragon/sdk-client';
 import type {WrappingFormParams} from 'context/govTokensWrapping';
-import {gTokenSymbol} from 'utils/tokens';
 import numeral from 'numeral';
 
 interface GovTokensWrappingModalProps {
@@ -93,8 +92,8 @@ const GovTokensWrappingModal: FC<GovTokensWrappingModalProps> = ({
 
     let title = t('modal.wrapToken.title');
     let subtitle = t('modal.wrapToken.desc', {
-      tokenSymbol,
-      gTokenSymbol: gTokenSymbol(tokenSymbol),
+      tokenSymbol: daoToken?.symbol || 'ANT',
+      gTokenSymbol: wrappedDaoToken?.symbol || 'ANT',
     });
 
     const finishedTitle = isWrapMode
