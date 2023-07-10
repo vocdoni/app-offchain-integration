@@ -2,11 +2,11 @@ import {
   AlertInline,
   ButtonText,
   IconReload,
-  IconSpinner,
   Label,
+  Spinner,
   WalletInputLegacy,
 } from '@aragon/ui-components';
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   Controller,
   useFormContext,
@@ -15,6 +15,7 @@ import {
 } from 'react-hook-form';
 import {useTranslation} from 'react-i18next';
 import styled from 'styled-components';
+import {PairingTypes, SessionTypes} from '@walletconnect/types';
 
 import ModalBottomSheetSwitcher from 'components/modalBottomSheetSwitcher';
 import ModalHeader from 'components/modalHeader';
@@ -22,26 +23,51 @@ import useScreen from 'hooks/useScreen';
 import {handleClipboardActions} from 'utils/library';
 import {useAlertContext} from 'context/alert';
 import {TransactionState as ConnectionState} from 'utils/constants/misc';
+import {useWalletConnectInterceptor} from 'hooks/useWalletConnectInterceptor';
+import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 
 type Props = {
   onBackButtonClicked: () => void;
+  onConnectionSuccess: (session: SessionTypes.Struct) => void;
   onClose: () => void;
   isOpen: boolean;
 };
 
 // Wallet connect id input name
-export const WC_CODE_INPUT_NAME = 'wcID';
+export const WC_URI_INPUT_NAME = 'wcID';
 
 const WCdAppValidation: React.FC<Props> = props => {
   const {t} = useTranslation();
   const {alert} = useAlertContext();
   const {isDesktop} = useScreen();
 
-  const [connectionStatus] = useState<ConnectionState>(ConnectionState.WAITING);
+  const {data: daoDetails} = useDaoDetailsQuery();
+
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionState>(
+    ConnectionState.WAITING
+  );
+  const [connection, setConnection] = useState<PairingTypes.Struct>();
+  const [session, setSession] = useState<SessionTypes.Struct>();
+
+  const {wcConnect, canConnect, activeSessions} = useWalletConnectInterceptor(
+    {}
+  );
 
   const {control} = useFormContext();
   const {errors} = useFormState({control});
-  const [wcCode] = useWatch({name: [WC_CODE_INPUT_NAME], control});
+  const [uri] = useWatch({name: [WC_URI_INPUT_NAME], control});
+
+  useEffect(() => {
+    if (activeSessions && connection) {
+      const newSession = Object.values(activeSessions).filter(
+        session => session.pairingTopic === connection.topic
+      )[0];
+      if (newSession) {
+        setConnectionStatus(ConnectionState.SUCCESS);
+        setSession(newSession);
+      }
+    }
+  }, [activeSessions, connection]);
 
   const ctaLabel = useMemo(() => {
     switch (connectionStatus) {
@@ -64,12 +90,16 @@ const WCdAppValidation: React.FC<Props> = props => {
     )
       return t('labels.copy');
 
-    if (wcCode) return t('labels.clear');
+    if (uri) return t('labels.clear');
 
     return t('labels.paste');
-  }, [connectionStatus, t, wcCode]);
+  }, [connectionStatus, t, uri]);
 
-  const disableCta = !wcCode || Boolean(errors[WC_CODE_INPUT_NAME]);
+  const disableCta =
+    !uri ||
+    (!canConnect(uri) && connectionStatus === ConnectionState.WAITING) ||
+    connectionStatus === ConnectionState.LOADING ||
+    Boolean(errors[WC_URI_INPUT_NAME]);
 
   /*************************************************
    *             Callbacks and Handlers            *
@@ -91,6 +121,26 @@ const WCdAppValidation: React.FC<Props> = props => {
     [alert, connectionStatus, t]
   );
 
+  const handleConnectDApp = useCallback(async () => {
+    if (connectionStatus === ConnectionState.SUCCESS) {
+      props.onConnectionSuccess(session as SessionTypes.Struct);
+    }
+
+    setConnectionStatus(ConnectionState.LOADING);
+
+    const c = await wcConnect({
+      uri,
+      address: daoDetails?.address as string,
+      onError: e => console.error(e),
+      autoApprove: true,
+    });
+
+    if (c) {
+      setConnection(c);
+    } else {
+      setConnectionStatus(ConnectionState.ERROR);
+    }
+  }, [connectionStatus, daoDetails?.address, props, session, uri, wcConnect]);
   /*************************************************
    *                     Render                    *
    *************************************************/
@@ -110,7 +160,7 @@ const WCdAppValidation: React.FC<Props> = props => {
           />
           {/* TODO: Please add validation when format of wc Code is known */}
           <Controller
-            name={WC_CODE_INPUT_NAME}
+            name={WC_URI_INPUT_NAME}
             control={control}
             defaultValue=""
             render={({
@@ -128,19 +178,6 @@ const WCdAppValidation: React.FC<Props> = props => {
                   adornmentText={adornmentText}
                   onAdornmentClick={() => handleAdornmentClick(value, onChange)}
                 />
-                {error?.message && (
-                  <AlertWrapper>
-                    <AlertInline label={error.message} mode="critical" />
-                  </AlertWrapper>
-                )}
-                {connectionStatus === ConnectionState.SUCCESS && (
-                  <AlertWrapper>
-                    <AlertInline
-                      label={t('wc.validation.codeInput.statusSuccess')}
-                      mode="critical"
-                    />
-                  </AlertWrapper>
-                )}
               </>
             )}
           />
@@ -151,13 +188,32 @@ const WCdAppValidation: React.FC<Props> = props => {
           disabled={disableCta}
           className="w-full"
           {...(connectionStatus === ConnectionState.LOADING && {
-            iconLeft: <IconSpinner />,
+            iconLeft: <Spinner size={'xs'} />,
             isActive: true,
           })}
           {...(connectionStatus === ConnectionState.ERROR && {
             iconLeft: <IconReload />,
           })}
+          onClick={handleConnectDApp}
         />
+        {connectionStatus === ConnectionState.SUCCESS && (
+          <AlertWrapper>
+            <AlertInline
+              label={t('wc.validation.codeInput.statusSuccess', {
+                dappName: session?.peer.metadata.name,
+              })}
+              mode="success"
+            />
+          </AlertWrapper>
+        )}
+        {connectionStatus === ConnectionState.ERROR && (
+          <AlertWrapper>
+            <AlertInline
+              label={t('wc.validation.addressInput.alertCritical')}
+              mode="critical"
+            />
+          </AlertWrapper>
+        )}
       </Content>
     </ModalBottomSheetSwitcher>
   );
@@ -171,4 +227,6 @@ const Content = styled.div.attrs({
 
 const FormGroup = styled.div.attrs({className: 'space-y-1.5'})``;
 
-const AlertWrapper = styled.div.attrs({className: 'mt-1.5'})``;
+const AlertWrapper = styled.div.attrs({
+  className: 'mt-1.5 flex justify-center',
+})``;
