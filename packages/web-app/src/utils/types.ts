@@ -309,27 +309,29 @@ export type ActionSCC = {
   contractName: string;
   contractAddress: string;
   functionName: string;
-  inputs: Array<{
-    name: string;
-    type: string;
-    notice?: string;
-    value: object | string | BigNumber;
-  }>;
+  inputs: Array<ExternalActionInput>;
   value?: string;
 };
 
-export type ActionWC = {
+// Alias
+export type ActionExternalContract = ActionWC;
+export type ExternalActionInput = {
+  name: string;
+  type: string;
+  notice?: string;
+  value: object | string | BigNumber;
+};
+
+export type ActionWC = Omit<ActionSCC, 'name'> & {
   name: 'wallet_connect_action';
-  contractName: string;
-  contractAddress: string;
-  functionName: string;
-  inputs: Array<{
-    name: string;
-    type: string;
-    notice?: string;
-    value: object | string | BigNumber;
-  }>;
-  value?: string;
+  notice?: string;
+  verified: boolean;
+  decoded: boolean;
+  // considering we have the raw action directly from WC, there
+  // is no need to decode it, re-encode it, only to decode it again
+  // when displaying on the proposal details page
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  raw?: any;
 };
 
 // TODO: Consider making this a generic type that take other types of the form
@@ -444,6 +446,7 @@ export interface Input {
   components?: Input[];
   internalType?: string;
   notice?: string;
+  value?: string;
 }
 
 export type SmartContract = {
