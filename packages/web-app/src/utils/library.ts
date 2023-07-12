@@ -11,6 +11,7 @@ import {
   TokenVotingClient,
   VotingMode,
 } from '@aragon/sdk-client';
+import {fetchEnsAvatar} from '@wagmi/core';
 
 import {
   DaoAction,
@@ -256,17 +257,14 @@ export async function decodeAddMembersToAction(
     return;
   }
 
-  const addresses: {
-    address: string;
-  }[] = client.decoding.addAddressesAction(data)?.map(address => ({
+  const addresses = client.decoding.addAddressesAction(data)?.map(address => ({
     address,
+    ensName: '',
   }));
 
   return Promise.resolve({
     name: 'add_address',
-    inputs: {
-      memberWallets: addresses,
-    },
+    inputs: {memberWallets: addresses},
   });
 }
 
@@ -284,17 +282,16 @@ export async function decodeRemoveMembersToAction(
     console.error('SDK client is not initialized correctly');
     return;
   }
-  const addresses: {
-    address: string;
-  }[] = client.decoding.removeAddressesAction(data)?.map(address => ({
-    address,
-  }));
+  const addresses = client.decoding
+    .removeAddressesAction(data)
+    ?.map(address => ({
+      address,
+      ensName: '',
+    }));
 
   return Promise.resolve({
     name: 'remove_address',
-    inputs: {
-      memberWallets: addresses,
-    },
+    inputs: {memberWallets: addresses},
   });
 }
 
@@ -737,6 +734,7 @@ export class Web3Address {
   private _address: string | null;
   private _ensName: string | null;
   private _provider?: providers.Provider;
+  private _avatar?: string | null;
 
   // Constructor for the Address class
   constructor(
@@ -794,6 +792,15 @@ export class Web3Address {
             addressObj._address = addressToSet;
           }
         }
+
+        if (addressObj._ensName) {
+          // fetch avatar
+          const chainId = (await provider.getNetwork()).chainId;
+          addressObj._avatar = await fetchEnsAvatar({
+            name: addressObj._ensName,
+            chainId,
+          });
+        }
       }
 
       // Return the Address instance
@@ -832,6 +839,11 @@ export class Web3Address {
     return this._ensName;
   }
 
+  // Getter for the avatar
+  get avatar() {
+    return this._avatar;
+  }
+
   display(
     options: {
       shorten: boolean;
@@ -854,10 +866,10 @@ export class Web3Address {
     return {address: this._address, ensName: this.ensName};
   }
 
-  isEqual(valueToCompare: Web3Address) {
+  isEqual(valueToCompare: Web3Address | {address: string; ensName: string}) {
     return (
       valueToCompare.address === this._address &&
-      valueToCompare._ensName === this._ensName
+      valueToCompare.ensName === this._ensName
     );
   }
 }
