@@ -1,7 +1,7 @@
 import {
   ButtonText,
-  IconSuccess,
   CheckboxListItem,
+  IconSuccess,
   NumberInput,
   TextInput,
   WalletInputLegacy,
@@ -299,6 +299,7 @@ export const ComponentForType: React.FC<ComponentForTypeProps> = ({
   // Check if we need to add "index" kind of variable to the "name"
   switch (classifyInputType(input.type)) {
     case 'address':
+    case 'encodedData':
       return (
         <Controller
           defaultValue=""
@@ -418,9 +419,88 @@ export const ComponentForType: React.FC<ComponentForTypeProps> = ({
   }
 };
 
-export const ComponentForTypeWithFormProvider: React.FC<
-  ComponentForTypeProps
-> = ({input, functionName, formHandleName, defaultValue, disabled = false}) => {
+/** This version of the component returns uncontrolled inputs */
+type FormlessComponentForTypeProps = {
+  input: Input;
+  disabled?: boolean;
+};
+
+export function FormlessComponentForType({
+  input,
+  disabled,
+}: FormlessComponentForTypeProps) {
+  const {alert} = useAlertContext();
+
+  // Check if we need to add "index" kind of variable to the "name"
+  switch (classifyInputType(input.type)) {
+    case 'address':
+    case 'encodedData': // custom type for the data field which is encoded bytes
+      return (
+        <WalletInputLegacy
+          name={input.name}
+          value={input.value}
+          onChange={() => {}}
+          placeholder="0x"
+          adornmentText={t('labels.copy')}
+          disabledFilled={disabled}
+          onAdornmentClick={() =>
+            handleClipboardActions(input.value as string, () => {}, alert)
+          }
+        />
+      );
+
+    case 'int':
+    case 'uint8':
+    case 'int8':
+    case 'uint32':
+    case 'int32':
+    case 'uint256':
+      return (
+        <NumberInput
+          name={input.name}
+          placeholder="0"
+          includeDecimal
+          disabled={disabled}
+          value={input.value as string}
+        />
+      );
+
+    case 'tuple':
+      return (
+        <>
+          {input.components?.map(component => (
+            <div key={component.name}>
+              <div className="mb-1.5 text-base font-bold text-ui-800 capitalize">
+                {input.name}
+              </div>
+              <FormlessComponentForType
+                key={component.name}
+                input={component}
+                disabled={disabled}
+              />
+            </div>
+          ))}
+        </>
+      );
+    default:
+      return (
+        <TextInput
+          name={input.name}
+          placeholder={`${input.name} (${input.type})`}
+          value={input.value}
+          disabled={disabled}
+        />
+      );
+  }
+}
+
+export function ComponentForTypeWithFormProvider({
+  input,
+  functionName,
+  formHandleName,
+  defaultValue,
+  disabled = false,
+}: ComponentForTypeProps) {
   const methods = useForm({mode: 'onChange'});
 
   return (
@@ -435,7 +515,7 @@ export const ComponentForTypeWithFormProvider: React.FC<
       />
     </FormProvider>
   );
-};
+}
 
 const ActionName = styled.p.attrs({
   className: 'text-lg font-bold text-ui-800 capitalize truncate',
