@@ -57,6 +57,7 @@ import {
   DetailedProposal,
   Erc20ProposalVote,
   ProposalId,
+  ProposalListItem,
   StrictlyExclude,
   SupportedProposals,
   SupportedVotingSettings,
@@ -1168,4 +1169,31 @@ function calculateProposalStatus(proposal: DetailedProposal): ProposalStatus {
         ((proposal as CachedProposal)?.minApprovals || 1),
     });
   }
+}
+
+/**
+ * Recalculates the status of a proposal.
+ * @template T - A type that extends DetailedProposal or ProposalListItem
+ * @param proposal - The proposal to recalculate the status of
+ * @returns The proposal with recalculated status,
+ * or null/undefined if the input was null/undefined
+ */
+export function recalculateStatus<
+  T extends DetailedProposal | ProposalListItem
+>(proposal: T | null | undefined): T | null | undefined {
+  if (proposal?.status === ProposalStatus.SUCCEEDED) {
+    const endTime = proposal.endDate.getTime();
+    // prioritize active state over succeeded one if end time has yet
+    // to be met
+    if (endTime >= Date.now())
+      return {...proposal, status: ProposalStatus.ACTIVE};
+
+    // for an inactive multisig proposal, make sure a vote has actually been cast
+    // or that the end time isn't in the past
+    if (isMultisigProposal(proposal)) {
+      if (endTime < Date.now() || proposal.approvals.length === 0)
+        return {...proposal, status: ProposalStatus.DEFEATED};
+    }
+  }
+  return proposal;
 }
