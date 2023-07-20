@@ -21,6 +21,7 @@ import {
   MIN_DURATION_HOURS,
 } from 'utils/constants';
 import {getDaysHoursMins} from 'utils/date';
+import {ProposalCreation} from './proposalCreation';
 
 const ConfigureCommunity: React.FC = () => {
   const {t} = useTranslation();
@@ -390,6 +391,9 @@ const ConfigureCommunity: React.FC = () => {
           </FormItem>
         </>
       )}
+      <FormItem>
+        <ProposalCreation />
+      </FormItem>
     </>
   );
 };
