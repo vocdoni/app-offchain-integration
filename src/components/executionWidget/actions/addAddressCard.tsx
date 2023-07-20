@@ -13,41 +13,34 @@ import {ActionAddAddress} from 'utils/types';
 
 export const AddAddressCard: React.FC<{
   action: ActionAddAddress;
-}> = ({action}) => {
+}> = ({action: {inputs}}) => {
   const {t} = useTranslation();
   const {network} = useNetwork();
   const {infura: provider} = useProviders();
 
-  const [displayedAddresses, setDisplayedAddresses] = useState<Web3Address[]>(
-    []
-  );
+  const [addresses, setAddresses] = useState<Web3Address[]>([]);
 
   /*************************************************
    *                    Effects                    *
    *************************************************/
   useEffect(() => {
-    async function filterAddresses() {
-      let memberAddresses:
-        | ActionAddAddress['inputs']['memberWallets']
-        | Array<Web3Address> = action.inputs.memberWallets.filter(
-        wallet => wallet.address
-      );
-
+    async function mapToWeb3Addresses() {
       try {
-        memberAddresses = await Promise.all(
-          memberAddresses.map(async ({address, ensName}) => {
-            return await Web3Address.create(provider, {address, ensName});
-          })
+        const response = await Promise.all(
+          inputs.memberWallets.map(
+            async ({address, ensName}) =>
+              await Web3Address.create(provider, {address, ensName})
+          )
         );
+
+        setAddresses(response);
       } catch (error) {
         console.error('Error creating Web3Addresses', error);
       }
-
-      setDisplayedAddresses(memberAddresses as Array<Web3Address>);
     }
 
-    if (action.inputs.memberWallets) filterAddresses();
-  }, [action.inputs.memberWallets, provider]);
+    if (inputs.memberWallets) mapToWeb3Addresses();
+  }, [inputs.memberWallets, network, provider]);
 
   /*************************************************
    *             Callbacks and Handlers            *
@@ -73,18 +66,22 @@ export const AddAddressCard: React.FC<{
       methodDescription={t('labels.addWalletsDescription')}
     >
       <Container>
-        {displayedAddresses.map(({address, avatar, ensName}) => (
-          <ListItemAddress
-            label={ensName || address}
-            src={avatar || address}
-            key={address}
-            onClick={() => handleAddressClick(ensName || address)}
-          />
-        ))}
+        {inputs.memberWallets.map(({address, ensName}, index) => {
+          const label = ensName || addresses[index]?.ensName || address;
+
+          return (
+            <ListItemAddress
+              label={label}
+              src={addresses[index]?.avatar || address}
+              key={address}
+              onClick={() => handleAddressClick(label)}
+            />
+          );
+        })}
       </Container>
       <AccordionSummary
         type="execution-widget"
-        total={displayedAddresses.length}
+        total={inputs.memberWallets.length}
       />
     </AccordionMethod>
   );

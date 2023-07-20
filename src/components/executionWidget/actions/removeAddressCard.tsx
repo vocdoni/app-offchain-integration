@@ -6,48 +6,41 @@ import styled from 'styled-components';
 import {AccordionMethod} from 'components/accordionMethod';
 import AccordionSummary from 'containers/actionBuilder/addAddresses/accordionSummary';
 import {useNetwork} from 'context/network';
-import {CHAIN_METADATA} from 'utils/constants';
-import {ActionRemoveAddress} from 'utils/types';
-import {Web3Address} from 'utils/library';
 import {useProviders} from 'context/providers';
+import {CHAIN_METADATA} from 'utils/constants';
+import {Web3Address} from 'utils/library';
+import {ActionRemoveAddress} from 'utils/types';
 
 export const RemoveAddressCard: React.FC<{
   action: ActionRemoveAddress;
-}> = ({action}) => {
+}> = ({action: {inputs}}) => {
   const {t} = useTranslation();
   const {network} = useNetwork();
   const {infura: provider} = useProviders();
 
-  const [displayedAddresses, setDisplayedAddresses] = useState<Web3Address[]>(
-    []
-  );
+  const [addresses, setAddresses] = useState<Web3Address[]>([]);
 
   /*************************************************
    *                    Effects                    *
    *************************************************/
   useEffect(() => {
-    async function filterAddresses() {
-      let memberAddresses:
-        | ActionRemoveAddress['inputs']['memberWallets']
-        | Array<Web3Address> = action.inputs.memberWallets.filter(
-        wallet => wallet.address
-      );
-
+    async function mapToWeb3Addresses() {
       try {
-        memberAddresses = await Promise.all(
-          memberAddresses.map(async ({address, ensName}) => {
-            return await Web3Address.create(provider, {address, ensName});
-          })
+        const response = await Promise.all(
+          inputs.memberWallets.map(
+            async ({address, ensName}) =>
+              await Web3Address.create(provider, {address, ensName})
+          )
         );
+
+        setAddresses(response);
       } catch (error) {
         console.error('Error creating Web3Addresses', error);
       }
-
-      setDisplayedAddresses(memberAddresses as Array<Web3Address>);
     }
 
-    if (action.inputs.memberWallets) filterAddresses();
-  }, [action.inputs.memberWallets, provider]);
+    if (inputs.memberWallets) mapToWeb3Addresses();
+  }, [inputs.memberWallets, network, provider]);
 
   /*************************************************
    *             Callbacks and Handlers            *
@@ -63,7 +56,7 @@ export const RemoveAddressCard: React.FC<{
   );
 
   /*************************************************
-   *                    Render                    *
+   *                    Render                     *
    *************************************************/
   return (
     <AccordionMethod
@@ -74,18 +67,22 @@ export const RemoveAddressCard: React.FC<{
       methodDescription={t('labels.removeWalletsDescription')}
     >
       <Container>
-        {displayedAddresses.map(({address, avatar, ensName}) => (
-          <ListItemAddress
-            label={ensName || address}
-            src={avatar || address}
-            key={address}
-            onClick={() => handleAddressClick(ensName || address)}
-          />
-        ))}
+        {inputs.memberWallets.map(({address, ensName}, index) => {
+          const label = ensName || addresses[index]?.ensName || address;
+
+          return (
+            <ListItemAddress
+              label={label}
+              src={addresses[index]?.avatar || address}
+              key={address}
+              onClick={() => handleAddressClick(label)}
+            />
+          );
+        })}
       </Container>
       <AccordionSummary
         type="execution-widget"
-        total={action.inputs.memberWallets.length}
+        total={inputs.memberWallets.length}
         IsRemove
       />
     </AccordionMethod>

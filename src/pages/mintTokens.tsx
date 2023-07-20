@@ -147,6 +147,6 @@ function actionIsValid(
   if (errors.actions || !formActions[0]) return false;
 
   return !formActions[0]?.inputs?.mintTokensToWallets?.some(
-    wallet => wallet.address === '' || Number(wallet.amount) === 0
+    wallet => wallet.web3Address?.address === '' || Number(wallet.amount) === 0
   );
 }

@@ -1,14 +1,16 @@
 import {IconLinkExternal, Link, ListItemAddress} from '@aragon/ods';
-import React from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import styled from 'styled-components';
 
 import {AccordionMethod} from 'components/accordionMethod';
 import {useNetwork} from 'context/network';
+import {useProviders} from 'context/providers';
 import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 import {useDaoMembers} from 'hooks/useDaoMembers';
 import {PluginTypes} from 'hooks/usePluginClient';
 import {CHAIN_METADATA} from 'utils/constants';
+import {Web3Address} from 'utils/library';
 import {ActionMintToken} from 'utils/types';
 
 export const MintTokenCard: React.FC<{
@@ -16,6 +18,7 @@ export const MintTokenCard: React.FC<{
 }> = ({action}) => {
   const {t} = useTranslation();
   const {network} = useNetwork();
+  const {infura: provider} = useProviders();
 
   const {data: daoDetails} = useDaoDetailsQuery();
 
@@ -26,15 +29,56 @@ export const MintTokenCard: React.FC<{
     daoDetails?.plugins[0].id as PluginTypes
   );
 
+  const [addresses, setAddresses] = useState<Web3Address[]>([]);
+
   const newTotalSupply = action.summary.newTokens + action.summary.tokenSupply;
 
-  const newHolders = action.inputs.mintTokensToWallets.filter(({address}) => {
-    return members.find(
-      (addr: {address: string}) =>
-        addr.address.toUpperCase() !== address.toUpperCase()
-    );
-  });
+  const newHolders = action.inputs.mintTokensToWallets.filter(
+    ({web3Address}) => {
+      return members.find(
+        (addr: {address: string}) =>
+          addr.address.toLowerCase() !== web3Address.address?.toLowerCase()
+      );
+    }
+  );
 
+  /*************************************************
+   *                    Effects                    *
+   *************************************************/
+  useEffect(() => {
+    async function mapToWeb3Addresses() {
+      try {
+        const response = await Promise.all(
+          action.inputs.mintTokensToWallets.map(
+            async ({web3Address: {address, ensName}}) =>
+              await Web3Address.create(provider, {address, ensName})
+          )
+        );
+
+        setAddresses(response);
+      } catch (error) {
+        console.error('Error creating Web3Addresses', error);
+      }
+    }
+
+    if (action.inputs.mintTokensToWallets) mapToWeb3Addresses();
+  }, [action.inputs.mintTokensToWallets, network, provider]);
+
+  /*************************************************
+   *             Callbacks and Handlers            *
+   *************************************************/
+  const handleAddressClick = useCallback(
+    (addressOrEns: string | null) =>
+      window.open(
+        `${CHAIN_METADATA[network].explorer}address/${addressOrEns}`,
+        '_blank'
+      ),
+    [network]
+  );
+
+  /*************************************************
+   *                     Render                    *
+   *************************************************/
   return (
     <AccordionMethod
       type="execution-widget"
@@ -46,28 +90,31 @@ export const MintTokenCard: React.FC<{
     >
       <Container>
         <div className="p-2 tablet:p-3 space-y-2 bg-ui-50">
-          {action.inputs.mintTokensToWallets.map((wallet, index) => {
-            const percentage = (Number(wallet.amount) / newTotalSupply) * 100;
+          {action.inputs.mintTokensToWallets.map(
+            ({web3Address, amount}, index) => {
+              const label =
+                web3Address.ensName ||
+                addresses[index]?.ensName ||
+                web3Address.address;
 
-            return wallet.address ? (
-              <ListItemAddress
-                key={index}
-                label={wallet.address}
-                src={wallet.address}
-                onClick={() =>
-                  window.open(
-                    `${CHAIN_METADATA[network].explorer}address/${wallet.address}`,
-                    '_blank'
-                  )
-                }
-                tokenInfo={{
-                  amount: parseFloat(Number(wallet.amount).toFixed(2)),
-                  symbol: action.summary.daoTokenSymbol || '',
-                  percentage: parseFloat(percentage.toFixed(2)),
-                }}
-              />
-            ) : null;
-          })}
+              const avatar = addresses[index]?.avatar || web3Address.address;
+              const percentage = (Number(amount) / newTotalSupply) * 100;
+
+              return web3Address.address ? (
+                <ListItemAddress
+                  key={web3Address.address}
+                  label={label}
+                  src={avatar}
+                  onClick={() => handleAddressClick(label)}
+                  tokenInfo={{
+                    amount: parseFloat(Number(amount).toFixed(2)),
+                    symbol: action.summary.daoTokenSymbol || '',
+                    percentage: parseFloat(percentage.toFixed(2)),
+                  }}
+                />
+              ) : null;
+            }
+          )}
         </div>
 
         <SummaryContainer>
