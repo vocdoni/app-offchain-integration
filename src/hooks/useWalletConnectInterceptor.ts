@@ -31,7 +31,8 @@ export function useWalletConnectInterceptor({
 
   const {data: daoDetails} = useDaoDetailsQuery();
 
-  const [activeSessions, setActiveSessions] = useState<WcSession[]>([]);
+  const [sessions, setSessions] = useState<WcSession[]>([]);
+  const activeSessions = sessions.filter(session => session.acknowledged);
 
   const updateActiveSessions = useCallback(() => {
     const newSessions = walletConnectInterceptor.getActiveSessions(
@@ -45,6 +46,7 @@ export function useWalletConnectInterceptor({
   const wcConnect = useCallback(async ({onError, uri}: WcConnectOptions) => {
     try {
       const connection = await walletConnectInterceptor.connect(uri);
+
       return connection;
     } catch (e) {
       onError?.(e as Error);
@@ -65,15 +67,13 @@ export function useWalletConnectInterceptor({
 
   const handleApprove = useCallback(
     async (data: Web3WalletTypes.SessionProposal) => {
-      const response = await walletConnectInterceptor.approveSession(
+      await walletConnectInterceptor.approveSession(
         data,
         daoDetails?.address as string,
         SUPPORTED_CHAIN_ID
       );
 
       updateActiveSessions();
-
-      return response;
     },
     [daoDetails, updateActiveSessions]
   );
@@ -98,10 +98,10 @@ export function useWalletConnectInterceptor({
   );
 
   useEffect(() => {
-    activeSessionsListeners.add(setActiveSessions);
+    activeSessionsListeners.add(setSessions);
 
     return () => {
-      activeSessionsListeners.delete(setActiveSessions);
+      activeSessionsListeners.delete(setSessions);
     };
   }, []);
 
@@ -146,5 +146,5 @@ export function useWalletConnectInterceptor({
     });
   }, [network, prevNetwork, activeSessions]);
 
-  return {wcConnect, wcDisconnect, activeSessions};
+  return {wcConnect, wcDisconnect, sessions, activeSessions};
 }
