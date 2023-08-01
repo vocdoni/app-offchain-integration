@@ -1,5 +1,3 @@
-// Library utils / Ethers for now
-import {ApolloClient} from '@apollo/client';
 import {
   Client,
   DaoDetails,
@@ -28,7 +26,7 @@ import {
 import {TFunction} from 'react-i18next';
 
 import {getEtherscanVerifiedContract} from 'services/etherscanAPI';
-import {fetchTokenData} from 'services/prices';
+import {Token} from 'services/token/domain';
 import {
   BIGINT_PATTERN,
   CHAIN_METADATA,
@@ -56,6 +54,7 @@ import {i18n} from '../../i18n.config';
 import {addABI, decodeMethod} from './abiDecoder';
 import {attachEtherNotice} from './contract';
 import {getTokenInfo} from './tokens';
+import {IFetchTokenParams} from 'services/token/token-service.api';
 
 export function formatUnits(amount: BigNumberish, decimals: number) {
   if (amount.toString().includes('.') || !decimals) {
@@ -123,7 +122,6 @@ export const toHex = (num: number | string) => {
  * DecodeWithdrawToAction
  * @param data Uint8Array action data
  * @param client SDK client, Fetched using useClient
- * @param apolloClient Apollo client, Fetched using useApolloClient
  * @param provider Eth provider
  * @param network network of the dao
  * @returns Return Decoded Withdraw action
@@ -131,11 +129,11 @@ export const toHex = (num: number | string) => {
 export async function decodeWithdrawToAction(
   data: Uint8Array | undefined,
   client: Client | undefined,
-  apolloClient: ApolloClient<object>,
   provider: providers.Provider,
   network: SupportedNetworks,
   to: string,
-  value: bigint
+  value: bigint,
+  fetchToken: (params: IFetchTokenParams) => Promise<Token | null>
 ): Promise<ActionWithdraw | undefined> {
   if (!client || !data) {
     console.error('SDK client is not initialized correctly');
@@ -166,12 +164,11 @@ export async function decodeWithdrawToAction(
       ),
     ]);
 
-    const apiResponse = await fetchTokenData(
-      tokenAddress,
-      apolloClient,
+    const apiResponse = await fetchToken({
+      address: tokenAddress,
       network,
-      tokenInfo.symbol
-    );
+      symbol: tokenInfo.symbol,
+    });
 
     return {
       amount: Number(formatUnits(decoded.amount, tokenInfo.decimals)),
@@ -179,9 +176,9 @@ export async function decodeWithdrawToAction(
       to: recipient,
       tokenBalance: 0, // unnecessary?
       tokenAddress: tokenAddress,
-      tokenImgUrl: apiResponse?.imgUrl || '',
+      tokenImgUrl: apiResponse?.imgUrl ?? '',
       tokenName: tokenInfo.name,
-      tokenPrice: apiResponse?.price || 0,
+      tokenPrice: apiResponse?.price ?? 0,
       tokenSymbol: tokenInfo.symbol,
       tokenDecimals: tokenInfo.decimals,
       isCustomToken: false,

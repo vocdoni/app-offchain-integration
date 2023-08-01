@@ -21,9 +21,6 @@ export const SUBGRAPH_API_URL: SubgraphNetworkUrl = {
   unsupported: undefined,
 };
 
-export const BASE_URL = 'https://api.coingecko.com/api/v3';
-export const DEFAULT_CURRENCY = 'usd';
-
 export const ARAGON_RPC = 'mainnet.eth.aragon.network';
 
 type AlchemyApiKeys = Record<SupportedNetworks, string | undefined>;
@@ -46,21 +43,3 @@ export const walletConnectProjectID = import.meta.env
   .VITE_WALLET_CONNECT_PROJECT_ID as string;
 
 export const COVALENT_API_KEY = import.meta.env.VITE_COVALENT_API_KEY as string;
-
-// Coingecko Api specific asset platform keys
-export const ASSET_PLATFORMS: Record<SupportedNetworks, string | null> = {
-  arbitrum: 'arbitrum-one',
-  'arbitrum-test': null,
-  base: 'base',
-  'base-goerli': null,
-  ethereum: 'ethereum',
-  goerli: null,
-  polygon: 'polygon-pos',
-  mumbai: null,
-  unsupported: null,
-};
-
-export const NATIVE_TOKEN_ID = {
-  default: 'ethereum',
-  polygon: 'matic-network',
-};

@@ -1,4 +1,3 @@
-import {useApolloClient} from '@apollo/client';
 import {
   Breadcrumb,
   ButtonText,
@@ -75,6 +74,7 @@ import {
   stripPlgnAdrFromProposalId,
 } from 'utils/proposals';
 import {Action, ProposalId} from 'utils/types';
+import {useTokenAsync} from 'services/token/queries/use-token';
 import {useNetwork} from 'context/network';
 
 // TODO: @Sepehr Please assign proper tags on action decoding
@@ -90,6 +90,7 @@ const Proposal: React.FC = () => {
   const {isDesktop} = useScreen();
   const {breadcrumbs, tag} = useMappedBreadcrumbs();
   const navigate = useNavigate();
+  const fetchToken = useTokenAsync();
 
   const {dao, id: urlId} = useParams();
   const proposalId = useMemo(
@@ -120,7 +121,6 @@ const Proposal: React.FC = () => {
 
   const {client} = useClient();
   const {set, get} = useCache();
-  const apolloClient = useApolloClient();
 
   const {network} = useNetwork();
   const {api: provider} = useProviders();
@@ -234,11 +234,11 @@ const Proposal: React.FC = () => {
             return decodeWithdrawToAction(
               action.data,
               client,
-              apolloClient,
               provider,
               network,
               action.to,
-              action.value
+              action.value,
+              fetchToken
             );
           case 'mint':
             if (mintTokenActions.actions.length === 0) {
@@ -276,11 +276,11 @@ const Proposal: React.FC = () => {
             const withdrawAction = decodeWithdrawToAction(
               action.data,
               client,
-              apolloClient,
               provider,
               network,
               action.to,
-              action.value
+              action.value,
+              fetchToken
             );
 
             const isPossiblyWithdrawAction =
@@ -330,7 +330,7 @@ const Proposal: React.FC = () => {
     Promise.all(actionPromises).then(value => {
       setDecodedActions(value);
     });
-  }, [apolloClient, client, network, pluginClient, proposal, provider, t]);
+  }, [client, network, pluginClient, proposal, provider, fetchToken, t]);
 
   // caches the status for breadcrumb
   useEffect(() => {
