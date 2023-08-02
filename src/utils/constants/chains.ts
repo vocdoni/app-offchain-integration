@@ -15,7 +15,13 @@ export function isSupportedChainId(
 }
 
 export const ENS_SUPPORTED_NETWORKS = ['ethereum', 'goerli'];
-export const NETWORKS_WITH_CUSTOM_REGISTRY = ['mumbai', 'polygon'];
+export const NETWORKS_WITH_CUSTOM_REGISTRY = [
+  // 'base',  TODO: uncomment when base network is available
+  'base-goerli',
+  'mumbai',
+  'polygon',
+];
+export const L2_NETWORKS = NETWORKS_WITH_CUSTOM_REGISTRY;
 
 const SUPPORTED_NETWORKS = [
   'arbitrum',
@@ -117,6 +123,10 @@ export const CHAIN_METADATA: ChainList = {
       networkId: 'arbitrum-one',
       nativeTokenId: 'arbitrum',
     },
+    covalent: {
+      networkId: 'arbitrum-mainnet',
+      nativeTokenId: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+    },
     supportsEns: false,
     ipfs: 'https://prod.ipfs.aragon.network',
   },
@@ -129,7 +139,7 @@ export const CHAIN_METADATA: ChainList = {
     isTestnet: false,
     rpc: ['https://developer-access-mainnet.base.org'],
     nativeCurrency: {
-      name: 'Base',
+      name: 'Ether',
       symbol: 'ETH',
       decimals: 18,
     },
@@ -153,12 +163,16 @@ export const CHAIN_METADATA: ChainList = {
     mainnet: 'base',
     rpc: ['https://goerli.base.org'],
     nativeCurrency: {
-      name: 'Base Goerli',
+      name: 'Ether',
       symbol: 'ETH',
       decimals: 18,
     },
     etherscanApi: 'https://api.basescan.org/api',
     etherscanApiKey: '',
+    covalent: {
+      networkId: 'base-testnet',
+      nativeTokenId: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+    },
     alchemyApi: '',
     supportsEns: false,
     ipfs: 'https://prod.ipfs.aragon.network',
@@ -239,6 +253,10 @@ export const CHAIN_METADATA: ChainList = {
     },
     etherscanApi: 'https://api-goerli.arbiscan.io/api',
     alchemyApi: 'https://arb-goerli.g.alchemy.com/v2',
+    covalent: {
+      networkId: 'arbitrum-goerli',
+      nativeTokenId: '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+    },
     supportsEns: false,
     ipfs: 'https://test.ipfs.aragon.network',
   },
