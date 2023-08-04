@@ -259,22 +259,37 @@ const Proposal: React.FC = () => {
         case 'setMetadata':
           return decodeMetadataToAction(action.data, client);
         default: {
-          const withdrawAction = await decodeWithdrawToAction(
-            action.data,
-            client,
-            provider,
-            network,
-            action.to,
-            action.value,
-            fetchToken
-          );
+          try {
+            const decodedAction = await decodeWithdrawToAction(
+              action.data,
+              client,
+              provider,
+              network,
+              action.to,
+              action.value,
+              fetchToken
+            );
 
-          // assume that the withdraw action is valid native token withdraw
-          // if it has a token balance
-          return withdrawAction?.tokenName.toLowerCase() ===
-            CHAIN_METADATA[network].nativeCurrency.name.toLowerCase()
-            ? withdrawAction
-            : decodeToExternalAction(action, proposal.dao.address, network, t);
+            // assume that the action is a valid native withdraw
+            // if the token name is the same as the chain native token
+            if (
+              decodedAction?.tokenName.toLowerCase() ===
+              CHAIN_METADATA[network].nativeCurrency.name.toLowerCase()
+            ) {
+              return decodedAction;
+            }
+          } catch (error) {
+            console.warn(
+              'decodeWithdrawToAction failed, trying decodeToExternalAction'
+            );
+
+            return decodeToExternalAction(
+              action,
+              proposal.dao.address,
+              network,
+              t
+            );
+          }
         }
       }
     };
