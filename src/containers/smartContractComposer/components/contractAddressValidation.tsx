@@ -651,32 +651,33 @@ const ContractAddressValidation: React.FC<Props> = props => {
                   setVerificationState(TransactionState.WAITING);
                   setABIFlowState(ManualABIFlowState.NOT_STARTED);
 
-                trackEvent('newProposal_createAction_clicked', {
-                  dao_address: daoAddressOrEns,
-                  smart_contract_address: addressField,
-                  smart_contract_name: contractName,
-                });
-              } else if (verificationState === TransactionState.ERROR) {
-                // Manual ABI flow starting
-                // setABIFlowState(ManualABIFlowState.ABI_INPUT);
+                  trackEvent('newProposal_createAction_clicked', {
+                    dao_address: daoAddressOrEns,
+                    smart_contract_address: addressField,
+                    smart_contract_name: contractName,
+                  });
+                } else if (verificationState === TransactionState.ERROR) {
+                  // Manual ABI flow starting
+                  // setABIFlowState(ManualABIFlowState.ABI_INPUT);
 
-                //Retry
-                resetField('contractAddress', {defaultValue: ''});
-                setVerificationState(TransactionState.WAITING);
-                setABIFlowState(ManualABIFlowState.NOT_STARTED);
+                  //Retry
+                  resetField('contractAddress', {defaultValue: ''});
+                  setVerificationState(TransactionState.WAITING);
+                  setABIFlowState(ManualABIFlowState.NOT_STARTED);
+                }
+              }}
+              iconLeft={
+                isTransactionLoading ? (
+                  <Spinner size="xs" color="white" />
+                ) : undefined
               }
-            }}
-            iconLeft={
-              isTransactionLoading ? (
-                <Spinner size="xs" color="white" />
-              ) : undefined
-            }
-            iconRight={icons[verificationState]}
-            isActive={isTransactionLoading}
-            disabled={isButtonDisabled}
-            size="large"
-            className="mt-3 w-full"
-          />
+              iconRight={icons[verificationState]}
+              isActive={isTransactionLoading}
+              disabled={isButtonDisabled}
+              size="large"
+              className="mt-3 w-full"
+            />
+          )
         )}
         {isTransactionError && ABIFlowState === ManualABIFlowState.WAITING && (
           <ButtonText
