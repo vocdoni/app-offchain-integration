@@ -268,7 +268,7 @@ export const Dashboard: React.FC = () => {
               liveDao.creationDate.getTime() / 1000,
               'MMMM yyyy'
             ).toString()}
-            daoChain={network}
+            daoChain={CHAIN_METADATA[network].name}
             daoType={daoType}
             favorited={isFavoritedDao}
             copiedOnClick={handleClipboardActions}
