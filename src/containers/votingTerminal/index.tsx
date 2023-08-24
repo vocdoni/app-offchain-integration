@@ -14,14 +14,17 @@ import {
   VoterType,
   VotersTable,
 } from '@aragon/ods';
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import styled from 'styled-components';
 
 import {StateEmpty} from 'components/stateEmpty';
-import {shortenAddress} from 'utils/library';
+import {Web3Address, shortenAddress} from 'utils/library';
 import BreakdownTab from './breakdownTab';
 import InfoTab from './infoTab';
+import {useProviders} from 'context/providers';
+import {useNetwork} from 'context/network';
+import {CHAIN_METADATA} from 'utils/constants';
 
 export type ProposalVoteResults = {
   yes: {value: string | number; percentage: number};
@@ -98,13 +101,37 @@ export const VotingTerminal: React.FC<VotingTerminalProps> = ({
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState('');
   const [selectedVote, setSelectedVote] = useState<VoteValues>();
+  const [displayedVoters, setDisplayedVoters] = useState<Array<VoterType>>([]);
+  const {api: provider} = useProviders();
   const {t} = useTranslation();
+  const {network} = useNetwork();
 
-  const displayedVoters = useMemo(() => {
+  useEffect(() => {
+    // fetch avatar fpr each voter
+    async function fetchEns() {
+      const response = await Promise.all(
+        voters.map(async voter => {
+          const wallet = await Web3Address.create(provider, voter.wallet);
+          return {
+            ...voter,
+            wallet: (wallet.ensName ?? wallet.address) as string,
+            src: (wallet.avatar || wallet.address) as string,
+          };
+        })
+      );
+      setDisplayedVoters(response);
+    }
+
+    fetchEns();
+  }, [provider, voters]);
+
+  const filteredVoters = useMemo(() => {
     return query === ''
-      ? voters
-      : voters.filter(voter => voter.wallet.includes(query.toLowerCase()));
-  }, [query, voters]);
+      ? displayedVoters
+      : displayedVoters.filter(voter =>
+          voter.wallet.includes(query.toLowerCase())
+        );
+  }, [displayedVoters, query]);
 
   const minimumReached = useMemo(() => {
     if (approvals && minApproval) {
@@ -162,14 +189,15 @@ export const VotingTerminal: React.FC<VotingTerminalProps> = ({
               setQuery(e.target.value.trim())
             }
           />
-          {displayedVoters.length !== 0 ? (
+          {filteredVoters.length !== 0 ? (
             <VotersTable
-              voters={displayedVoters}
+              voters={filteredVoters}
               showOption
               page={page}
-              showVotingPower={token !== undefined}
               showAmount={token !== undefined}
               onLoadMore={() => setPage(prev => prev + 1)}
+              LoadMoreLabel={t('community.votersTable.loadMore')}
+              explorerURL={CHAIN_METADATA[network].explorer}
             />
           ) : (
             <StateEmpty

@@ -1277,6 +1277,12 @@
       "optionBlockExplorer": "View on block explorer",
       "optionDelegate": "Delegate to",
       "optionUndelegate": "Undelegate"
+    },
+    "actionItemVoter": {
+      "labelVoteWasChanged": "Vote was changed"
+    },
+    "votersTable": {
+      "loadMore": "Load More"
     }
   },
   "modalAlert": {
