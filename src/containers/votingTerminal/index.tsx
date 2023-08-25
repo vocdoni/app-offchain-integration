@@ -122,7 +122,9 @@ export const VotingTerminal: React.FC<VotingTerminalProps> = ({
       setDisplayedVoters(response);
     }
 
-    fetchEns();
+    if (voters.length) {
+      fetchEns();
+    }
   }, [provider, voters]);
 
   const filteredVoters = useMemo(() => {
