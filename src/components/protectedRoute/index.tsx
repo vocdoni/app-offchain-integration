@@ -1,5 +1,8 @@
-import {MultisigVotingSettings, VotingSettings} from '@aragon/sdk-client';
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {
+  MajorityVotingSettings,
+  MultisigVotingSettings,
+} from '@aragon/sdk-client';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Outlet, useNavigate} from 'react-router-dom';
 
 import {Loading} from 'components/temporary';
@@ -10,12 +13,12 @@ import {useProviders} from 'context/providers';
 import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 import {useDaoMembers} from 'hooks/useDaoMembers';
 import {PluginTypes} from 'hooks/usePluginClient';
-import {usePluginSettings} from 'hooks/usePluginSettings';
+import {useVotingSettings} from 'hooks/useVotingSettings';
 import {useWallet} from 'hooks/useWallet';
+import {useVotingPowerAsync} from 'services/aragon-sdk/queries/use-voting-power';
 import {CHAIN_METADATA} from 'utils/constants';
 import {formatUnits} from 'utils/library';
 import {fetchBalance} from 'utils/tokens';
-import {useVotingPowerAsync} from 'services/aragon-sdk/queries/use-voting-power';
 
 const ProtectedRoute: React.FC = () => {
   const navigate = useNavigate();
@@ -26,31 +29,26 @@ const ProtectedRoute: React.FC = () => {
     isOnWrongNetwork,
     isModalOpen: web3ModalIsShown,
   } = useWallet();
-  const {data: daoDetails, isLoading: detailsAreLoading} = useDaoDetailsQuery();
-  const fetchVotingPower = useVotingPowerAsync();
+  const {network} = useNetwork();
+  const {api: provider} = useProviders();
 
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const [pluginType, pluginAddress] = useMemo(
-    () => [
-      daoDetails?.plugins[0].id as PluginTypes,
-      daoDetails?.plugins[0].instanceAddress as string,
-    ],
-    [daoDetails?.plugins]
-  );
+  const {data: daoDetails, isLoading: detailsAreLoading} = useDaoDetailsQuery();
+  const pluginAddress = daoDetails?.plugins?.[0]?.instanceAddress as string;
+  const pluginType = daoDetails?.plugins?.[0]?.id as PluginTypes;
 
-  const {data: daoSettings, isLoading: settingsAreLoading} = usePluginSettings(
-    pluginAddress,
-    pluginType
-  );
+  const {data: votingSettings, isLoading: settingsAreLoading} =
+    useVotingSettings({
+      pluginAddress,
+      pluginType,
+    });
 
   const {
     data: {daoToken, filteredMembers},
     isLoading: membersAreLoading,
   } = useDaoMembers(pluginAddress, pluginType, address as string);
-
-  const {network} = useNetwork();
-  const {api: provider} = useProviders();
+  const fetchVotingPower = useVotingPowerAsync();
 
   /*************************************************
    *             Callbacks and Handlers            *
@@ -86,7 +84,8 @@ const ProtectedRoute: React.FC = () => {
 
       const minProposalThreshold = Number(
         formatUnits(
-          (daoSettings as VotingSettings).minProposerVotingPower || 0,
+          (votingSettings as MajorityVotingSettings)?.minProposerVotingPower ||
+            0,
           daoToken?.decimals || 18
         )
       );
@@ -102,7 +101,7 @@ const ProtectedRoute: React.FC = () => {
     address,
     fetchVotingPower,
     close,
-    daoSettings,
+    votingSettings,
     daoToken,
     filteredMembers.length,
     network,
@@ -111,7 +110,7 @@ const ProtectedRoute: React.FC = () => {
   ]);
 
   const gateMultisigProposal = useCallback(() => {
-    if ((daoSettings as MultisigVotingSettings).onlyListed === false) {
+    if ((votingSettings as MultisigVotingSettings)?.onlyListed === false) {
       close('gating');
     } else if (
       !filteredMembers.some(
@@ -123,7 +122,14 @@ const ProtectedRoute: React.FC = () => {
     } else {
       close('gating');
     }
-  }, [membersAreLoading, close, daoSettings, open, address, filteredMembers]);
+  }, [
+    membersAreLoading,
+    close,
+    votingSettings,
+    open,
+    address,
+    filteredMembers,
+  ]);
 
   /*************************************************
    *                     Effects                   *

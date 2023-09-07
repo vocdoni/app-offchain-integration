@@ -12,7 +12,7 @@ import {useDaoBalances} from 'hooks/useDaoBalances';
 import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 import {useDaoMembers} from 'hooks/useDaoMembers';
 import {PluginTypes} from 'hooks/usePluginClient';
-import {usePluginSettings} from 'hooks/usePluginSettings';
+import {useVotingSettings} from 'hooks/useVotingSettings';
 import {formatUnits} from 'utils/library';
 import {
   ActionIndex,
@@ -48,16 +48,13 @@ const Action: React.FC<ActionsComponentProps> = ({
 }) => {
   // dao data
   const {data: daoDetails} = useDaoDetailsQuery();
+  const pluginAddress = daoDetails?.plugins?.[0]?.instanceAddress as string;
+  const pluginType = daoDetails?.plugins?.[0]?.id as PluginTypes;
 
   // plugin data
-  const {data: votingSettings} = usePluginSettings(
-    daoDetails?.plugins[0].instanceAddress as string,
-    daoDetails?.plugins[0].id as PluginTypes
-  );
-  const {data: daoMembers} = useDaoMembers(
-    daoDetails?.plugins?.[0]?.instanceAddress || '',
-    (daoDetails?.plugins?.[0]?.id as PluginTypes) || undefined
-  );
+  const {data: votingSettings} = useVotingSettings({pluginAddress, pluginType});
+
+  const {data: daoMembers} = useDaoMembers(pluginAddress, pluginType);
   const multisigDAOSettings = votingSettings as MultisigVotingSettings;
 
   switch (name) {
@@ -119,7 +116,7 @@ const ActionBuilder: React.FC<ActionBuilderProps> = ({allowEmpty = true}) => {
   const {data: daoDetails} = useDaoDetailsQuery();
   const {network} = useNetwork();
   const {selectedActionIndex: index, actions} = useActionsContext();
-  const {data: tokens} = useDaoBalances(daoDetails?.address || '');
+  const {data: tokens} = useDaoBalances(daoDetails?.address ?? '');
   const {setValue, resetField, clearErrors} = useFormContext();
   const fetchToken = useTokenAsync();
 
