@@ -185,7 +185,27 @@ const ContractAddressValidation: React.FC<Props> = props => {
             address: addressField,
             name: value.ContractName,
             logo,
+            proxy: value.Proxy,
+            implementation: value.Implementation,
           };
+
+          if (value.proxyImplementation) {
+            const result = value.proxyImplementation.result[0];
+            const implementationActions = attachEtherNotice(
+              result.SourceCode,
+              result.ContractName,
+              JSON.parse(result.ABI || '')
+            );
+
+            verifiedContract.implementationData = {
+              actions: implementationActions,
+              address: value.Implementation as string,
+              proxyAddress: addressField,
+              name: result.ContractName,
+              logo,
+            };
+          }
+
           setContractName(value?.ContractName);
         }
 

@@ -469,6 +469,10 @@ export type EtherscanContractResponse = {
   EVMVersion: string;
   LicenseType: string;
   SourceCode: string;
+  Proxy?: string;
+  Implementation?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  proxyImplementation?: any;
 };
 
 export type SourcifyContractResponse = {
@@ -518,6 +522,16 @@ export type SmartContract = {
   address: string;
   logo?: string;
   name: string;
+  proxy?: string;
+  implementation?: string;
+  implementationData?: {
+    actions: Array<SmartContractAction>;
+    address: string;
+    name: string;
+    proxyAddress: string;
+    logo?: string;
+  };
+  proxyAddress?: string;
 };
 
 export type VerifiedContracts = {
