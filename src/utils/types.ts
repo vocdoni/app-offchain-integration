@@ -156,16 +156,6 @@ export type Withdraw = BaseTransfer & {
 
 export type Transfer = Deposit | Withdraw;
 
-/*************************************************
- *                  Proposal types               *
- *************************************************/
-
-export type ProposalData = UncategorizedProposalData & {
-  type: 'draft' | 'pending' | 'active' | 'succeeded' | 'executed' | 'defeated';
-};
-
-type Seconds = string;
-
 export type ExecutionStatus =
   | 'defeated'
   | 'executed'
@@ -173,44 +163,9 @@ export type ExecutionStatus =
   | 'executable-failed'
   | 'default';
 
-export type UncategorizedProposalData = {
-  id: string;
-  metadata: ProposalMetadata;
-  vote: VotingData;
-  execution: ExecutionData;
-  creator: string;
-};
-
-type ProposalMetadata = {
-  title: string;
-  description: string;
-  resources?: ProposalResource[];
-  published?: BlockChainInteraction;
-  executed?: BlockChainInteraction;
-};
-
 export type ProposalResource = {
   name: string;
   url: string;
-};
-
-type BlockChainInteraction = {
-  date: Seconds;
-  block: string;
-};
-
-export type VotingData = {
-  start: Seconds;
-  end: Seconds;
-  total: number;
-  results: Record<string, number>; // e.g. option -> amount of votes
-  tokenSymbol: string;
-};
-
-type ExecutionData = {
-  from: string;
-  to: string;
-  amount: number;
 };
 
 export type Erc20ProposalVote = {
@@ -426,20 +381,6 @@ export type ActionItem = {
   inputs?: ParamType[];
 };
 
-export type TransactionItem = {
-  type: TransferTypes;
-  data: {
-    sender: string;
-    amount: number;
-    tokenContract: string;
-  };
-};
-
-/* MISCELLANEOUS TYPES ======================================================= */
-export type Dao = {
-  address: string;
-};
-
 /* UTILITY TYPES ============================================================ */
 
 /** Return type for data hooks */
@@ -637,7 +578,7 @@ interface TokenFormData {
   isCustomToken: boolean;
 }
 
-export type WithdrawFormDataAction = TokenFormData & {
+type WithdrawFormDataAction = TokenFormData & {
   to: InputValue;
   from: string;
   amount: string;
