@@ -475,9 +475,7 @@ export const EditMvSettings: React.FC<EditMvSettingsProps> = ({daoDetails}) => {
   );
 };
 
-const Container = styled.div.attrs({
-  className: 'mt-5 desktop:mt-8',
-})``;
+const Container = styled.div.attrs({})``;
 
 const AccordionContent = styled.div.attrs({
   className:

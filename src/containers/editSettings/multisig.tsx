@@ -380,9 +380,7 @@ export const EditMsSettings: React.FC<EditMsSettingsProps> = ({daoDetails}) => {
   );
 };
 
-const Container = styled.div.attrs({
-  className: 'mt-5 desktop:mt-8',
-})``;
+const Container = styled.div.attrs({})``;
 
 const AccordionContent = styled.div.attrs({
   className:
