@@ -329,3 +329,18 @@ export async function validateWeb3Address(
 export function isFieldValid<T>(error: FieldError | T | undefined): boolean {
   return !error;
 }
+
+export async function updateVerification(
+  address: string,
+  provider: EthersProviders.Provider
+): Promise<ValidateResult> {
+  const result = validateAddress(address);
+
+  if (result === true) {
+    return (await isERC20Token(address, provider))
+      ? true
+      : (i18n.t('errors.notERC20Token') as string);
+  } else {
+    return result;
+  }
+}
