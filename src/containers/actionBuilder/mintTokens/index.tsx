@@ -405,31 +405,6 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
     trigger,
   ]);
 
-  // const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   if (e.target.files && e.target.files[0]) {
-  //     const myFile = e.target.files[0];
-  //     const reader = new FileReader();
-
-  //     reader.onload = () => {
-  //       const csvData = reader.result;
-  //       if (csvData) {
-  //         const lines = (csvData as string).split('\n');
-  //         for (let i = 0; i < lines.length; i++) {
-  //           const tuple = lines[i].split(',');
-  //           if (tuple[0] === 'Address' && tuple[1] === 'Tokens' && i === 0) {
-  //             continue;
-  //           }
-  //           if (tuple[0] && tuple[1]) {
-  //             append({address: tuple[0], amount: tuple[1]});
-  //           }
-  //         }
-  //       }
-  //     };
-
-  //     reader.readAsBinaryString(myFile);
-  //   }
-  // };
-
   /*************************************************
    *                    Render                    *
    *************************************************/
@@ -437,7 +412,7 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
     <>
       <Container standAlone={standAlone}>
         {isDesktop && (
-          <div className="flex items-center p-2 tablet:p-3 space-x-2 ">
+          <div className="flex items-center space-x-2 p-2 tablet:p-3 ">
             <div className="flex-1">
               <FormLabel label={t('labels.whitelistWallets.address')} />
             </div>

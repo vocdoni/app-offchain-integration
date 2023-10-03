@@ -101,7 +101,7 @@ export const MembershipSnapshot: React.FC<Props> = ({
             onClick={headerButtonHandler}
           />
         </div>
-        <div className="space-y-2 w-2/3">
+        <div className="w-2/3 space-y-2">
           <ListItemGrid>
             <MembersList token={daoToken} members={members} />
           </ListItemGrid>
@@ -141,7 +141,11 @@ export const MembershipSnapshot: React.FC<Props> = ({
         orientation="vertical"
         onClick={headerButtonHandler}
       />
-      <MembersList token={daoToken} members={members.slice(0, 3)} />
+      <MembersList
+        token={daoToken}
+        members={members.slice(0, 3)}
+        isCompactMode={true}
+      />
       <ButtonText
         mode="secondary"
         size="large"
@@ -161,5 +165,5 @@ const VerticalContainer = styled.div.attrs({
 
 const ListItemGrid = styled.div.attrs({
   className:
-    'desktop:grid desktop:grid-cols-2 desktop:grid-flow-row desktop:gap-2',
+    'desktop:grid desktop:grid-cols-1 desktop:grid-flow-row desktop:gap-2',
 })``;

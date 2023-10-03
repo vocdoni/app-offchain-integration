@@ -5,6 +5,11 @@ import {
   Pagination,
   SearchInput,
   IllustrationHuman,
+  Dropdown,
+  ButtonText,
+  ListItemAction,
+  IconCheckmark,
+  IconSort,
 } from '@aragon/ods';
 import React, {useState} from 'react';
 import {useTranslation} from 'react-i18next';
@@ -27,6 +32,7 @@ import useScreen from 'hooks/useScreen';
 import {useGovTokensWrapping} from 'context/govTokensWrapping';
 import {useExistingToken} from 'hooks/useExistingToken';
 import {Erc20WrapperTokenDetails} from '@aragon/sdk-client';
+import {featureFlags} from 'utils/featureFlags';
 
 const MEMBERS_PER_PAGE = 20;
 
@@ -38,6 +44,9 @@ export const Community: React.FC = () => {
   const {handleOpenModal} = useGovTokensWrapping();
 
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<'votingPower' | 'delegations'>(
+    'votingPower'
+  );
   const [debouncedTerm, searchTerm, setSearchTerm] = useDebouncedState('');
 
   const {data: daoDetails, isLoading: detailsAreLoading} = useDaoDetailsQuery();
@@ -47,7 +56,8 @@ export const Community: React.FC = () => {
   } = useDaoMembers(
     daoDetails?.plugins[0].instanceAddress as string,
     daoDetails?.plugins[0].id as PluginTypes,
-    debouncedTerm
+    debouncedTerm,
+    sort
   );
 
   const {isDAOTokenWrapped, isTokenMintable} = useExistingToken({
@@ -57,10 +67,23 @@ export const Community: React.FC = () => {
 
   const totalMemberCount = members.length;
   const filteredMemberCount = filteredMembers.length;
+
   const displayedMembers = filteredMemberCount > 0 ? filteredMembers : members;
+  const pagedMembers = displayedMembers.slice(
+    (page - 1) * MEMBERS_PER_PAGE,
+    page * MEMBERS_PER_PAGE
+  );
 
   const walletBased =
     (daoDetails?.plugins[0].id as PluginTypes) === 'multisig.plugin.dao.eth';
+  const enableDelegation =
+    featureFlags.getValue('VITE_FEATURE_FLAG_DELEGATION') === 'true';
+
+  const sortLabel = isMobile
+    ? undefined
+    : sort === 'delegations'
+    ? t('community.sortByDelegations.selected')
+    : t('community.sortByVotingPower.selected');
 
   /*************************************************
    *                    Handlers                   *
@@ -118,8 +141,10 @@ export const Community: React.FC = () => {
             />
           </div>
         }
-        buttonLabel={t('community.emptyState.ctaLabel')}
-        onClick={handleOpenModal}
+        primaryButton={{
+          label: t('community.emptyState.ctaLabel'),
+          onClick: handleOpenModal,
+        }}
       />
     );
   }
@@ -173,17 +198,68 @@ export const Community: React.FC = () => {
     >
       <BodyContainer>
         <SearchAndResultWrapper>
-          {/* Search input */}
-          <InputWrapper>
-            <SearchInput
-              placeholder={t('labels.searchPlaceholder')}
-              value={searchTerm}
-              onChange={handleQueryChange}
-            />
+          <div className="space-y-2">
+            <div className="flex flex-row gap-2 desktop:gap-4">
+              <SearchInput
+                placeholder={t('labels.searchPlaceholder')}
+                containerClassName="grow"
+                value={searchTerm}
+                onChange={handleQueryChange}
+              />
+              {!walletBased && enableDelegation && (
+                <Dropdown
+                  align="end"
+                  className="px-0 py-1"
+                  style={{minWidth: 'var(--radix-dropdown-menu-trigger-width)'}}
+                  sideOffset={8}
+                  listItems={[
+                    {
+                      callback: () => setSort('votingPower'),
+                      component: (
+                        <ListItemAction
+                          title={t('community.sortByVotingPower.default')}
+                          bgWhite={true}
+                          mode={sort === 'votingPower' ? 'selected' : 'default'}
+                          iconRight={
+                            sort === 'votingPower' ? (
+                              <IconCheckmark />
+                            ) : undefined
+                          }
+                        />
+                      ),
+                    },
+                    {
+                      callback: () => setSort('delegations'),
+                      component: (
+                        <ListItemAction
+                          title={t('community.sortByDelegations.default')}
+                          bgWhite={true}
+                          mode={sort === 'delegations' ? 'selected' : 'default'}
+                          iconRight={
+                            sort === 'delegations' ? (
+                              <IconCheckmark />
+                            ) : undefined
+                          }
+                        />
+                      ),
+                    },
+                  ]}
+                  side="bottom"
+                  trigger={
+                    <ButtonText
+                      mode="secondary"
+                      iconLeft={<IconSort />}
+                      size="large"
+                      label={sortLabel}
+                    />
+                  }
+                />
+              )}
+            </div>
             {!walletBased && (
               <AlertInline label={t('alert.tokenBasedMembers') as string} />
             )}
-          </InputWrapper>
+          </div>
 
           {/* Members List */}
           {membersLoading ? (
@@ -207,13 +283,7 @@ export const Community: React.FC = () => {
                         : t('labels.nResults', {count: filteredMemberCount})}
                     </ResultsCountLabel>
                   )}
-                  <MembersList
-                    token={daoToken}
-                    members={displayedMembers.slice(
-                      (page - 1) * MEMBERS_PER_PAGE,
-                      page * MEMBERS_PER_PAGE
-                    )}
-                  />
+                  <MembersList token={daoToken} members={pagedMembers} />
                 </>
               )}
             </>
@@ -243,10 +313,10 @@ export const Community: React.FC = () => {
 };
 
 const BodyContainer = styled.div.attrs({
-  className: 'mt-5 desktop:space-y-8',
+  className: 'mt-1 desktop:space-y-8',
 })``;
 
-const SearchAndResultWrapper = styled.div.attrs({className: 'space-y-3'})``;
+const SearchAndResultWrapper = styled.div.attrs({className: 'space-y-5'})``;
 
 const ResultsCountLabel = styled.p.attrs({
   className: 'font-bold text-ui-800 ft-text-lg',
@@ -254,8 +324,4 @@ const ResultsCountLabel = styled.p.attrs({
 
 const PaginationWrapper = styled.div.attrs({
   className: 'flex mt-8',
-})``;
-
-const InputWrapper = styled.div.attrs({
-  className: 'space-y-1',
 })``;
