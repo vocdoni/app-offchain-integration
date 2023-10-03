@@ -44,10 +44,9 @@ export const MembershipSnapshot: React.FC<Props> = ({
   const {handleOpenModal} = useGovTokensWrapping();
 
   const {
-    data: {members, daoToken},
+    data: {members, daoToken, memberCount: totalMemberCount},
     isLoading,
-  } = useDaoMembers(pluginAddress, pluginType);
-  const totalMemberCount = members.length;
+  } = useDaoMembers(pluginAddress, pluginType, {page: 0});
 
   const {data: daoDetails} = useDaoDetailsQuery();
 
