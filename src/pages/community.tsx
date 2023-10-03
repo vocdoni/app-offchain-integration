@@ -50,14 +50,19 @@ export const Community: React.FC = () => {
   const [debouncedTerm, searchTerm, setSearchTerm] = useDebouncedState('');
 
   const {data: daoDetails, isLoading: detailsAreLoading} = useDaoDetailsQuery();
+
+  const apiPage = Math.floor(((page - 1) / 1000) * MEMBERS_PER_PAGE);
   const {
-    data: {members, filteredMembers, daoToken},
+    data: {members, filteredMembers, daoToken, memberCount: totalMemberCount},
     isLoading: membersLoading,
   } = useDaoMembers(
     daoDetails?.plugins[0].instanceAddress as string,
     daoDetails?.plugins[0].id as PluginTypes,
-    debouncedTerm,
-    sort
+    {
+      searchTerm: debouncedTerm,
+      sort,
+      page: apiPage,
+    }
   );
 
   const {isDAOTokenWrapped, isTokenMintable} = useExistingToken({
@@ -65,17 +70,24 @@ export const Community: React.FC = () => {
     daoDetails,
   });
 
-  const totalMemberCount = members.length;
   const filteredMemberCount = filteredMembers.length;
 
-  const displayedMembers = filteredMemberCount > 0 ? filteredMembers : members;
+  const showFiltered =
+    filteredMemberCount > 0 &&
+    filteredMemberCount < members.length &&
+    apiPage === 0;
+  const displayedMembers = showFiltered ? filteredMembers : members;
+  const displayedMembersTotal = showFiltered
+    ? filteredMemberCount
+    : totalMemberCount;
   const pagedMembers = displayedMembers.slice(
-    (page - 1) * MEMBERS_PER_PAGE,
+    (page - 1) * MEMBERS_PER_PAGE - apiPage * 1000,
     page * MEMBERS_PER_PAGE
   );
 
   const walletBased =
     (daoDetails?.plugins[0].id as PluginTypes) === 'multisig.plugin.dao.eth';
+  const enableSearchSort = totalMemberCount <= 1000;
   const enableDelegation =
     featureFlags.getValue('VITE_FEATURE_FLAG_DELEGATION') === 'true';
 
@@ -200,13 +212,15 @@ export const Community: React.FC = () => {
         <SearchAndResultWrapper>
           <div className="space-y-2">
             <div className="flex flex-row gap-2 desktop:gap-4">
-              <SearchInput
-                placeholder={t('labels.searchPlaceholder')}
-                containerClassName="grow"
-                value={searchTerm}
-                onChange={handleQueryChange}
-              />
-              {!walletBased && enableDelegation && (
+              {enableSearchSort && (
+                <SearchInput
+                  placeholder={t('labels.searchPlaceholder')}
+                  containerClassName="grow"
+                  value={searchTerm}
+                  onChange={handleQueryChange}
+                />
+              )}
+              {!walletBased && enableSearchSort && enableDelegation && (
                 <Dropdown
                   align="end"
                   className="px-0 py-1"
@@ -292,12 +306,10 @@ export const Community: React.FC = () => {
 
         {/* Pagination */}
         <PaginationWrapper>
-          {(displayedMembers.length || 0) > MEMBERS_PER_PAGE && (
+          {displayedMembersTotal > MEMBERS_PER_PAGE && (
             <Pagination
               totalPages={
-                Math.ceil(
-                  (displayedMembers.length || 0) / MEMBERS_PER_PAGE
-                ) as number
+                Math.ceil(displayedMembersTotal / MEMBERS_PER_PAGE) as number
               }
               activePage={page}
               onChange={(activePage: number) => {
