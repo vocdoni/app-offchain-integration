@@ -7,7 +7,7 @@ import {CHAIN_METADATA} from 'utils/constants';
 import {fetchBalance} from 'utils/tokens';
 
 import {formatUnits} from 'ethers/lib/utils';
-import {getTokenHoldersPaged} from 'services/covalentAPI';
+import {TokenHoldersResponse, getTokenHoldersPaged} from 'services/covalentAPI';
 import {HookData} from 'utils/types';
 import {useDaoToken} from './useDaoToken';
 import {PluginTypes, usePluginClient} from './usePluginClient';
@@ -137,37 +137,23 @@ export const useDaoMembers = (
             return;
           }
 
-          let members = [] as BalanceMember[];
+          //TODO: pagination should be added later here
+          const rawMembers: TokenHoldersResponse = await getTokenHoldersPaged(
+            queryClient,
+            daoToken?.address,
+            network,
+            0,
+            100
+          );
 
-          const addRawMembers = async (page: number, pageSize: 100 | 1000) => {
-            const rawMembers = await getTokenHoldersPaged(
-              queryClient,
-              daoToken?.address,
-              network,
-              page,
-              pageSize
-            );
-            members = members.concat(
-              rawMembers.data.items.map(m => {
-                return {
-                  address: m.address,
-                  balance: Number(formatUnits(m.balance, m.contract_decimals)),
-                } as BalanceMember;
-              })
-            );
-            return rawMembers.data.pagination.has_more;
-          };
+          const members = rawMembers.data.items.map(m => {
+            return {
+              address: m.address,
+              balance: Number(formatUnits(m.balance, m.contract_decimals)),
+            } as BalanceMember;
+          });
 
-          // This limits total members to 3000. Very short term solution, should be superceded in a couple of days
-          let hasMore = await addRawMembers(0, 100); // try for 100 members first
-          if (hasMore) {
-            members = [];
-            hasMore = await addRawMembers(0, 1000);
-          }
-          if (hasMore) hasMore = await addRawMembers(1, 1000);
-          if (hasMore) hasMore = await addRawMembers(2, 1000);
-
-          members = members.sort(sortMembers);
+          members.sort(sortMembers);
           setData(members);
         }
         setIsLoading(false);
