@@ -80,9 +80,10 @@ export const Community: React.FC = () => {
   const displayedMembersTotal = showFiltered
     ? filteredMemberCount
     : totalMemberCount;
+  const subpageStart = (page - 1) * MEMBERS_PER_PAGE - apiPage * 1000;
   const pagedMembers = displayedMembers.slice(
-    (page - 1) * MEMBERS_PER_PAGE - apiPage * 1000,
-    page * MEMBERS_PER_PAGE
+    subpageStart,
+    subpageStart + MEMBERS_PER_PAGE
   );
 
   const walletBased =
