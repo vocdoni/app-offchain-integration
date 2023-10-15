@@ -719,6 +719,7 @@ export const Proposal: React.FC = () => {
               <UpdateVerificationCard
                 proposal={proposal}
                 actions={decodedActions}
+                proposalId={proposalId}
               />
             )}
 

@@ -10,7 +10,7 @@ import {
 import {ProposalStatus} from '@aragon/sdk-client-common';
 import React, {useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {useNavigate} from 'react-router-dom';
+import {generatePath, useNavigate} from 'react-router-dom';
 import styled from 'styled-components';
 
 import ProposalList from 'components/proposalList';
@@ -26,12 +26,15 @@ import {useProposals} from 'services/aragon-sdk/queries/use-proposals';
 import {featureFlags} from 'utils/featureFlags';
 import {htmlIn} from 'utils/htmlIn';
 import {toDisplayEns} from 'utils/library';
+import {useNetwork} from 'context/network';
+import {NewProposal} from 'utils/paths';
 
 export const Governance: React.FC = () => {
   const {t} = useTranslation();
   const navigate = useNavigate();
   const {isMobile} = useScreen();
   const {open} = useGlobalModalContext();
+  const {network} = useNetwork();
 
   const [filter, setFilter] = useState<ProposalStatus | 'All'>('All');
 
@@ -68,7 +71,13 @@ export const Governance: React.FC = () => {
     trackEvent('governance_newProposalBtn_clicked', {
       dao_address: daoDetails?.address as string,
     });
-    navigate('new-proposal');
+    navigate(
+      generatePath(NewProposal, {
+        type: 'default',
+        network,
+        dao: toDisplayEns(daoDetails?.ensDomain) || daoDetails?.address,
+      })
+    );
   };
 
   const handleShowMoreClick = () => {
@@ -129,12 +138,7 @@ export const Governance: React.FC = () => {
         primaryBtnProps={{
           label: t('governance.action'),
           iconLeft: <IconAdd />,
-          onClick: () => {
-            trackEvent('governance_newProposalBtn_clicked', {
-              dao_address: daoDetails?.address,
-            });
-            navigate('new-proposal');
-          },
+          onClick: handleNewProposalClick,
         }}
         secondaryBtnProps={
           enableDelegation
