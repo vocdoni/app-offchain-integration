@@ -12,15 +12,21 @@ import useScreen from 'hooks/useScreen';
 import {htmlIn} from 'utils/htmlIn';
 
 type Props = {
-  onConnectNewdApp: (dApp: SignClientTypes.Metadata) => void;
-  onSelectExistingdApp: (session: SessionTypes.Struct) => void;
+  onConnectNewdApp: (dApp: AllowListDApp) => void;
+  onSelectExistingdApp: (
+    session: SessionTypes.Struct,
+    dApp: AllowListDApp
+  ) => void;
   onClose: () => void;
   isOpen: boolean;
 };
 
-const AllowListDApps: SignClientTypes.Metadata[] = [
+export type AllowListDApp = SignClientTypes.Metadata & {shortName: string};
+
+export const AllowListDApps: AllowListDApp[] = [
   {
     name: 'CoW Swap | The smartest way to trade cryptocurrencies',
+    shortName: 'CoW Swap',
     description:
       'CoW Swap finds the lowest prices from all decentralized exchanges and DEX aggregators & saves you more with p2p trading and protection from MEV',
     url: 'https://swap.cow.fi',
@@ -37,7 +43,7 @@ const SelectWCApp: React.FC<Props> = props => {
   const {isDesktop} = useScreen();
   const {onConnectNewdApp, onSelectExistingdApp, onClose, isOpen} = props;
 
-  const {activeSessions} = useWalletConnectContext();
+  const {sessions} = useWalletConnectContext();
 
   /*************************************************
    *                     Render                    *
@@ -56,15 +62,15 @@ const SelectWCApp: React.FC<Props> = props => {
       <Content>
         <div className="space-y-1">
           {AllowListDApps.map(dApp => {
-            const filteredSession = activeSessions.filter(session =>
+            const filteredSession = sessions.filter(session =>
               session.peer.metadata.name
                 .toLowerCase()
                 .includes(dApp.name.toLowerCase())
             );
             return (
               <ListItemAction
-                key={dApp.name}
-                title={dApp.name}
+                key={dApp.shortName}
+                title={dApp.shortName}
                 iconLeft={parseWCIconUrl(dApp.url, dApp.icons[0])}
                 bgWhite
                 iconRight={
@@ -81,7 +87,7 @@ const SelectWCApp: React.FC<Props> = props => {
                 truncateText
                 onClick={() => {
                   if (filteredSession[0]) {
-                    onSelectExistingdApp(filteredSession[0]);
+                    onSelectExistingdApp(filteredSession[0], dApp);
                   } else {
                     onConnectNewdApp(dApp);
                   }
