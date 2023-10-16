@@ -5,7 +5,7 @@ import {
   IconSpinner,
   IlluObject,
   IllustrationHuman,
-} from '@aragon/ods';
+} from '@aragon/ods-old';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {generatePath, useNavigate, useParams} from 'react-router-dom';
@@ -272,7 +272,7 @@ export const Dashboard: React.FC = () => {
             ).toString()}
             daoChain={CHAIN_METADATA[network].name}
             daoType={daoType}
-            favorited={isFavoritedDao}
+            following={isFavoritedDao}
             onCopy={onCopy}
             onFavoriteClick={() =>
               handleFavoriteClick({
