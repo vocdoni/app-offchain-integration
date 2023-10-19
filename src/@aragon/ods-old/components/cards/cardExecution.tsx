@@ -87,23 +87,23 @@ type CardProps = Pick<CardExecutionProps, 'wide'>;
 const Card = styled.div.attrs<CardProps>(({wide}) => ({
   className: `${
     wide ? 'flex justify-between' : 'w-84'
-  } flex-col bg-white rounded-xl p-3 space-y-3`,
+  } flex-col bg-neutral-0 rounded-xl p-6 space-y-6`,
 }))<CardProps>``;
 
 const Header = styled.div.attrs({
-  className: 'flex flex-col space-y-1',
+  className: 'flex flex-col space-y-2',
 })``;
 
 const Title = styled.h2.attrs({
-  className: 'text-ui-800 font-bold text-2xl',
+  className: 'text-neutral-800 font-semibold text-3xl leading-tight',
 })``;
 
 const Description = styled.p.attrs({
-  className: 'text-ui-600 font-normal text-normal',
+  className: 'text-neutral-600 font-normal text-normal',
 })``;
 
 const Content = styled.div.attrs({
-  className: 'flex flex-col space-y-1.5',
+  className: 'flex flex-col space-y-3',
 })``;
 
 const Action = styled.div.attrs({

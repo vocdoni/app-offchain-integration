@@ -73,7 +73,7 @@ export const LoginRequired: React.FC<ILoginRequiredProps> = props => {
 
 const ModalHeader = styled.div.attrs({
   className:
-    'flex justify-between items-center p-3 bg-ui-0 rounded-xl gap-2 sticky top-0',
+    'flex justify-between items-center p-6 bg-neutral-0 rounded-xl gap-4 sticky top-0',
 })`
   box-shadow:
     0px 4px 8px rgba(31, 41, 51, 0.04),
@@ -82,5 +82,5 @@ const ModalHeader = styled.div.attrs({
 `;
 
 const WarningDescription = styled.p.attrs({
-  className: 'text-base text-ui-500 text-center',
+  className: 'text-base leading-normal text-neutral-500 text-center',
 })``;

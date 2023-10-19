@@ -87,7 +87,7 @@ export const Modal: React.FC<ModalProps> = ({
 type StyledContentProps = Pick<ModalProps, 'style'>;
 
 const ModalContainer = styled(Content).attrs(({style}: StyledContentProps) => {
-  const className = 'bg-ui-50 z-30';
+  const className = 'bg-neutral-50 z-30';
   const currentStyle: CSSProperties = style ?? {
     position: 'fixed',
     top: '50%',
@@ -108,7 +108,7 @@ const ModalContainer = styled(Content).attrs(({style}: StyledContentProps) => {
 
 const ModalHeader = styled.div.attrs({
   className:
-    'flex justify-between items-start bg-white rounded-xl p-3 space-x-3 sticky top-0',
+    'flex justify-between items-start bg-neutral-0 rounded-xl p-6 space-x-6 sticky top-0',
 })`
   box-shadow:
     0px 4px 8px rgba(31, 41, 51, 0.04),
@@ -117,19 +117,20 @@ const ModalHeader = styled.div.attrs({
 `;
 
 const ModalTitleContainer = styled.div.attrs({
-  className: 'space-y-0.5',
+  className: 'space-y-1',
 })``;
 
 const ModalTitle = styled(Title).attrs({
-  className: 'font-bold text-ui-800',
+  className: 'font-semibold text-neutral-800',
 })``;
 
 const ModalSubtitle = styled.div.attrs({
-  className: 'ft-text-sm text-ui-500',
+  className: 'ft-text-sm text-neutral-500',
 })``;
 
 const ModalClose = styled(Close).attrs({
-  className: 'shrink-0 text-ui-500 w-4 h-4 rounded-lg bg-ui-50 outline:none',
+  className:
+    'shrink-0 text-neutral-500 w-8 h-8 rounded-lg bg-neutral-50 outline:none',
 })``;
 
 const ModalOverlay = styled(Overlay).attrs(() => {

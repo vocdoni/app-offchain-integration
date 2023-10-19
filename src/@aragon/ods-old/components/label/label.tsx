@@ -37,15 +37,15 @@ export const Label: React.FC<LabelProps> = ({
 };
 
 const VStack = styled.div.attrs({
-  className: 'space-y-0.5',
+  className: 'space-y-1',
 })``;
 
 const LabelLine = styled.div.attrs({
-  className: 'flex space-x-1.5',
+  className: 'flex space-x-3',
 })``;
 
 const Heading = styled.p.attrs({
-  className: 'font-bold text-ui-800',
+  className: 'font-semibold text-neutral-800',
 })`
   & > a {
     color: #003bf5;
@@ -53,7 +53,7 @@ const Heading = styled.p.attrs({
 `;
 
 const HelpText = styled.p.attrs({
-  className: 'ft-text-sm font-normal text-ui-600',
+  className: 'ft-text-sm font-normal text-neutral-600',
 })`
   & > a {
     color: #003bf5;

@@ -46,9 +46,9 @@ export const DaoCard = (props: IDaoCardProps) => {
       <DaoDataWrapper>
         <HeaderContainer>
           <AvatarDao daoName={props.name} src={avatar} />
-          <div className="space-y-0.25 text-left desktop:space-y-0.5">
+          <div className="space-y-0.5 text-left xl:space-y-1">
             <Title>{props.name}</Title>
-            <p className="font-semibold text-ui-500 ft-text-sm">
+            <p className="font-semibold text-neutral-500 ft-text-sm">
               {props.ensName}
             </p>
           </div>
@@ -70,11 +70,11 @@ export const DaoCard = (props: IDaoCardProps) => {
 };
 
 const Container = styled.button.attrs({
-  className: `p-2 desktop:p-3 w-full flex flex-col space-y-3
-    box-border border border-transparent
-    focus:outline-none focus:ring-2 focus:ring-primary-500
-    hover:border-ui-100 active:border-200
-    bg-white rounded-xl
+  className: `p-4 xl:p-6 w-full flex flex-col space-y-6
+    box-border border border-neutral-0
+    focus:outline-none focus:ring focus:ring-primary
+    hover:border-neutral-100 active:border-200
+    bg-neutral-0 rounded-xl
     `,
 })`
   &:hover {
@@ -89,11 +89,11 @@ const Container = styled.button.attrs({
 `;
 
 const HeaderContainer = styled.div.attrs({
-  className: 'flex flex-row space-x-2 items-center',
+  className: 'flex flex-row space-x-4 items-center',
 })``;
 
 const Title = styled.p.attrs({
-  className: 'font-bold text-ui-800 ft-text-xl break-words',
+  className: 'font-semibold text-neutral-800 ft-text-xl break-words',
 })``;
 
 // The line desktop breakpoint does not work with
@@ -101,7 +101,7 @@ const Title = styled.p.attrs({
 // is achieved using styled components
 const Description = styled.p.attrs({
   className: `
-  font-medium text-ui-600 ft-text-base flex text-left
+  font-medium text-neutral-600 ft-text-base flex text-left
   `,
 })<DescriptionProps>`
   overflow: hidden;
@@ -111,23 +111,23 @@ const Description = styled.p.attrs({
 `;
 
 const DaoMetadataWrapper = styled.div.attrs({
-  className: 'flex flex-row space-x-3',
+  className: 'flex flex-row space-x-6',
 })``;
 const IconLabel = styled.p.attrs({
-  className: 'text-ui-600 ft-text-sm capitalize',
+  className: 'text-neutral-600 ft-text-sm capitalize',
 })``;
 const IconWrapper = styled.div.attrs({
-  className: 'flex flex-row space-x-1',
+  className: 'flex flex-row space-x-2',
 })``;
 
 const DaoDataWrapper = styled.div.attrs({
-  className: 'flex flex-col grow space-y-1.5 flex-1',
+  className: 'flex flex-col grow space-y-3 flex-1',
 })``;
 
 const StyledIconBlock = styled(IconBlock).attrs({
-  className: 'text-ui-600',
+  className: 'text-neutral-600',
 })``;
 
 const StyledIconCommunity = styled(IconCommunity).attrs({
-  className: 'text-ui-600',
+  className: 'text-neutral-600',
 })``;

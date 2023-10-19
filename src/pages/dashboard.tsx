@@ -205,7 +205,7 @@ export const Dashboard: React.FC = () => {
 
     const buttonIcon = {
       [DaoCreationState.ASSEMBLING_DAO]: (
-        <IconSpinner className="h-1.5 w-1.5 animate-spin desktop:h-2 desktop:w-2" />
+        <IconSpinner className="h-3 w-3 animate-spin xl:h-4 xl:w-4" />
       ),
       [DaoCreationState.DAO_READY]: <IconCheckmark />,
       [DaoCreationState.OPEN_DAO]: undefined,
@@ -235,14 +235,14 @@ export const Dashboard: React.FC = () => {
           <EmptyStateHeading>
             {t('dashboard.emptyState.title')}
           </EmptyStateHeading>
-          <p className="mt-1.5 text-center text-base">
+          <p className="mt-3 text-center text-base leading-normal">
             {t('dashboard.emptyState.subtitle')}
           </p>
           <ButtonText
             size="large"
             label={buttonLabel[daoCreationState]}
             iconLeft={buttonIcon[daoCreationState]}
-            className={`mt-4 ${daoCreationState === 0 && 'bg-primary-800'}`}
+            className={`mt-8 ${daoCreationState === 0 && 'bg-primary-800'}`}
             onClick={handleOpenYourDaoClick}
           />
         </EmptyStateContainer>
@@ -334,7 +334,7 @@ export const Dashboard: React.FC = () => {
 
 const HeaderWrapper = styled.div.attrs({
   className:
-    'w-screen -mx-2 tablet:col-span-full tablet:w-full tablet:mx-0 desktop:col-start-2 desktop:col-span-10 tablet:mt-3',
+    'w-screen -mx-4 md:col-span-full md:w-full md:mx-0 xl:col-start-2 xl:col-span-10 md:mt-6',
 })``;
 
 /* DESKTOP DASHBOARD ======================================================== */
@@ -440,20 +440,19 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
 // the mobile layout is much simpler, it has it's own component.
 
 const LeftWideContent = styled.div.attrs({
-  className: 'desktop:space-y-5 desktop:col-start-2 desktop:col-span-6',
+  className: 'xl:space-y-10 xl:col-start-2 xl:col-span-6',
 })``;
 
 const RightNarrowContent = styled.div.attrs({
-  className: 'desktop:col-start-8 desktop:col-span-4 desktop:space-y-3',
+  className: 'xl:col-start-8 xl:col-span-4 xl:space-y-6',
 })``;
 
 const EqualDivide = styled.div.attrs({
-  className:
-    'desktop:col-start-2 desktop:col-span-10 desktop:flex desktop:space-x-3',
+  className: 'xl:col-start-2 xl:col-span-10 xl:flex xl:space-x-6',
 })``;
 
 const MembersWrapper = styled.div.attrs({
-  className: 'desktop:col-start-2 desktop:col-span-10',
+  className: 'xl:col-start-2 xl:col-span-10',
 })``;
 
 /* MOBILE DASHBOARD CONTENT ================================================= */
@@ -487,5 +486,5 @@ const MobileDashboardContent: React.FC<DashboardContentProps> = ({
 };
 
 const MobileLayout = styled.div.attrs({
-  className: 'col-span-full space-y-5',
+  className: 'col-span-full space-y-10',
 })``;

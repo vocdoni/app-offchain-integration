@@ -37,14 +37,14 @@ export const DropdownInput: React.FC<DropDownInputProps> = ({
 const Container = styled.button.attrs(
   ({mode, disabled}: StyledContainerProps) => {
     let className = `${
-      disabled ? 'bg-ui-100' : 'bg-ui-0'
-    } flex bg-ui-0 focus:outline-none focus-within:ring-2
-    focus-within:ring-primary-500 py-1.5 px-2 rounded-xl w-full
-    hover:border-ui-300 border-2 active:border-primary-500 active:ring-0
+      disabled ? 'bg-neutral-100' : 'bg-neutral-0'
+    } flex bg-neutral-0 focus:outline-none focus-within:ring
+    focus-within:ring-primary py-3 px-4 rounded-xl w-full
+    hover:border-neutral-300 border-2 active:border-primary-500 active:ring-0
     items-center justify-between `;
 
     if (mode === 'default') {
-      className += 'border-ui-100';
+      className += 'border-neutral-100';
     } else if (mode === 'success') {
       className += 'border-success-600';
     } else if (mode === 'warning') {
@@ -63,10 +63,10 @@ export type StyledChevronDownProps = Pick<StyledContainerProps, 'disabled'>;
 
 const StyledIconChevronDown = styled(IconChevronDown).attrs(
   ({disabled}: StyledChevronDownProps) => ({
-    className: `${disabled ? 'text-ui-300' : 'text-ui-600'}`,
+    className: `${disabled ? 'text-neutral-300' : 'text-neutral-600'}`,
   })
 )``;
 
 const Placeholder = styled.span.attrs({
-  className: 'text-ui-300',
+  className: 'text-neutral-300',
 })``;

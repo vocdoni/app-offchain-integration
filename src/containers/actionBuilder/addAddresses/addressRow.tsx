@@ -147,9 +147,9 @@ export const AddressRow = ({
 };
 
 const Container = styled.div.attrs(() => ({
-  className: 'flex gap-2 items-start',
+  className: 'flex gap-4 items-start',
 }))``;
 
 const InputContainer = styled.div.attrs(() => ({
-  className: 'flex flex-col gap-1 flex-1',
+  className: 'flex flex-col gap-2 flex-1',
 }))``;

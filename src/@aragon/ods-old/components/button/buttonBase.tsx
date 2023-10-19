@@ -45,9 +45,9 @@ ButtonBase.displayName = 'ButtonBase';
  *             STYLES             *
  **********************************/
 const sizeClassNames = {
-  small: 'h-4 space-x-1 rounded-lg',
-  medium: 'h-5 space-x-1.5 rounded-larger',
-  large: 'h-6 space-x-1.5 rounded-xl',
+  small: 'h-8 space-x-2 rounded-lg',
+  medium: 'h-10 space-x-3 rounded-[10px]',
+  large: 'h-12 space-x-3 rounded-xl',
 };
 
 const sizeStyles = {
@@ -63,9 +63,9 @@ const fontStyles = {
 };
 
 const iconStyles = {
-  small: 'w-1.5 h-1.5',
-  medium: 'w-2 h-2',
-  large: 'w-2 h-2',
+  small: 'w-3 h-3',
+  medium: 'w-4 h-4',
+  large: 'w-4 h-4',
 };
 
 /**********************************
@@ -77,8 +77,8 @@ type SizeProps = {
 
 const BaseStyledButton = styled.button.attrs<SizeProps>(({size = 'medium'}) => {
   const className = `${sizeClassNames[size]} ${fontStyles[size]}
-  flex justify-center items-center focus:outline-none focus-visible:ring-2
-  focus-visible:ring-primary-500`;
+  flex justify-center items-center focus:outline-none focus-visible:ring
+  focus-visible:ring-primary`;
 
   const style = sizeStyles[size] as CSSProperties;
 
@@ -90,7 +90,7 @@ type LabelProps = {
 };
 
 const Label = styled.span.attrs<LabelProps>(({visible}) => {
-  let className = 'font-bold';
+  let className = 'font-semibold';
   if (!visible) {
     className += ' hidden';
   }

@@ -197,15 +197,15 @@ const ActionListenerModal: React.FC<Props> = ({
         {...(isDesktop ? {showCloseButton: true, onClose} : {})}
       />
       <Content>
-        <div className="flex flex-col items-center space-y-1.5">
+        <div className="flex flex-col items-center space-y-3">
           <AvatarDao daoName={metadataName} src={metadataIcon} size="medium" />
-          <div className="flex items-center justify-center text-center font-bold text-ui-800">
+          <div className="flex items-center justify-center text-center font-semibold text-neutral-800">
             <Spinner size={'xs'} />
-            <p className="ml-2">
+            <p className="ml-4">
               {t('modal.dappConnect.detaildApp.spinnerLabel')}
             </p>
           </div>
-          <p className="text-center text-sm text-ui-500 desktop:px-5">
+          <p className="text-center text-sm leading-normal text-neutral-500 xl:px-10">
             {t('modal.dappConnect.detaildApp.desc', {
               dappName: metadataName,
             })}
@@ -221,7 +221,7 @@ const ActionListenerModal: React.FC<Props> = ({
           )}
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-3">
           {actionsReceived.length > 0 ? (
             <ButtonText
               label={t('modal.dappConnect.detaildApp.ctaLabel', {
@@ -263,5 +263,5 @@ const ActionListenerModal: React.FC<Props> = ({
 export default ActionListenerModal;
 
 const Content = styled.div.attrs({
-  className: 'py-3 px-2 desktop:px-3 space-y-3',
+  className: 'py-6 px-4 xl:px-6 space-y-6',
 })``;

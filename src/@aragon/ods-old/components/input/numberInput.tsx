@@ -62,8 +62,8 @@ export const NumberInput: React.FC<NumberInputProps> = ({
   const inputWidth: {
     [value: string]: string;
   } = {
-    bigger: 'w-8',
-    percentage: 'w-3.5',
+    bigger: 'w-16',
+    percentage: 'w-7',
     default: 'w-full',
   };
 
@@ -149,17 +149,17 @@ export type StyledContainerProps = Pick<
 const Container = styled.div.attrs<StyledContainerProps>(
   ({mode, disabled, width}) => {
     let className = `${
-      disabled ? 'bg-ui-100' : 'bg-ui-0'
-    } inline-flex bg-ui-0 ${
+      disabled ? 'bg-neutral-100' : 'bg-neutral-0'
+    } inline-flex bg-neutral-0 ${
       width ? '' : 'w-full'
-    } focus:outline-none items-center py-0.75 px-1
-      focus-within:ring-2 focus-within:ring-primary-500 justify-between
-      rounded-xl hover:border-ui-300 border-2 active:border-primary-500
+    } focus:outline-none items-center py-1.5 px-2
+      focus-within:ring focus-within:ring-primary justify-between
+      rounded-xl hover:border-neutral-300 border-2 active:border-primary-500
       active:ring-0
     `;
 
     if (mode === 'default') {
-      className += 'border-ui-100';
+      className += 'border-neutral-100';
     } else if (mode === 'success') {
       className += 'border-success-600';
     } else if (mode === 'warning') {
@@ -186,7 +186,7 @@ export type PercentProps = Pick<NumberInputProps, 'disabled'>;
 
 const Percent = styled.label.attrs<PercentProps>(({disabled}) => {
   const className: string | undefined = `${
-    disabled ? 'text-ui-300' : 'text-ui-600'
+    disabled ? 'text-neutral-300' : 'text-neutral-600'
   }`;
   return {
     className,
@@ -195,7 +195,7 @@ const Percent = styled.label.attrs<PercentProps>(({disabled}) => {
 
 const LeftAdornment = styled.label.attrs<PercentProps>(({disabled}) => {
   const className: string | undefined = `${
-    disabled ? 'text-ui-300' : 'text-ui-600'
+    disabled ? 'text-neutral-300' : 'text-neutral-600'
   }`;
   return {
     className,
@@ -205,8 +205,8 @@ const LeftAdornment = styled.label.attrs<PercentProps>(({disabled}) => {
 const StyledNumberInput = styled.input.attrs<StyledNumberInputProps>(
   ({disabled, inputWidth}) => {
     const className: string | undefined = `${
-      disabled ? 'text-ui-300' : 'text-ui-600'
-    } bg-transparent margin-0 ${inputWidth}`;
+      disabled ? 'text-neutral-300' : 'text-neutral-600'
+    } bg-[transparent] margin-0 ${inputWidth}`;
     return {
       className,
     };

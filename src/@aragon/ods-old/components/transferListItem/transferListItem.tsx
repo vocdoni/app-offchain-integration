@@ -30,13 +30,13 @@ export type TransferListItemProps = {
 
 const Icons: {[key: string]: JSX.Element} = {
   VaultDeposit: (
-    <IconDeposit className="h-1.5 w-1.5 text-success-600 desktop:h-2 desktop:w-2" />
+    <IconDeposit className="h-3 w-3 text-success-600 xl:h-4 xl:w-4" />
   ),
   Pending: (
-    <IconSpinner className="h-1.5 w-1.5 animate-spin text-primary-500 desktop:h-2 desktop:w-2" />
+    <IconSpinner className="h-3 w-3 animate-spin text-primary-500 xl:h-4 xl:w-4" />
   ),
   VaultWithdraw: (
-    <IconWithdraw className="h-1.5 w-1.5 text-warning-600 desktop:h-2 desktop:w-2" />
+    <IconWithdraw className="h-3 w-3 text-warning-600 xl:h-4 xl:w-4" />
   ),
 };
 
@@ -73,18 +73,18 @@ export const TransferListItem: React.FC<TransferListItemProps> = ({
         } ${tokenAmount} ${tokenSymbol}`}</USDValue>
         <TokenAmount>{usdValue}</TokenAmount>
       </Value>
-      <IconChevronRight className="text-ui-300 group-hover:text-primary-500" />
+      <IconChevronRight className="text-neutral-300 group-hover:text-primary-500" />
     </Container>
   );
 };
 
 const Container = styled.button.attrs({
-  className: `group w-full px-2 desktop:px-3 py-1.5 desktop:py-2.5 bg-ui-0 rounded-xl
-  flex items-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 active:bg-ui-100`,
+  className: `group w-full px-4 xl:px-6 py-3 xl:py-5 bg-neutral-0 rounded-xl
+  flex items-center space-x-4 focus:outline-none focus-visible:ring focus-visible:ring-primary active:bg-neutral-100`,
 })``;
 
 const AvatarContainer = styled.div.attrs<{bgColor: string}>(({bgColor}) => ({
-  className: `flex items-center justify-center w-3 h-3 ${bgColor} rounded desktop:w-5 desktop:h-5 desktop:rounded-xl`,
+  className: `flex items-center justify-center w-6 h-6 ${bgColor} rounded xl:w-10 xl:h-10 xl:rounded-xl`,
 }))<{bgColor: string}>``;
 
 const Content = styled.div.attrs({
@@ -92,11 +92,12 @@ const Content = styled.div.attrs({
 })``;
 
 const Title = styled.p.attrs({
-  className: 'font-bold text-ui-800 group-hover:text-primary-500 truncate',
+  className:
+    'font-semibold text-neutral-800 group-hover:text-primary-500 truncate',
 })``;
 
 const Date = styled.p.attrs({
-  className: 'ft-text-sm text-ui-500',
+  className: 'ft-text-sm text-neutral-500',
 })``;
 
 const Value = styled.div.attrs({
@@ -104,9 +105,9 @@ const Value = styled.div.attrs({
 })``;
 
 const USDValue = styled.p.attrs({
-  className: 'font-bold text-ui-800',
+  className: 'font-semibold text-neutral-800',
 })``;
 
 const TokenAmount = styled.p.attrs({
-  className: 'ft-text-sm text-ui-500',
+  className: 'ft-text-sm text-neutral-500',
 })``;

@@ -543,7 +543,7 @@ function getTextAreaHeight(element: HTMLTextAreaElement | null) {
 
 export const StyledInput = styled.textarea.attrs(() => {
   const baseClassName =
-    'w-full items-center appearance-none bg-transparent border-none outline-none resize-none font-inherit p-0 m-0';
+    'w-full items-center appearance-none bg-[transparent] border-none outline-none resize-none font-inherit p-0 m-0';
   const disabledClassName = 'disabled:cursor-not-allowed';
 
   const className: string | undefined = `${baseClassName} ${disabledClassName}`;
@@ -558,7 +558,7 @@ export const InputWrapper = styled.div.attrs({
 type StyledContainerProps = Pick<WalletInputProps, 'state' | 'disabled'>;
 
 const AdornmentWrapper = styled.div.attrs(() => {
-  const className = 'flex items-center space-x-0.75 border-blue-600';
+  const className = 'flex items-center space-x-1.5 border-blue-600';
 
   return {className};
 })``;
@@ -572,23 +572,22 @@ const modeStyles = (state: WalletInputProps['state']) => {
     case 'critical':
       return 'border-critical-600';
     default:
-      return 'border-ui-100';
+      return 'border-neutral-100';
   }
 };
 
 export const Container = styled.div.attrs<StyledContainerProps>(
   ({state, disabled}) => {
-    const baseClassName =
-      'border-2 flex space-x-1.5 py-0.75 pr-1 pl-2 rounded-xl';
+    const baseClassName = 'border-2 flex space-x-3 py-1.5 pr-2 pl-4 rounded-xl';
     const modeClassName = modeStyles(state);
 
     const focusClass = disabled
       ? ''
-      : 'focus-within:ring-2 focus-within:ring-primary-500';
+      : 'focus-within:ring focus-within:ring-primary';
 
     const bgAndBorderColor = disabled
-      ? 'bg-ui-100 border-ui-200 text-ui-700'
-      : 'bg-ui-0 text-ui-600';
+      ? 'bg-neutral-100 border-neutral-200 text-neutral-700'
+      : 'bg-neutral-0 text-neutral-600';
 
     return {
       className: `${baseClassName} ${modeClassName} ${bgAndBorderColor} ${focusClass}`,

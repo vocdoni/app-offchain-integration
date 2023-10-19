@@ -102,7 +102,7 @@ export const GatingMenu: React.FC = () => {
         )}
 
         {displayWrapToken ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-6">
             <ButtonText
               label={t('modalAlert.wrapToken.ctaLabel')}
               onClick={handleWrapTokens}
@@ -128,5 +128,5 @@ export const GatingMenu: React.FC = () => {
 };
 
 const WarningDescription = styled.p.attrs({
-  className: 'text-base text-ui-500 text-center',
+  className: 'text-base text-neutral-500 text-center',
 })``;

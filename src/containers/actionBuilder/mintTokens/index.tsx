@@ -410,17 +410,17 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
     <>
       <Container standAlone={standAlone}>
         {isDesktop && (
-          <div className="flex items-center space-x-2 p-2 tablet:p-3 ">
+          <div className="flex items-center space-x-4 p-4 md:p-6 ">
             <div className="flex-1">
               <FormLabel label={t('labels.whitelistWallets.address')} />
             </div>
-            <div className="w-23">
+            <div className="w-[184px]">
               <FormLabel label={t('finance.tokens')} />
             </div>
-            <div className="w-12">
+            <div className="w-24">
               <FormLabel label={t('finance.allocation')} />
             </div>
-            <div className="w-6" />
+            <div className="w-12" />
           </div>
         )}
 
@@ -448,12 +448,12 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
             mode="secondary"
             size="large"
             bgWhite
-            className="flex-1 tablet:flex-initial"
+            className="flex-1 md:flex-initial"
             onClick={handleAddWallet}
           />
 
           {/* eslint-disable-next-line tailwindcss/classnames-order */}
-          {/* <label className="flex-1 tablet:flex-initial py-1.5 px-2 space-x-1.5 h-6 font-bold rounded-xl cursor-pointer hover:text-primary-500 bg-ui-0 ft-text-base">
+          {/* <label className="flex-1 md:flex-initial py-3 px-4 space-x-3 h-12 font-semibold rounded-xl cursor-pointer hover:text-primary-500 bg-neutral-0 ft-text-base">
           {t('labels.whitelistWallets.uploadCSV')}
           <input
             type="file"
@@ -466,7 +466,9 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
         </ButtonContainer>
         {!daoTokenLoading && (
           <SummaryContainer>
-            <p className="font-bold text-ui-800">{t('labels.summary')}</p>
+            <p className="font-semibold text-neutral-800">
+              {t('labels.summary')}
+            </p>
             <HStack>
               <Label>{t('labels.newTokens')}</Label>
               <p>
@@ -509,18 +511,17 @@ export const MintTokenForm: React.FC<MintTokenFormProps> = ({
 };
 
 const Container = styled.div.attrs<{standAlone: boolean}>(({standAlone}) => ({
-  className: `bg-white border divide-y border-ui-100 divide-ui-100 ${
+  className: `bg-neutral-0 border divide-y border-neutral-100 divide-neutral-100 ${
     standAlone ? 'rounded-xl' : 'rounded-b-xl border-t-0'
   }`,
 }))<{standAlone: boolean}>``;
 
 const ButtonContainer = styled.div.attrs({
-  className:
-    'flex justify-between tablet:justify-start p-2 tablet:p-3 space-x-2',
+  className: 'flex justify-between md:justify-start p-4 md:p-6 space-x-4',
 })``;
 
 const SummaryContainer = styled.div.attrs({
-  className: 'p-2 tablet:p-3 space-y-1.5 font-bold text-ui-800',
+  className: 'p-4 md:p-6 space-y-3 font-semibold text-neutral-800',
 })``;
 
 const HStack = styled.div.attrs({
@@ -528,5 +529,5 @@ const HStack = styled.div.attrs({
 })``;
 
 const Label = styled.p.attrs({
-  className: 'font-normal text-ui-500',
+  className: 'font-normal text-neutral-500',
 })``;

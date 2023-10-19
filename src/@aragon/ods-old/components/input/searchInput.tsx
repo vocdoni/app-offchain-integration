@@ -31,7 +31,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
           </LeftAdornmentWrapper>
         ) : (
           <LeftAdornmentWrapper>
-            <IconSearch className="text-ui-300" />
+            <IconSearch className="text-neutral-300" />
           </LeftAdornmentWrapper>
         )
       }
@@ -52,7 +52,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
             }}
           >
             <RightAdornmentWrapper>
-              <IconClose className="text-ui-300" />
+              <IconClose className="text-neutral-300" />
             </RightAdornmentWrapper>
           </button>
         )
@@ -63,9 +63,9 @@ export const SearchInput: React.FC<SearchInputProps> = ({
 };
 
 const LeftAdornmentWrapper = styled.div.attrs({
-  className: 'pl-2 pr-1.5',
+  className: 'pl-4 pr-3',
 })``;
 
 const RightAdornmentWrapper = styled.div.attrs({
-  className: 'pr-2',
+  className: 'pr-4',
 })``;

@@ -63,21 +63,21 @@ const SCCAction: React.FC<ActionIndex & {allowRemove?: boolean}> = ({
         verified
         methodDescription={actionData.notice}
       >
-        <FormItem className="space-y-3 rounded-b-xl">
+        <FormItem className="space-y-6 rounded-b-xl">
           {actionData.inputs?.length > 0 ? (
-            <div className="space-y-2 pb-1.5">
+            <div className="space-y-4 pb-3">
               {(actionData.inputs as Input[])
                 .filter(input => input.type)
                 .map((input, index) => (
                   <div key={input.name}>
-                    <div className="text-base font-bold capitalize text-ui-800">
+                    <div className="text-base font-semibold capitalize leading-normal text-neutral-800">
                       {input.name}
-                      <span className="ml-0.5 text-sm normal-case">
+                      <span className="ml-1 text-sm normal-case leading-normal">
                         ({input.type})
                       </span>
                     </div>
-                    <div className="mb-1.5 mt-0.5">
-                      <span className="text-ui-600 ft-text-sm">
+                    <div className="mb-3 mt-1">
+                      <span className="text-neutral-600 ft-text-sm">
                         {input.notice}
                       </span>
                     </div>

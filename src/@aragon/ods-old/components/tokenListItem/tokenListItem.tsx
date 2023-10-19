@@ -55,11 +55,11 @@ export const TokenListItem: React.FC<TokenListItemProps> = ({
 type StyledContentProps = Pick<TokenListItemProps, 'bgWhite'>;
 
 const Container = styled.button.attrs<StyledContentProps>(({bgWhite}) => ({
-  className: `w-full flex justify-between items-center py-1.5
-  px-2 hover:text-ui-800 hover:bg-ui-100 active:text-ui-800
-  text-ui-600 active:bg-ui-200 disabled:text-ui-300
-  disabled:text-ui-300 disabled:bg-ui-100 rounded-xl
-  ${bgWhite ? 'bg-ui-50' : 'bg-ui-0'}`,
+  className: `w-full flex justify-between items-center py-3
+  px-4 hover:text-neutral-800 hover:bg-neutral-100 active:text-neutral-800
+  text-neutral-600 active:bg-neutral-200 disabled:text-neutral-300
+  disabled:text-neutral-300 disabled:bg-neutral-100 rounded-xl
+  ${bgWhite ? 'bg-neutral-50' : 'bg-neutral-0'}`,
 }))``;
 
 const AmountWrapper = styled.h3.attrs({
@@ -67,9 +67,9 @@ const AmountWrapper = styled.h3.attrs({
 })``;
 
 const TextWrapper = styled.div.attrs({
-  className: 'flex space-x-2',
+  className: 'flex space-x-4',
 })``;
 
 const Name = styled.h2.attrs({
-  className: 'font-bold ft-text-base',
+  className: 'font-semibold ft-text-base',
 })``;

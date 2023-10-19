@@ -33,12 +33,12 @@ export const ListItemAddress: FC<ListItemAddressProps> = ({
     <Container data-testid="listItem-address" {...props}>
       <LeftContent>
         <Avatar src={src ?? ''} />
-        <p className="font-bold">{shortenAddress(label)}</p>
+        <p className="font-semibold">{shortenAddress(label)}</p>
       </LeftContent>
 
       <RightContent>
         {tokenInfo && (
-          <p className="text-ui-500">
+          <p className="text-neutral-500">
             {tokenInfo.amount} {tokenInfo.symbol} ({tokenInfo.percentage}%)
           </p>
         )}
@@ -52,30 +52,30 @@ type AvatarProps = Pick<ListItemAddressProps, 'src'>;
 
 const Avatar: FC<AvatarProps> = ({src}) => {
   if (!src) {
-    return <IconPerson className="h-2.5 w-2.5" />;
+    return <IconPerson className="h-5 w-5" />;
   }
   return <AvatarWallet src={src} />;
 };
 
 const Container = styled.button.attrs(() => {
   const baseLayoutClasses =
-    'flex items-center justify-between w-full border-2 border-transparent ';
-  const baseStyleClasses = 'bg-ui-0 p-2 tablet:p-3 rounded-xl';
+    'flex items-center justify-between w-full border-2 border-neutral-0 ';
+  const baseStyleClasses = 'bg-neutral-0 p-4 md:p-6 rounded-xl';
   let className:
     | string
     | undefined = `${baseLayoutClasses} ${baseStyleClasses}`;
 
   const focusVisibleClasses =
-    'focus-visible:ring-0 focus-visible:ring-transparent';
-  const hoverClasses = 'hover:text-primary-500 hover:shadow-100';
-  const activeClasses = 'active:outline-none active:border-ui-200';
+    'focus-visible:ring-0 focus-visible:ring-[transparent]';
+  const hoverClasses = 'hover:text-primary-500 hover:shadow-neutral';
+  const activeClasses = 'active:outline-none active:border-neutral-200';
 
-  className += ` text-ui-600 ${focusVisibleClasses} ${activeClasses} ${hoverClasses}`;
+  className += ` text-neutral-600 ${focusVisibleClasses} ${activeClasses} ${hoverClasses}`;
 
   return {className};
 })``;
 
-const LeftContent = styled.div.attrs({className: 'flex space-x-2'})``;
+const LeftContent = styled.div.attrs({className: 'flex space-x-4'})``;
 const RightContent = styled.div.attrs({
-  className: 'flex space-x-2 items-center ft-text-sm',
+  className: 'flex space-x-4 items-center ft-text-sm',
 })``;

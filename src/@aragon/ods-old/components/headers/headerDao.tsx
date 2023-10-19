@@ -154,7 +154,7 @@ export const HeaderDao: React.FC<HeaderDaoProps> = ({
           <Title>{daoName}</Title>
 
           <Dropdown
-            className="w-30"
+            className="w-60"
             align="start"
             trigger={
               <CredentialsDropdownTrigger
@@ -166,7 +166,7 @@ export const HeaderDao: React.FC<HeaderDaoProps> = ({
             listItems={daoCredentialsDropdownItems}
           />
 
-          <div className="mt-1.5">
+          <div className="mt-3">
             <Description ref={descriptionRef} {...{fullDescription: showAll}}>
               {description}
             </Description>
@@ -191,7 +191,7 @@ export const HeaderDao: React.FC<HeaderDaoProps> = ({
           <AvatarDao
             daoName={daoName || ''}
             size="unset"
-            className="h-10 w-10 text-lg desktop:h-14 desktop:w-14 desktop:text-xl"
+            className="h-20 w-20 text-xl leading-tight xl:h-28 xl:w-28 xl:text-2xl"
             {...(daoAvatar && {src: daoAvatar})}
           />
         </AvatarContainer>
@@ -236,7 +236,7 @@ export const HeaderDao: React.FC<HeaderDaoProps> = ({
                 className="max-w-xs"
                 listItems={links?.map(({label, href}, index: number) => ({
                   component: (
-                    <div className="mb-1.5 p-1">
+                    <div className="mb-3 p-2">
                       <ListItemLink {...{label, href}} key={index} external />
                     </div>
                   ),
@@ -261,7 +261,7 @@ export const HeaderDao: React.FC<HeaderDaoProps> = ({
 
 const Card = styled.div.attrs({
   className:
-    'w-full bg-white tablet:rounded-xl p-2 tablet:p-3 desktop:p-6 border border-ui-100 space-y-3',
+    'w-full bg-neutral-0 md:rounded-xl p-4 md:p-6 xl:p-12 border border-neutral-100 space-y-6',
 })`
   box-shadow:
     0px 4px 8px rgba(31, 41, 51, 0.04),
@@ -278,15 +278,15 @@ const Content = styled.div.attrs({
 })``;
 
 const AvatarContainer = styled.div.attrs({
-  className: 'tablet:flex hidden justify-end col-span-2 desktop:items-center',
+  className: 'md:flex hidden justify-end col-span-2 xl:items-center',
 })``;
 
 const Title = styled.h1.attrs({
-  className: 'ft-text-3xl font-bold text-ui-800',
+  className: 'ft-text-3xl font-semibold text-neutral-800',
 })``;
 
 const Description = styled.p.attrs({
-  className: 'font-medium text-ui-600 ft-text-base',
+  className: 'font-medium text-neutral-600 ft-text-base',
 })<DescriptionProps>`
   overflow: hidden;
   display: -webkit-box;
@@ -296,43 +296,43 @@ const Description = styled.p.attrs({
 `;
 
 const DetailsWrapper = styled.div.attrs({
-  className: 'flex items-center justify-between flex-col tablet:flex-row',
+  className: 'flex items-center justify-between flex-col md:flex-row',
 })``;
 
 const NetworkDetailsContainer = styled.div.attrs({
-  className: 'flex space-x-3 w-full tablet:w-auto',
+  className: 'flex space-x-6 w-full md:w-auto',
 })``;
 
 const NetworkDetails = styled.div.attrs({
-  className: 'flex space-x-1 items-center justify-center',
+  className: 'flex space-x-2 items-center justify-center',
 })``;
 
 const DetailsText = styled.span.attrs({
-  className: 'text-ui-600 ft-text-sm' as string | undefined,
+  className: 'text-neutral-600 ft-text-sm' as string | undefined,
 })``;
 
 const LinksWrapper = styled.div.attrs({
-  className: 'space-x-3 hidden desktop:flex',
+  className: 'space-x-6 hidden xl:flex',
 })``;
 
 const ActionContainer = styled.div.attrs({
-  className: 'flex space-x-1.5 w-full justify-between',
+  className: 'flex space-x-3 w-full justify-between',
 })``;
 
 const ActionWrapper = styled.div.attrs({
   className:
-    'flex items-center tablet:space-x-3 justify-between tablet:justify-start w-full tablet:w-max space-y-3 tablet:space-y-0',
+    'flex items-center md:space-x-6 justify-between md:justify-start w-full md:w-max space-y-6 md:space-y-0',
 })``;
 
 const CredentialsDropdownItem = styled.div.attrs({
-  className: `flex text-ui-600 items-center justify-between gap-1.5 py-1.5 font-semibold ft-text-base hover:bg-primary-50 px-2 rounded-xl hover:text-primary-400`,
+  className: `flex text-neutral-600 items-center justify-between gap-3 py-3 font-semibold ft-text-base hover:bg-primary-50 px-4 rounded-xl hover:text-primary-400`,
 })``;
 
 const CredentialsDropdownTrigger = styled(Link).attrs({
   className:
-    'mt-1.5 text-primary-400 hover:text-primary-600 active:text-primary-800 focus-visible:ring focus-visible:ring-primary-200 focus-visible:bg-ui-50',
+    'mt-3 text-primary-400 hover:text-primary-600 active:text-primary-800 focus-visible:ring focus-visible:ring-primary-200 focus-visible:bg-neutral-50',
 })``;
 
 const StyledCopyIcon = styled(IconCopy).attrs({
-  className: 'text-ui-400',
+  className: 'text-neutral-400',
 })``;

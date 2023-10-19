@@ -225,11 +225,11 @@ type Props = {
 };
 
 const Container = styled.div.attrs<Props>(({disabled, fullScreen = false}) => ({
-  className: `w-full text-ui-600 overflow-auto ${
+  className: `w-full text-neutral-600 overflow-auto ${
     fullScreen
       ? 'h-screen flex flex-col fixed top-0'
-      : 'rounded-xl border-2 border-ui-100 hover:border-ui-300 focus-within:ring-2 focus-within:ring-primary-500 active:border-primary-500 active:ring-0 '
-  } ${disabled ? 'bg-ui-100 border-ui-200' : 'bg-white'}`,
+      : 'rounded-xl border-2 border-neutral-100 hover:border-neutral-300 focus-within:ring focus-within:ring-primary active:border-primary-500 active:ring-0 '
+  } ${disabled ? 'bg-neutral-100 border-neutral-200' : 'bg-neutral-0'}`,
 }))<Props>`
   ::-webkit-input-placeholder {
     color: #9aa5b1;
@@ -246,13 +246,13 @@ const Container = styled.div.attrs<Props>(({disabled, fullScreen = false}) => ({
 `;
 
 const StyledMenuBar = styled.div.attrs<Props>(({disabled, fullScreen}) => ({
-  className: `bg-ui-50 px-2 py-1.5 flex flex-wrap justify-between ${
+  className: `bg-neutral-50 px-4 py-3 flex flex-wrap justify-between ${
     fullScreen ? 'sticky top-0 z-10' : 'rounded-t-xl'
-  } ${disabled ? 'bg-ui-100' : ''}`,
+  } ${disabled ? 'bg-neutral-100' : ''}`,
 }))<Props>``;
 
 const Toolgroup = styled.div.attrs({
-  className: 'flex flex-wrap space-x-1.5',
+  className: 'flex flex-wrap space-x-3',
 })``;
 
 const StyledEditorContent = styled(EditorContent)`

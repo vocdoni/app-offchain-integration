@@ -73,20 +73,20 @@ export const MultisigEligibility = () => {
 };
 
 const TitleContainer = styled.div.attrs({
-  className: 'flex-col space-y-0.5',
+  className: 'flex-col space-y-1',
 })``;
 
 const OptionsContainers = styled.div.attrs({
-  className: 'space-y-1.5',
+  className: 'space-y-3',
 })``;
 
 const CheckboxItemsContainer = styled.div.attrs({
   className:
-    'flex desktop:flex-row flex-col desktop:gap-2 desktop:bg-transparent bg-ui-0 gap-1 p-2 desktop:p-0 rounded-xl',
+    'flex xl:flex-row flex-col xl:gap-4 xl:bg-[transparent] bg-neutral-0 gap-2 p-4 xl:p-0 rounded-xl',
 })``;
 
 const CheckboxContainer = styled.div.attrs({
-  className: 'flex space-y-1.5 flex-col',
+  className: 'flex space-y-3 flex-col',
 })``;
 
 const CheckboxListItemWrapper = styled.div.attrs({

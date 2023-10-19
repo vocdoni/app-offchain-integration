@@ -229,9 +229,9 @@ export const Pagination: React.FC<PaginationProps> = ({
 };
 
 const HStack = styled.div.attrs({
-  className: 'flex space-x-1.5',
+  className: 'flex space-x-3',
 })``;
 
 const Separator = styled.div.attrs({
-  className: 'flex items-center justify-center w-6 h-6',
+  className: 'flex items-center justify-center w-12 h-12',
 })``;

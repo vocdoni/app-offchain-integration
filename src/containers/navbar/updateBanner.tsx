@@ -35,8 +35,8 @@ const UpdateBanner: React.FC = () => {
         <DummyElement />
         <MessageWrapper>
           <TextWrapper>
-            <IconUpdate className="text-ui-0" />
-            <span className="font-semibold text-ui-0 ft-text-base">
+            <IconUpdate className="text-neutral-0" />
+            <span className="font-semibold text-neutral-0 ft-text-base">
               {t('update.banner.title')}
             </span>
           </TextWrapper>
@@ -56,28 +56,28 @@ const UpdateBanner: React.FC = () => {
             }
           />
         </MessageWrapper>
-        <IconClose className="cursor-pointer justify-self-end text-ui-0" />
+        <IconClose className="cursor-pointer justify-self-end text-neutral-0" />
       </UpdateContainer>
     );
   return null;
 };
 
 const DummyElement = styled.div.attrs({
-  className: 'tablet:block hidden',
+  className: 'md:block hidden',
 })``;
 
 const UpdateContainer = styled.div.attrs({
   className:
-    'flex justify-between items-center py-1 px-3 bg-primary-400' as string,
+    'flex justify-between items-center py-2 px-6 bg-primary-400' as string,
 })``;
 
 const TextWrapper = styled.div.attrs({
-  className: 'flex items-center gap-x-1' as string,
+  className: 'flex items-center gap-x-2' as string,
 })``;
 
 const MessageWrapper = styled.div.attrs({
   className:
-    'block tablet:flex tablet:items-center tablet:space-x-3 tablet:space-y-0 space-y-1' as string,
+    'block md:flex md:items-center md:space-x-6 md:space-y-0 space-y-2' as string,
 })``;
 
 export default UpdateBanner;

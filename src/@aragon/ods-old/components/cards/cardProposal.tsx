@@ -136,7 +136,7 @@ export const CardProposal: React.FC<CardProposalProps> = ({
               label={shortenAddress(
                 (isExploreProposal(type) ? daoName : publisherAddress) ?? ''
               )}
-              className="text-sm"
+              className="text-sm leading-normal"
             />
           </Publisher>
         </TextContent>
@@ -226,10 +226,10 @@ const HeaderOptions: React.VFC<HeaderOptionProps> = ({
 
 const Card = styled.button.attrs({
   className:
-    'w-full bg-white rounded-xl box-border ' +
-    'hover:border hover:border-ui-100 ' +
-    'active:border active:border-ui-200 ' +
-    'focus:outline-none focus:ring-2 focus:ring-primary-500',
+    'w-full bg-neutral-0 rounded-xl box-border ' +
+    'hover:border hover:border-neutral-100 ' +
+    'active:border active:border-neutral-200 ' +
+    'focus:outline-none focus:ring focus:ring-primary',
 })`
   &:hover {
     box-shadow:
@@ -239,11 +239,11 @@ const Card = styled.button.attrs({
   }
 `;
 
-const CardBody = styled.div.attrs({className: 'p-2 space-y-3'})``;
+const CardBody = styled.div.attrs({className: 'p-4 space-y-6'})``;
 
 const CardBanner = styled.div.attrs({
   className:
-    'bg-primary-400 text-primary-50 text-sm font-semibold px-2 py-1 flex items-center gap-x-1.5 rounded-t-xl',
+    'bg-primary-400 text-primary-50 text-sm leading-normal font-semibold px-4 py-2 flex items-center gap-x-3 rounded-t-xl',
 })``;
 
 const Header = styled.div.attrs({
@@ -251,23 +251,23 @@ const Header = styled.div.attrs({
 })``;
 
 const Title = styled.p.attrs({
-  className: 'text-ui-800 text-left font-bold ft-text-xl',
+  className: 'text-neutral-800 text-left font-semibold ft-text-xl',
 })``;
 
 const Description = styled.p.attrs({
-  className: 'text-ui-600 text-left font-normal ft-text-base line-clamp-2',
+  className: 'text-neutral-600 text-left font-normal ft-text-base line-clamp-2',
 })``;
 
 const Publisher = styled.span.attrs({
-  className: 'flex space-x-1 text-ui-500 ft-text-sm',
+  className: 'flex space-x-2 text-neutral-500 ft-text-sm',
 })``;
 
 const TextContent = styled.div.attrs({
-  className: 'space-y-1.5',
+  className: 'space-y-3',
 })``;
 
 const LoadingContent = styled.div.attrs({
-  className: 'space-y-2 p-2 bg-ui-50 rounded-xl',
+  className: 'space-y-4 p-4 bg-neutral-50 rounded-xl',
 })``;
 
 const ProgressInfoWrapper = styled.div.attrs({
@@ -275,23 +275,23 @@ const ProgressInfoWrapper = styled.div.attrs({
 })``;
 
 const ProgressTitle = styled.h3.attrs({
-  className: 'text-ui-800 ft-text-base font-bold',
+  className: 'text-neutral-800 ft-text-base font-semibold',
 })``;
 
 const Amount = styled.span.attrs({
-  className: 'text-ui-500 ft-text-base',
+  className: 'text-neutral-500 ft-text-base',
 })``;
 
 const Vote = styled.span.attrs({
-  className: 'text-primary-500 font-bold ft-text-base',
+  className: 'text-primary-500 font-semibold ft-text-base',
 })``;
 
 const Percentage = styled.span.attrs({
-  className: 'text-primary-500 font-bold ft-text-base',
+  className: 'text-primary-500 font-semibold ft-text-base',
 })``;
 
-const PublisherLabel = styled.p.attrs({className: '-mr-0.5'})``;
+const PublisherLabel = styled.p.attrs({className: '-mr-1'})``;
 
 const VotedAlertWrapper = styled.div.attrs({
-  className: 'flex justify-center desktop:justify-start',
+  className: 'flex justify-center xl:justify-start',
 })``;

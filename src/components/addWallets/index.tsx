@@ -150,10 +150,10 @@ const AddWallets: React.FC = () => {
 
 export default AddWallets;
 
-const Container = styled.div.attrs({className: 'space-y-1.5'})``;
+const Container = styled.div.attrs({className: 'space-y-3'})``;
 
 const ListGroup = styled.div.attrs({
-  className: 'flex flex-col overflow-hidden space-y-0.25 rounded-xl',
+  className: 'flex flex-col overflow-hidden space-y-0.5 rounded-xl',
 })``;
 
 const ActionsWrapper = styled.div.attrs({

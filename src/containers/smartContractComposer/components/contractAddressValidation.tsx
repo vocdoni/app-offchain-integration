@@ -385,7 +385,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
   const sourcifyValidationStatus = useMemo(() => {
     if (sourcifyLoading && !isTransactionError) {
       return (
-        <div className="flex space-x-1">
+        <div className="flex space-x-2">
           <Spinner size={'xs'} className="text-primary-500" />
           <VerificationStatus colorClassName="text-primary-800">
             {t('scc.validation.sourcifyStatusPending')}
@@ -395,7 +395,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
     } else {
       if (sourcifyFullData) {
         return (
-          <div className="flex space-x-1">
+          <div className="flex space-x-2">
             <IconSuccess className="text-success-500" />
             <VerificationStatus colorClassName="text-success-800">
               {t('scc.validation.sourcifyStatusSuccess')}
@@ -404,7 +404,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
         );
       } else if (sourcifyPartialData) {
         return (
-          <div className="flex space-x-1">
+          <div className="flex space-x-2">
             <IconRadioMulti className="text-warning-500" />
             <VerificationStatus colorClassName="text-warning-800">
               {t('scc.validation.sourcifyStatusWarning')}
@@ -413,7 +413,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
         );
       } else {
         return (
-          <div className="flex space-x-1">
+          <div className="flex space-x-2">
             <IconRadioCancel className="text-critical-500" />
             <VerificationStatus colorClassName="text-critical-800">
               {t('scc.validation.sourcifyStatusCritical')}
@@ -433,7 +433,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
   const etherscanValidationStatus = useMemo(() => {
     if (etherscanLoading && !isTransactionError) {
       return (
-        <div className="flex space-x-1">
+        <div className="flex space-x-2">
           <Spinner size={'xs'} className="text-primary-500" />
           <VerificationStatus colorClassName="text-primary-800">
             {t('scc.validation.etherscanStatusPending')}
@@ -446,7 +446,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
         etherscanData?.result[0].ABI !== 'Contract source code not verified'
       ) {
         return (
-          <div className="flex space-x-1">
+          <div className="flex space-x-2">
             <IconSuccess className="text-success-500" />
             <VerificationStatus colorClassName="text-success-800">
               {t('scc.validation.etherscanStatusSuccess')}
@@ -455,7 +455,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
         );
       } else {
         return (
-          <div className="flex space-x-1">
+          <div className="flex space-x-2">
             <IconRadioCancel className="text-critical-500" />
             <VerificationStatus colorClassName="text-critical-800">
               {t('scc.validation.etherscanStatusCritical')}
@@ -504,7 +504,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
               external
               label={t('labels.etherscan')}
               href={`${CHAIN_METADATA[network].explorer}`}
-              className="ml-0.5"
+              className="ml-1"
             />
           </Description>
         </DescriptionContainer>
@@ -536,7 +536,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
                 adornmentText={adornmentText}
                 onAdornmentClick={() => handleAdornmentClick(value, onChange)}
               />
-              <div className="mt-1">
+              <div className="mt-2">
                 {error?.message && (
                   <AlertInline label={error.message} mode="critical" />
                 )}
@@ -586,16 +586,16 @@ const ContractAddressValidation: React.FC<Props> = props => {
           ABIFlowState !== ManualABIFlowState.WAITING &&
           !isTransactionWaiting && (
             <>
-              <div className="mt-2 font-bold text-ui-700 ft-text-base">
+              <div className="mt-4 font-semibold text-neutral-700 ft-text-base">
                 {t('scc.abi.abiInputLabel')}
               </div>
               <p
-                className="mt-0.5 text-sm text-ui-600"
+                className="mt-1 text-sm leading-normal text-neutral-600"
                 dangerouslySetInnerHTML={{
                   __html: htmlIn(t)('scc.abi.abiInputHelp'),
                 }}
               />
-              <div className="mt-1.5">
+              <div className="mt-3">
                 <Controller
                   name="ABIInput"
                   rules={{
@@ -631,7 +631,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
               setVerificationState(TransactionState.WAITING);
             }}
             size="large"
-            className="mt-3 w-full"
+            className="mt-6 w-full"
             mode="secondary"
           />
         ) : (
@@ -700,7 +700,7 @@ const ContractAddressValidation: React.FC<Props> = props => {
             isActive={isTransactionLoading}
             disabled={isButtonDisabled}
             size="large"
-            className="mt-3 w-full"
+            className="mt-6 w-full"
           />
         )}
         {isTransactionError && ABIFlowState === ManualABIFlowState.WAITING && (
@@ -712,12 +712,12 @@ const ContractAddressValidation: React.FC<Props> = props => {
               props.onClose();
             }}
             size="large"
-            className="mt-2 w-full"
+            className="mt-4 w-full"
             mode="secondary"
           />
         )}
         {error?.message && (
-          <div className="mt-2 flex justify-center">
+          <div className="mt-4 flex justify-center">
             <AlertInline
               label={error.message}
               mode={
@@ -735,26 +735,26 @@ const ContractAddressValidation: React.FC<Props> = props => {
 
 export default ContractAddressValidation;
 
-const Content = styled.div.attrs({className: 'px-2 tablet:px-3 py-3'})``;
+const Content = styled.div.attrs({className: 'px-4 md:px-6 py-6'})``;
 
 const DescriptionContainer = styled.div.attrs({
-  className: 'space-y-0.5 mb-1.5',
+  className: 'space-y-1 mb-3',
 })``;
 
 const Title = styled.h2.attrs({
-  className: 'text-ui-800 ft-text-base font-bold',
+  className: 'text-neutral-800 ft-text-base font-semibold',
 })``;
 
 const Description = styled.p.attrs({
-  className: 'ft-text-sm text-ui-600 font-normal',
+  className: 'ft-text-sm text-neutral-600 font-normal',
 })``;
 
 const VerificationCard = styled.div.attrs({
-  className: 'bg-ui-0 rounded-xl p-2 mt-3 space-y-2',
+  className: 'bg-neutral-0 rounded-xl p-4 mt-6 space-y-4',
 })``;
 
 const VerificationTitle = styled.h2.attrs({
-  className: 'text-ui-600 ft-text-base font-semibold',
+  className: 'text-neutral-600 ft-text-base font-semibold',
 })``;
 
 const VerificationWrapper = styled.div.attrs({

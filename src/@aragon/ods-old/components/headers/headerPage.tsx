@@ -58,30 +58,30 @@ export const HeaderPage: React.FC<HeaderPageProps> = ({
 
 const Card = styled.div.attrs({
   className:
-    'flex flex-col p-2 pb-3 tablet:p-3 desktop:p-5 bg-ui-0 gap-y-2 tablet:gap-y-3 tablet:rounded-xl tablet:border tablet:border-ui-100 tablet:shadow-100',
+    'flex flex-col p-4 pb-6 md:p-6 xl:p-10 bg-neutral-0 gap-y-4 md:gap-y-6 md:rounded-xl md:border md:border-neutral-100 md:shadow-neutral',
 })``;
 
 const TextContent = styled.div.attrs({
-  className: 'tablet:flex-1 space-y-1 desktop:space-y-2',
+  className: 'md:flex-1 space-y-2 xl:space-y-4',
 })``;
 
 const Title = styled.h2.attrs({
-  className: 'ft-text-3xl font-bold text-ui-800',
+  className: 'ft-text-3xl font-semibold text-neutral-800',
 })``;
 
 const Description = styled.div.attrs({
-  className: 'ft-text-lg text-ui-600',
+  className: 'ft-text-lg text-neutral-600',
 })``;
 
 const ContentWrapper = styled.div.attrs({
   className:
-    'flex flex-col tablet:flex-row gap-y-2 tablet:gap-x-6 tablet:items-start desktop:items-center desktop:mt-0 desktop:pt-0',
+    'flex flex-col md:flex-row gap-y-4 md:gap-x-12 md:items-start xl:items-center xl:mt-0 xl:pt-0',
 })``;
 
 const ButtonGroup = styled.div.attrs({
-  className: 'flex flex-col-reverse tablet:flex-row gap-2',
+  className: 'flex flex-col-reverse md:flex-row gap-4',
 })``;
 
 const BreadcrumbWrapper = styled.div.attrs({
-  className: 'desktop:hidden desktop:h-0 flex',
+  className: 'xl:hidden xl:h-0 flex',
 })``;

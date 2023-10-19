@@ -27,34 +27,34 @@ export const TableCell: React.FC<TableCellProps> = ({
     return (
       <td
         data-testid="tableCell"
-        className={`bg-ui-100 px-2 py-1.5 ${
+        className={`bg-neutral-100 px-4 py-3 ${
           rightAligned ? 'text-right' : 'text-left'
         } ${className}`}
       >
-        <p className="text-ui-600 ft-text-base">{text}</p>
-        {subtext && <p className="text-ui-500 ft-text-sm">{subtext}</p>}
+        <p className="text-neutral-600 ft-text-base">{text}</p>
+        {subtext && <p className="text-neutral-500 ft-text-sm">{subtext}</p>}
       </td>
     );
   } else if (type === 'head') {
     return (
       <th
         data-testid="tableCell"
-        className={`bg-ui-100 px-2 py-1.75 ${
+        className={`bg-neutral-100 px-4 py-3.5 ${
           rightAligned ? 'text-right' : 'text-left'
         } ${className}`}
       >
-        <p className="font-bold text-ui-800 ft-text-sm">{text}</p>
+        <p className="font-semibold text-neutral-800 ft-text-sm">{text}</p>
       </th>
     );
   } else if (type === 'link') {
     return (
       <td
         data-testid="tableCell"
-        className={`px-2 py-1.75 ${!bgWhite && 'bg-ui-0'} ${
+        className={`px-4 py-3.5 ${!bgWhite && 'bg-neutral-0'} ${
           rightAligned ? 'text-right' : 'text-left'
         } ${className}`}
       >
-        <p className="cursor-pointer font-bold text-primary-500 ft-text-base">
+        <p className="cursor-pointer font-semibold text-primary-500 ft-text-base">
           {children}
         </p>
       </td>
@@ -63,7 +63,7 @@ export const TableCell: React.FC<TableCellProps> = ({
     return (
       <td
         data-testid="tableCell"
-        className={`px-2 py-1.5 ${!bgWhite && 'bg-ui-0'} ${className}`}
+        className={`px-4 py-3 ${!bgWhite && 'bg-neutral-0'} ${className}`}
       >
         {children}
       </td>
@@ -73,12 +73,12 @@ export const TableCell: React.FC<TableCellProps> = ({
   return (
     <td
       data-testid="tableCell"
-      className={`px-2 py-1.5 ${!bgWhite && 'bg-ui-0'} ${
+      className={`px-4 py-3 ${!bgWhite && 'bg-neutral-0'} ${
         rightAligned ? 'text-right' : 'text-left'
       } ${className}`}
     >
-      <p className="text-ui-600 ft-text-base">{text}</p>
-      {subtext && <p className="text-ui-500 ft-text-sm">{subtext}</p>}
+      <p className="text-neutral-600 ft-text-base">{text}</p>
+      {subtext && <p className="text-neutral-500 ft-text-sm">{subtext}</p>}
     </td>
   );
 };

@@ -23,18 +23,18 @@ export const WidgetStatus: React.FC<WidgetStatusProps> = ({steps}) => {
           return <ProgressStatus key={s.label + s.mode} {...s} />;
         })
       ) : (
-        <p className="text-ui-400">Progress unavailable</p>
+        <p className="text-neutral-400">Progress unavailable</p>
       )}
     </Card>
   );
 };
 
 const Card = styled.div.attrs(() => {
-  const baseClasses = 'bg-ui-0 rounded-xl pt-3 pb-4 space-y-2';
-  const bpClasses = ' px-2  tablet:px-3';
+  const baseClasses = 'bg-neutral-0 rounded-xl pt-6 pb-8 space-y-4';
+  const bpClasses = ' px-4  md:px-6';
   return {className: baseClasses + bpClasses};
 })``;
 
 const Header = styled.p.attrs({
-  className: 'font-bold ft-text-xl text-ui-800',
+  className: 'font-semibold ft-text-xl text-neutral-800',
 })``;

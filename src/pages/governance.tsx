@@ -179,7 +179,7 @@ export const Governance: React.FC = () => {
         </ListWrapper>
 
         {hasNextPage && (
-          <div className="mt-3">
+          <div className="mt-6">
             <ButtonText
               label={t('explore.explorer.showMore')}
               iconRight={
@@ -197,11 +197,11 @@ export const Governance: React.FC = () => {
 };
 
 export const Container = styled.div.attrs({
-  className: 'col-span-full desktop:col-start-3 desktop:col-end-11',
+  className: 'col-span-full xl:col-start-3 xl:col-end-11',
 })``;
 
 const ButtonGroupContainer = styled.div.attrs({
-  className: 'flex overflow-auto mt-3 desktop:mt-8',
+  className: 'flex overflow-auto mt-6 xl:mt-16',
 })`
   scrollbar-width: none;
 
@@ -212,5 +212,5 @@ const ButtonGroupContainer = styled.div.attrs({
 `;
 
 const ListWrapper = styled.div.attrs({
-  className: 'mt-3',
+  className: 'mt-6',
 })``;

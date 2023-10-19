@@ -48,7 +48,7 @@ export const CardToken: React.FC<CardTokenProps> = ({
           </CoinNameAndAllocation>
           {isVault && (
             <SecondaryCoinDetails>
-              <div className="flex space-x-0.5">
+              <div className="flex space-x-1">
                 <div className="truncate">{props.tokenCount}</div>{' '}
                 <div>{props.tokenSymbol}</div>
               </div>
@@ -67,7 +67,7 @@ export const CardToken: React.FC<CardTokenProps> = ({
           {isVault ? (
             <div className="truncate">{props.treasuryShare}</div>
           ) : (
-            <div className="flex justify-end space-x-0.5">
+            <div className="flex justify-end space-x-1">
               <div className="truncate">{props.tokenCount}</div>{' '}
               <div>{props.tokenSymbol}</div>
             </div>
@@ -111,8 +111,8 @@ export const CardToken: React.FC<CardTokenProps> = ({
 type CardProps = Pick<CardTokenProps, 'bgWhite'>;
 
 const Card = styled.div.attrs<CardProps>(({bgWhite}) => ({
-  className: `flex justify-between space-x-4 items-center py-2.5 px-3 overflow-hidden ${
-    bgWhite ? 'bg-ui-50' : 'bg-ui-0'
+  className: `flex justify-between space-x-8 items-center py-5 px-6 overflow-hidden ${
+    bgWhite ? 'bg-neutral-50' : 'bg-neutral-0'
   } rounded-xl`,
 }))<CardProps>``;
 
@@ -121,37 +121,37 @@ const CoinDetailsWithImage = styled.div.attrs({
 })``;
 
 const CoinImage = styled.img.attrs(({src}) => ({
-  className: 'w-3 h-3 tablet:h-5 tablet:w-5 rounded-full',
+  className: 'w-6 h-6 md:h-10 md:w-10 rounded-full',
   src,
 }))``;
 
 const CoinDetails = styled.div.attrs({
-  className: 'ml-2 space-y-1 overflow-hidden',
+  className: 'ml-4 space-y-2 overflow-hidden',
 })``;
 
 const CoinNameAndAllocation = styled.div.attrs({
-  className: 'flex items-start space-x-1',
+  className: 'flex items-start space-x-2',
 })``;
 
 const CoinName = styled.h1.attrs({
-  className: 'font-bold text-ui-800 truncate',
+  className: 'font-semibold text-neutral-800 truncate',
 })``;
 
 const SecondaryCoinDetails = styled.div.attrs({
-  className: 'ft-text-sm text-ui-500 space-x-0.5 tablet:flex',
+  className: 'ft-text-sm text-neutral-500 space-x-1 md:flex',
 })``;
 
 const MarketProperties = styled.div.attrs({
-  className: 'text-right space-y-1 flex-auto overflow-hidden',
+  className: 'text-right space-y-2 flex-auto overflow-hidden',
 })``;
 
 const FiatValue = styled.h1.attrs({
-  className: 'font-bold text-ui-800',
+  className: 'font-semibold text-neutral-800',
 })``;
 
 const SecondaryFiatDetails = styled.div.attrs({
   className:
-    'ft-text-sm text-ui-500 space-x-1 flex justify-end items-center truncate',
+    'ft-text-sm text-neutral-500 space-x-2 flex justify-end items-center truncate',
 })``;
 
 type ToggleMobileVisibilityProps = {
@@ -165,9 +165,7 @@ const ToggleMobileVisibility: React.FC<ToggleMobileVisibilityProps> = ({
 }) => {
   return (
     <div
-      className={
-        visible ? 'inline-block tablet:hidden' : 'hidden tablet:inline-block'
-      }
+      className={visible ? 'inline-block md:hidden' : 'hidden md:inline-block'}
     >
       {children}
     </div>

@@ -25,16 +25,16 @@ export const Wizard: React.FC<WizardProps> = ({
 }) => {
   return (
     <StepCard data-testid="wizard">
-      <div className="desktop:hidden">{nav}</div>
+      <div className="xl:hidden">{nav}</div>
 
       {/* Stepper */}
       {includeStepper && (
         <Wrapper>
           <CenteredFlex>
-            <p className="font-bold text-ui-800 desktop:text-primary-500">
+            <p className="font-semibold text-neutral-800 xl:text-primary-500">
               {processName}
             </p>
-            <p className="text-ui-400">
+            <p className="text-neutral-400">
               Step {currentStep} of {totalSteps}
             </p>
           </CenteredFlex>
@@ -59,19 +59,19 @@ export const Wizard: React.FC<WizardProps> = ({
 
 const StepCard = styled.div.attrs({
   className:
-    'flex flex-col px-2 pt-2 pb-3 tablet:p-3 desktop:p-6 tablet:rounded-xl gap-y-3 bg-ui-0 tablet:shadow-100',
+    'flex flex-col px-4 pt-4 pb-6 md:p-6 xl:p-12 md:rounded-xl gap-y-6 bg-neutral-0 md:shadow-neutral',
 })``;
 
 const Wrapper = styled.div.attrs({
-  className: 'space-y-1',
+  className: 'space-y-2',
 })``;
 
 const StepTitle = styled.p.attrs({
-  className: 'ft-text-3xl text-ui-800 font-bold',
+  className: 'ft-text-3xl text-neutral-800 font-semibold',
 })``;
 
 const StepSubTitle = styled.span.attrs({
-  className: 'text-ui-600 ft-text-lg',
+  className: 'text-neutral-600 ft-text-lg',
 })`
   & > a {
     color: #003bf5;
@@ -80,5 +80,5 @@ const StepSubTitle = styled.span.attrs({
 `;
 
 const CenteredFlex = styled.div.attrs({
-  className: 'flex justify-between text-sm desktop:text-base',
+  className: 'flex justify-between text-sm xl:text-base leading-normal',
 })``;

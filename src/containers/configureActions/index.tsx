@@ -94,7 +94,7 @@ const ConfigureActions: React.FC<ConfigureActionsProps> = ({
             label={addExtraActionLabel}
             iconLeft={<IconAdd />}
             onClick={handleExtraActionClick}
-            className="mt-2 w-full tablet:w-max"
+            className="mt-4 w-full md:w-max"
           />
         </ActionsWrapper>
       ) : (
@@ -128,9 +128,9 @@ const ConfigureActions: React.FC<ConfigureActionsProps> = ({
 export default ConfigureActions;
 
 const FormWrapper = styled.div.attrs({
-  className: 'space-y-1.5',
+  className: 'space-y-3',
 })``;
 
 const ActionsWrapper = styled.div.attrs({
-  className: 'space-y-2',
+  className: 'space-y-4',
 })``;

@@ -59,9 +59,9 @@ export const UpdateListItem: React.FC<CheckboxListItemProps> = ({
   return (
     <Container data-testid="checkboxListItem" {...{type, disabled, onClick}}>
       <Wrapper>
-        <div className="flex flex-col space-y-1">
+        <div className="flex flex-col space-y-2">
           <HStack {...{disabled, type}}>
-            <div className="flex space-x-1">
+            <div className="flex space-x-2">
               <p className="font-semibold ft-text-base">{label}</p>
               {tagLabelNatural && (
                 <Tag label={tagLabelNatural} colorScheme="neutral" />
@@ -74,7 +74,7 @@ export const UpdateListItem: React.FC<CheckboxListItemProps> = ({
           <Link label={LinkLabel} iconRight={<IconLinkExternal />} />
         </div>
         {(buttonPrimaryLabel || buttonSecondaryLabel) && (
-          <div className="mt-3 flex flex-col gap-y-1.5">
+          <div className="mt-6 flex flex-col gap-y-3">
             {buttonPrimaryLabel && (
               <ButtonText
                 label={buttonPrimaryLabel}
@@ -105,15 +105,15 @@ type ContainerTypes = {
 };
 
 const Container = styled.div.attrs<ContainerTypes>(({disabled, type}) => ({
-  className: `flex-1 py-1.5 px-2 rounded-xl border-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
+  className: `flex-1 py-3 px-4 rounded-xl border-2 focus:outline-none focus-visible:ring focus-visible:ring-primary ${
     disabled
-      ? 'bg-ui-100 border-ui-300'
-      : `bg-ui-0 group hover:border-primary-500 cursor-pointer ${
+      ? 'bg-neutral-100 border-neutral-300'
+      : `bg-neutral-0 group hover:border-primary-500 cursor-pointer ${
           type === 'error'
             ? 'border-critical-500'
             : type !== 'default'
             ? 'border-primary-500'
-            : 'border-ui-100'
+            : 'border-neutral-100'
         }`
   }`,
   tabIndex: disabled ? -1 : 0,
@@ -125,15 +125,15 @@ const Wrapper = styled.div.attrs({
 
 const HStack = styled.div.attrs<ContainerTypes>(({disabled, type}) => ({
   className:
-    `flex justify-between items-center group-hover:text-primary-500 space-x-1.5 ${
+    `flex justify-between items-center group-hover:text-primary-500 space-x-3 ${
       disabled
-        ? 'text-ui-600'
+        ? 'text-neutral-600'
         : type === 'default' || type === 'error'
-        ? 'text-ui-600'
+        ? 'text-neutral-600'
         : 'text-primary-500'
     }` as string,
 }))<ContainerTypes>``;
 
 const Helptext = styled.p.attrs({
-  className: 'ft-text-base text-ui-500 mr-3.5',
+  className: 'ft-text-base text-neutral-500 mr-7',
 })``;

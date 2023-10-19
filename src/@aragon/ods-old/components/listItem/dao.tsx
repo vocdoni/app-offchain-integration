@@ -39,13 +39,13 @@ type Selectable = Pick<ListItemDaoProps, 'selected'>;
 
 const Container = styled.button.attrs<Selectable>(({selected}) => {
   const baseClasses =
-    'group flex items-center p-2 space-x-2  w-full rounded-xl' +
-    ' focus-visible:ring-2 focus-visible:ring-primary-500 focus:outline-none';
+    'group flex items-center p-4 space-x-4  w-full rounded-xl' +
+    ' focus-visible:ring focus-visible:ring-primary focus:outline-none';
 
   return {
     className: selected
-      ? `${baseClasses} bg-ui-0`
-      : `${baseClasses} hover:bg-ui-50 focus:bg-ui-50 active:bg-ui-0`,
+      ? `${baseClasses} bg-neutral-0`
+      : `${baseClasses} hover:bg-neutral-50 focus:bg-neutral-50 active:bg-neutral-0`,
   };
 })<Selectable>``;
 
@@ -54,14 +54,14 @@ const Content = styled.div.attrs({
 })``;
 
 const Domain = styled.p.attrs({
-  className: 'ft-text-sm text-ui-500 truncate',
+  className: 'ft-text-sm text-neutral-500 truncate',
 })``;
 
 const DaoName = styled.p.attrs<Selectable>(({selected}) => {
   return {
     className: selected
-      ? 'font-bold truncate text-primary-500'
-      : 'truncate font-bold text-ui-600 group-hover:text-primary-500 group-active:text-primary-500',
+      ? 'font-semibold truncate text-primary-500'
+      : 'truncate font-semibold text-neutral-600 group-hover:text-primary-500 group-active:text-primary-500',
   };
 })<Selectable>``;
 
@@ -69,6 +69,6 @@ const IconContainer = styled.div.attrs<Selectable>(({selected}) => {
   return {
     className: selected
       ? 'ft-text-sm text-primary-500'
-      : 'ft-text-sm text-ui-400 group-hover:text-primary-500 group-active:text-primary-500',
+      : 'ft-text-sm text-neutral-400 group-hover:text-primary-500 group-active:text-primary-500',
   };
 })<Selectable>``;

@@ -49,7 +49,7 @@ export const Link = React.forwardRef<HTMLAnchorElement, LinkProps>(
         {...props}
         data-testid="link"
       >
-        <div className="mr-0.5 flex items-center gap-x-1">
+        <div className="mr-1 flex items-center gap-x-2">
           <Label>{label}</Label>
           {iconRight && <div>{iconRight}</div>}
         </div>
@@ -67,7 +67,7 @@ type StyledLinkProps = Pick<LinkProps, 'disabled'> & {
 
 const StyledLink = styled.a.attrs<StyledLinkProps>(({disabled, type}) => {
   let className =
-    'inline-flex flex-col gap-y-0.25 tablet:gap-y-0.5 max-w-full rounded cursor-pointer ';
+    'inline-flex flex-col gap-y-0.5 md:gap-y-1 max-w-full rounded cursor-pointer ';
   className += variants[type];
   className += disabled ? disabledColors[type] : defaultColors[type];
 
@@ -81,23 +81,23 @@ const Label = styled.span.attrs({
 })``;
 
 const Description = styled.p.attrs({
-  className: 'ft-text-sm text-ui-600 truncate',
+  className: 'ft-text-sm text-neutral-600 truncate',
 })``;
 
 const variants = {
   primary: `hover:text-primary-600 active:text-primary-800
-        focus-visible:ring focus-visible:ring-primary-200 focus-visible:bg-ui-50 `,
+        focus-visible:ring focus-visible:ring-primary-200 focus-visible:bg-neutral-50 `,
 
-  neutral: `hover:text-ui-800 active:text-ui-800
-        focus-visible:ring focus-visible:ring-primary-200 focus-visible:bg-ui-50 `,
+  neutral: `hover:text-neutral-800 active:text-neutral-800
+        focus-visible:ring focus-visible:ring-primary-200 focus-visible:bg-neutral-50 `,
 };
 
 const disabledColors = {
-  primary: 'text-ui-300 pointer-events-none ',
-  neutral: 'text-ui-300 pointer-events-none ',
+  primary: 'text-neutral-300 pointer-events-none ',
+  neutral: 'text-neutral-300 pointer-events-none ',
 };
 
 const defaultColors = {
   primary: 'text-primary-400 ',
-  neutral: 'text-ui-600 ',
+  neutral: 'text-neutral-600 ',
 };

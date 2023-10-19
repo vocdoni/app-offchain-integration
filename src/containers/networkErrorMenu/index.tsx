@@ -105,7 +105,7 @@ export const NetworkErrorMenu = () => {
 };
 
 const ModalHeader = styled.div.attrs({
-  className: 'flex p-3 bg-ui-0 rounded-xl gap-2 sticky top-0',
+  className: 'flex p-6 bg-neutral-0 rounded-xl gap-4 sticky top-0',
 })`
   box-shadow:
     0px 4px 8px rgba(31, 41, 51, 0.04),
@@ -114,15 +114,15 @@ const ModalHeader = styled.div.attrs({
 `;
 
 export const Title = styled.div.attrs({
-  className: 'flex-1 font-bold text-ui-800',
+  className: 'flex-1 font-semibold text-neutral-800',
 })``;
 
 const SubTitle = styled.div.attrs({
-  className: 'flex-1 font-medium text-ui-500 text-sm',
+  className: 'flex-1 font-medium text-neutral-500 text-sm leading-normal ',
 })``;
 
 const AvatarAddressContainer = styled.div.attrs({
-  className: 'flex flex-1 gap-1.5 items-center',
+  className: 'flex flex-1 gap-3 items-center',
 })``;
 
 const AddressContainer = styled.div.attrs({
@@ -130,21 +130,21 @@ const AddressContainer = styled.div.attrs({
 })``;
 
 export const ModalBody = styled.div.attrs({
-  className: 'flex flex-col px-3 pb-3',
+  className: 'flex flex-col px-6 pb-6',
 })``;
 
 export const StyledImage = styled.img.attrs({
-  className: 'h-20',
+  className: 'h-40',
 })``;
 
 export const WarningContainer = styled.div.attrs({
-  className: 'flex flex-col justify-center items-center space-y-1.5 mb-3',
+  className: 'flex flex-col justify-center items-center space-y-3 mb-6',
 })``;
 
 export const WarningTitle = styled.h2.attrs({
-  className: 'text-xl font-bold text-ui-800',
+  className: 'text-2xl leading-tight font-semibold text-neutral-800',
 })``;
 
 const WarningDescription = styled.p.attrs({
-  className: 'text-sm text-ui-500 text-center',
+  className: 'text-sm leading-normal text-neutral-500 text-center',
 })``;

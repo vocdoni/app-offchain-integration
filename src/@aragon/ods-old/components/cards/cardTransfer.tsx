@@ -23,7 +23,7 @@ export const CardTransfer: React.FC<CardTransferProps> = ({
   return (
     <CardContainer data-testid="cardTransfer">
       <Card label={fromLabel} copy={from} bgWhite={bgWhite} />
-      <IconChevronRight className="text-ui-600" />
+      <IconChevronRight className="text-neutral-600" />
       <Card label={toLabel} copy={to} bgWhite={bgWhite} />
     </CardContainer>
   );
@@ -46,28 +46,28 @@ const Card: React.FC<CardProps> = ({label, copy, bgWhite}) => {
 };
 
 const CardContainer = styled.div.attrs({
-  className: 'flex items-center space-x-1',
+  className: 'flex items-center space-x-2',
 })``;
 
 type ContainerProps = {bgWhite: boolean};
 const Container = styled.div.attrs<ContainerProps>(({bgWhite}) => {
   return {
-    className: `flex-1 py-1.5 px-2 min-w-0 text-left ${
-      bgWhite ? 'bg-ui-50' : 'bg-ui-0'
+    className: `flex-1 py-3 px-4 min-w-0 text-left ${
+      bgWhite ? 'bg-neutral-50' : 'bg-neutral-0'
     } rounded-xl`,
   };
 })<ContainerProps>``;
 
 const Label = styled.p.attrs({
-  className: 'ft-text-sm text-ui-500 capitalize',
+  className: 'ft-text-sm text-neutral-500 capitalize',
 })``;
 
 // TODO: Revisit address shortening
 type ValueProps = {isAddress: boolean};
 const Value = styled.p.attrs<ValueProps>(({isAddress}) => {
   const className = isAddress
-    ? 'font-bold text-ui-800'
-    : 'overflow-hidden font-bold text-ui-800 text-ellipsis whitespace-nowrap';
+    ? 'font-semibold text-neutral-800'
+    : 'overflow-hidden font-semibold text-neutral-800 text-ellipsis whitespace-nowrap';
 
   return {className};
 })<ValueProps>``;

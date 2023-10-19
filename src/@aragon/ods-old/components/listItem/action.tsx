@@ -51,7 +51,7 @@ export const ListItemAction: React.FC<ListItemActionProps> = ({
          to inherit the color (for example, when selected mode is on) */}
         <LabelContainer>
           <p
-            className={`font-bold ft-text-base ${
+            className={`font-semibold ft-text-base ${
               truncateText ? 'truncate' : ''
             }`}
           >
@@ -59,7 +59,7 @@ export const ListItemAction: React.FC<ListItemActionProps> = ({
           </p>
           {subtitle && (
             <p
-              className={`text-ui-500 ft-text-sm ${
+              className={`text-neutral-500 ft-text-sm ${
                 truncateText ? 'truncate' : ''
               }`}
             >
@@ -93,34 +93,34 @@ type InputContainerProps = Pick<ListItemActionProps, 'mode' | 'bgWhite'>;
 
 const Container = styled.button.attrs<InputContainerProps>(
   ({mode, bgWhite = false}) => {
-    const baseLayoutClasses = 'flex items-center gap-x-1.5 w-full';
+    const baseLayoutClasses = 'flex items-center gap-x-3 w-full';
     const baseStyleClasses =
-      'py-1.5 px-2 rounded-xl font-normal border-2 border-transparent';
+      'py-3 px-4 rounded-xl font-normal border-2 border-[transparent]';
     let className:
       | string
       | undefined = `${baseLayoutClasses} ${baseStyleClasses}`;
 
     switch (mode) {
       case 'disabled':
-        className += ' text-ui-300';
-        className += bgWhite ? ' bg-ui-0' : ' bg-ui-50';
+        className += ' text-neutral-300';
+        className += bgWhite ? ' bg-neutral-0' : ' bg-neutral-50';
         break;
       case 'selected':
         className += ' text-primary-500 border-primary-500';
-        className += bgWhite ? ' bg-primary-50' : ' bg-ui-0';
+        className += bgWhite ? ' bg-primary-50' : ' bg-neutral-0';
         break;
       default:
         {
           const focusClasses =
-            'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
+            'focus:outline-none focus-visible:ring focus-visible:ring-primary';
           const hoverClasses = 'hover:text-primary-500';
           let activeClasses = 'active:outline-none active:ring-0';
           activeClasses += bgWhite
             ? ' active:bg-primary-50'
-            : ' active:bg-ui-0';
+            : ' active:bg-neutral-0';
 
-          className += bgWhite ? ' bg-ui-0' : ' bg-ui-50';
-          className += ` text-ui-600 ${activeClasses} ${focusClasses} ${hoverClasses}`;
+          className += bgWhite ? ' bg-neutral-0' : ' bg-neutral-50';
+          className += ` text-neutral-600 ${activeClasses} ${focusClasses} ${hoverClasses}`;
         }
         break;
     }
@@ -133,5 +133,5 @@ const LabelContainer = styled.div.attrs({
   className: 'text-left overflow-hidden',
 })``;
 const LeftContent = styled.div.attrs({
-  className: 'flex items-center space-x-1.5 flex-1 overflow-hidden',
+  className: 'flex items-center space-x-3 flex-1 overflow-hidden',
 })``;

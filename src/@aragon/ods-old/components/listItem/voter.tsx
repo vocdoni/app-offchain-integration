@@ -55,11 +55,11 @@ export const ListItemVoter: FC<ListItemVoterProps> = ({
       <LeftSection>
         {!isMobile && <Avatar src={src ?? ''} />}
         <LeftContent>
-          <p className="flex font-semibold text-ui-800 ft-text-base">
+          <p className="flex font-semibold text-neutral-800 ft-text-base">
             {shortenAddress(label)}
-            {walletTag && <Tag {...walletTag} className="mx-1" />}
+            {walletTag && <Tag {...walletTag} className="mx-2" />}
           </p>
-          <p className="flex font-semibold text-ui-600 ft-text-sm">
+          <p className="flex font-semibold text-neutral-600 ft-text-sm">
             {tokenInfo?.amount} {tokenInfo?.symbol}
           </p>
         </LeftContent>
@@ -75,11 +75,11 @@ export const ListItemVoter: FC<ListItemVoterProps> = ({
             />
           )}
           {voteReplaced && (
-            <p className="text-ui-600 ft-text-xs">{voteReplacedLabel}</p>
+            <p className="text-neutral-600 ft-text-xs">{voteReplacedLabel}</p>
           )}
         </RightContent>
         {!isMobile && (
-          <span className="px-1.5">
+          <span className="px-3">
             <IconLinkExternal />
           </span>
         )}
@@ -92,36 +92,36 @@ type AvatarProps = Pick<ListItemVoterProps, 'src'>;
 
 const Avatar: FC<AvatarProps> = ({src}) => {
   if (!src) {
-    return <IconPerson className="h-2.5 w-2.5" />;
+    return <IconPerson className="h-5 w-5" />;
   }
   return <AvatarWallet src={src} />;
 };
 
 const Container = styled.button.attrs(() => {
   const baseLayoutClasses =
-    'flex items-center justify-between w-full border-ui-100 border-b-2';
-  const baseStyleClasses = 'bg-ui-0 pl-2 pr-1.5 py-1.5 ';
+    'flex items-center justify-between w-full border-neutral-100 border-b-2';
+  const baseStyleClasses = 'bg-neutral-0 pl-4 pr-3 py-3 ';
   let className:
     | string
     | undefined = `${baseLayoutClasses} ${baseStyleClasses}`;
 
   const focusVisibleClasses =
-    'focus-visible:ring-0 focus-visible:ring-transparent';
-  const hoverClasses = 'hover:text-primary-500 hover:shadow-100';
-  const activeClasses = 'active:outline-none active:border-ui-200';
+    'focus-visible:ring-0 focus-visible:ring-[transparent]';
+  const hoverClasses = 'hover:text-primary-500 hover:shadow-neutral';
+  const activeClasses = 'active:outline-none active:border-neutral-200';
 
-  className += ` text-ui-600 ${focusVisibleClasses} ${activeClasses} ${hoverClasses}`;
+  className += ` text-neutral-600 ${focusVisibleClasses} ${activeClasses} ${hoverClasses}`;
 
   return {className};
 })``;
 
 const LeftSection = styled.div.attrs({
-  className: 'flex items-center space-x-1.5',
+  className: 'flex items-center space-x-3',
 })``;
-const LeftContent = styled.div.attrs({className: 'space-y-0.5'})``;
+const LeftContent = styled.div.attrs({className: 'space-y-1'})``;
 const RightContent = styled.div.attrs({
-  className: 'flex flex-col items-end space-y-0.5',
+  className: 'flex flex-col items-end space-y-1',
 })``;
 const RightSection = styled.div.attrs({
-  className: 'flex space-x-1.5 items-center ft-text-sm',
+  className: 'flex space-x-3 items-center ft-text-sm',
 })``;

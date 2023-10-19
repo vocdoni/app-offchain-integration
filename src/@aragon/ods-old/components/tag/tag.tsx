@@ -3,7 +3,7 @@ import React from 'react';
 import type {TagColorScheme, TagProps} from './tag.api';
 
 const colorSchemeClass: Record<TagColorScheme, string> = {
-  neutral: 'bg-ui-100 text-ui-600',
+  neutral: 'bg-neutral-100 text-neutral-600',
   info: 'bg-info-200 text-info-800',
   warning: 'bg-warning-200 text-warning-800',
   critical: 'bg-critical-200 text-critical-800',
@@ -15,7 +15,7 @@ export const Tag: React.FC<TagProps> = props => {
   const {label, colorScheme = 'neutral', className} = props;
 
   const classes = classNames(
-    'flex rounded px-0.5 py-0.1 text-center font-bold ft-text-sm',
+    'flex rounded px-1 py-0.25 text-center font-semibold ft-text-sm',
     colorSchemeClass[colorScheme],
     className
   );

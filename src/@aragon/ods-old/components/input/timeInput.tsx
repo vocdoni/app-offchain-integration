@@ -115,17 +115,17 @@ export type StyledContainerProps = Pick<
 const Container = styled.div.attrs<StyledContainerProps>(
   ({mode, disabled, width}) => {
     let className = `${
-      disabled ? 'bg-ui-100' : 'bg-ui-0'
-    } inline-flex p-1 bg-ui-0 ${
-      width ? '' : 'w-30'
+      disabled ? 'bg-neutral-100' : 'bg-neutral-0'
+    } inline-flex p-2 bg-neutral-0 ${
+      width ? '' : 'w-60'
     } focus:outline-none items-center font-normal
-      focus-within:ring-2 focus-within:ring-primary-500 justify-between
-      rounded-xl hover:border-ui-300 border-2 active:border-primary-500
+      focus-within:ring focus-within:ring-primary justify-between
+      rounded-xl hover:border-neutral-300 border-2 active:border-primary-500
       active:ring-0
     `;
 
     if (mode === 'default') {
-      className += 'border-ui-100';
+      className += 'border-neutral-100';
     } else if (mode === 'success') {
       className += 'border-success-600';
     } else if (mode === 'warning') {
@@ -143,8 +143,8 @@ const Container = styled.div.attrs<StyledContainerProps>(
 
 const StyledTimeInput = styled.input.attrs(({disabled}) => {
   const className: string | undefined = `${
-    disabled ? 'text-ui-300' : 'text-ui-600'
-  } bg-transparent focus:outline-none margin-0 w-full`;
+    disabled ? 'text-neutral-300' : 'text-neutral-600'
+  } bg-[transparent] focus:outline-none margin-0 w-full`;
 
   return {
     className,

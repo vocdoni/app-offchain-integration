@@ -68,7 +68,7 @@ export const DelegateVotingSuccess: React.FC<
   const description = isReclaim ? 'successReclaimDesc' : 'successDelegateDesc';
 
   return (
-    <div className="flex flex-col gap-3 text-center">
+    <div className="flex flex-col gap-6 text-center">
       <FormGroup>
         <IllustrationHuman
           width={343}
@@ -78,8 +78,10 @@ export const DelegateVotingSuccess: React.FC<
           hair="curly"
           accessory="piercings_tattoo"
         />
-        <p className="text-xl text-ui-800">{t(`modal.delegation.${title}`)}</p>
-        <p className="text-ui-600">
+        <p className="text-2xl leading-tight text-neutral-800">
+          {t(`modal.delegation.${title}`)}
+        </p>
+        <p className="text-neutral-600">
           {t(`modal.delegation.${description}`, {
             balance: tokenAmount,
             tokenSymbol: daoToken?.symbol,
@@ -106,4 +108,4 @@ export const DelegateVotingSuccess: React.FC<
   );
 };
 
-const FormGroup = styled.div.attrs({className: 'flex flex-col gap-1.5'})``;
+const FormGroup = styled.div.attrs({className: 'flex flex-col gap-3'})``;

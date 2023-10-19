@@ -63,7 +63,7 @@ const DaoSelectMenu: React.FC = () => {
             onClick={handleBackButtonClick}
           />
           <Title>{t('daoSwitcher.title')}</Title>
-          <div role="presentation" className="h-4 w-4" />
+          <div role="presentation" className="h-8 w-8" />
         </ModalHeader>
         <ModalContentContainer>
           <ListGroup>
@@ -92,7 +92,7 @@ const DaoSelectMenu: React.FC = () => {
             })}
           </ListGroup>
         </ModalContentContainer>
-        <div className="p-3">
+        <div className="p-6">
           <ButtonText
             mode="secondary"
             size="large"
@@ -113,7 +113,8 @@ const DaoSelectMenu: React.FC = () => {
 export default DaoSelectMenu;
 
 const ModalHeader = styled.div.attrs({
-  className: 'flex items-center p-2 space-x-2 bg-ui-0 rounded-xl sticky top-0',
+  className:
+    'flex items-center p-4 space-x-4 bg-neutral-0 rounded-xl sticky top-0',
 })`
   box-shadow:
     0px 4px 8px rgba(31, 41, 51, 0.04),
@@ -122,13 +123,13 @@ const ModalHeader = styled.div.attrs({
 `;
 
 const Title = styled.div.attrs({
-  className: 'flex-1 font-bold text-center text-ui-800',
+  className: 'flex-1 font-semibold text-center text-neutral-800',
 })``;
 
 const ModalContentContainer = styled.div.attrs({
-  className: 'p-3 pb-0 space-y-3 tablet:w-50 desktop:w-auto overflow-auto',
+  className: 'p-6 pb-0 space-y-6 md:w-[400px] xl:w-auto overflow-auto',
 })``;
 
 const ListGroup = styled.div.attrs({
-  className: 'space-y-1.5',
+  className: 'space-y-3',
 })``;

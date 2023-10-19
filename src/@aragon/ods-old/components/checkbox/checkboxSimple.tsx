@@ -28,7 +28,7 @@ export const CheckboxSimple: React.FC<CheckboxSimpleProps> = ({
       onClick={onClick}
     >
       {Icons[multiSelect ? 'multiSelect' : 'radio'][state]}
-      <p className="font-bold">{label}</p>
+      <p className="font-semibold">{label}</p>
     </Container>
   );
 };
@@ -41,13 +41,13 @@ type ContainerTypes = {
 
 const Container = styled.div.attrs<ContainerTypes>(
   ({disabled, state, iconLeft}) => ({
-    className: `flex w-max space-x-1.5 items-center ${
+    className: `flex w-max space-x-3 items-center ${
       !iconLeft && 'flex-row-reverse space-x-reverse'
     } ${
       disabled
-        ? 'text-ui-300'
+        ? 'text-neutral-300'
         : `cursor-pointer hover:text-primary-500 ${
-            state !== 'default' ? 'text-primary-500' : 'text-ui-600'
+            state !== 'default' ? 'text-primary-500' : 'text-neutral-600'
           }`
     }`,
   })

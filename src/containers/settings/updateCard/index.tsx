@@ -18,9 +18,9 @@ export const SettingsUpdateCard: React.FC = () => {
 
   if (isDesktop) {
     return (
-      <Container className="desktop:gap-x-3 desktop:p-3">
-        <div className="flex items-start gap-x-6">
-          <div className="flex-1 space-y-1">
+      <Container className="xl:gap-x-6 xl:p-6">
+        <div className="flex items-start gap-x-12">
+          <div className="flex-1 space-y-2">
             <Head>
               <IconUpdate />
               <Title>{t('update.alert.title')}</Title>
@@ -77,11 +77,12 @@ export const SettingsUpdateCard: React.FC = () => {
 };
 
 const Container = styled.div.attrs({
-  className: 'gap-x-2 p-2 space-y-1 bg-primary-400 rounded-xl' as string,
+  className: 'gap-x-4 p-4 space-y-2 bg-primary-400 rounded-xl' as string,
 })``;
 
 const Head = styled.div.attrs({
-  className: 'flex items-center space-x-1.5 font-semibold text-ui-0 ft-text-lg',
+  className:
+    'flex items-center space-x-3 font-semibold text-neutral-0 ft-text-lg',
 })``;
 
 const Title = styled.p.attrs({})``;
@@ -89,5 +90,5 @@ const Title = styled.p.attrs({})``;
 const Description = styled.p.attrs({className: 'ft-text-base'})``;
 
 const ContentWrapper = styled.div.attrs({
-  className: 'pl-3.5 space-y-1.5 text-primary-50' as string,
+  className: 'pl-7 space-y-3 text-primary-50' as string,
 })``;

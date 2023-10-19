@@ -61,13 +61,11 @@ export const CardWallet: React.FC<CardWalletProps> = ({
 
 type ContainerProps = Pick<CardWalletProps, 'wide'>;
 const Card = styled.div.attrs<ContainerProps>(({wide}) => ({
-  className: `flex items-center ${
-    wide && 'w-full justify-between'
-  } space-x-1.5`,
+  className: `flex items-center ${wide && 'w-full justify-between'} space-x-3`,
 }))``;
 
 const Content = styled.div.attrs({
-  className: 'flex items-center space-x-1.5',
+  className: 'flex items-center space-x-3',
 })``;
 
 const TextContainer = styled.div.attrs({
@@ -75,9 +73,9 @@ const TextContainer = styled.div.attrs({
 })``;
 
 const Title = styled.p.attrs({
-  className: 'text-ui-700 font-bold',
+  className: 'text-neutral-700 font-semibold',
 })``;
 
 const Subtitle = styled.p.attrs({
-  className: 'ft-text-sm text-ui-500',
+  className: 'ft-text-sm text-neutral-500',
 })``;

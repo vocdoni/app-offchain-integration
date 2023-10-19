@@ -48,7 +48,7 @@ export const CheckboxListItem: React.FC<CheckboxListItemProps> = ({
       {...(disabled ? {} : {onClick})}
     >
       <HStack disabled={disabled} type={type}>
-        <p className="font-bold">{label}</p>
+        <p className="font-semibold">{label}</p>
         {Icons[multiSelect ? 'multiSelect' : 'radio'][type]}
       </HStack>
       {helptext && <Helptext>{helptext}</Helptext>}
@@ -62,30 +62,30 @@ type ContainerTypes = {
 };
 
 const Container = styled.div.attrs<ContainerTypes>(({disabled, type}) => ({
-  className: `py-1.5 px-2 rounded-xl border-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
+  className: `py-3 px-4 rounded-xl border-2 focus:outline-none focus-visible:ring focus-visible:ring-primary ${
     disabled
-      ? 'bg-ui-100 border-ui-300'
-      : `bg-ui-0 group hover:border-primary-500 cursor-pointer ${
+      ? 'bg-neutral-100 border-neutral-300'
+      : `bg-neutral-0 group hover:border-primary-500 cursor-pointer ${
           type === 'error'
             ? 'border-critical-500'
             : type !== 'default'
             ? 'border-primary-500'
-            : 'border-ui-100'
+            : 'border-neutral-100'
         }`
   }`,
   tabIndex: disabled ? -1 : 0,
 }))<ContainerTypes>``;
 
 const HStack = styled.div.attrs<ContainerTypes>(({disabled, type}) => ({
-  className: `flex justify-between items-center group-hover:text-primary-500 space-x-1.5 ${
+  className: `flex justify-between items-center group-hover:text-primary-500 space-x-3 ${
     disabled
-      ? 'text-ui-600'
+      ? 'text-neutral-600'
       : type === 'default' || type === 'error'
-      ? 'text-ui-600'
+      ? 'text-neutral-600'
       : 'text-primary-500'
   }`,
 }))<ContainerTypes>``;
 
 const Helptext = styled.p.attrs({
-  className: 'ft-text-sm text-ui-500 mt-0.25 mr-3.5',
+  className: 'ft-text-sm text-neutral-500 mt-0.5 mr-7',
 })``;

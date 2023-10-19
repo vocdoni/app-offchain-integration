@@ -51,7 +51,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
           return (
             <div
               key={index}
-              className="flex items-center space-x-1 desktop:space-x-1.5"
+              className="flex items-center space-x-2 xl:space-x-3"
             >
               <Crumb
                 first={index === 0}
@@ -61,7 +61,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
                 tag={tag}
                 {...(isLast ? {} : {onClick: () => onClick?.(path)})}
               />
-              {!isLast && <IconChevronRight className="text-ui-300" />}
+              {!isLast && <IconChevronRight className="text-neutral-300" />}
             </div>
           );
         })}
@@ -77,7 +77,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
             onClick={() => onClick?.(crumbs.path)}
             bgWhite
           />
-          <p className="font-bold">{crumbs?.label}</p>
+          <p className="font-semibold">{crumbs?.label}</p>
           {tag}
         </ProcessCrumbContainer>
       </ProcessContainer>
@@ -87,15 +87,15 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
 
 const Container = styled.div.attrs({
   className:
-    'inline-flex items-center py-0.5 desktop:px-2 space-x-1 ' +
-    'desktop:space-x-1.5 h-5 desktop:h-6 desktop:bg-ui-0 desktop:rounded-xl',
+    'inline-flex items-center py-1 xl:px-4 space-x-2 ' +
+    'xl:space-x-3 h-10 xl:h-12 xl:bg-neutral-0 xl:rounded-xl',
 })``;
 
 const ProcessContainer = styled.div.attrs({
   className:
-    'inline-flex py-0.5 desktop:pr-2 desktop:pl-0.5 desktop:rounded-xl desktop:bg-ui-0 h-6',
+    'inline-flex py-1 xl:pr-4 xl:pl-1 xl:rounded-xl xl:bg-neutral-0 h-12',
 })``;
 
 const ProcessCrumbContainer = styled.div.attrs({
-  className: 'flex items-center space-x-1.5 font-bold text-ui-600',
+  className: 'flex items-center space-x-3 font-semibold text-neutral-600',
 })``;

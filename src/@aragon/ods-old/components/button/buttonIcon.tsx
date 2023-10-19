@@ -44,9 +44,9 @@ export const ButtonIcon = React.forwardRef<HTMLButtonElement, ButtonIconProps>(
 ButtonIcon.displayName = 'ButtonIcon';
 
 const paddingStyles = {
-  small: 'w-4 p-1',
-  medium: 'w-5 p-1.5',
-  large: 'w-6 p-2',
+  small: 'w-8 p-2',
+  medium: 'w-10 p-3',
+  large: 'w-12 p-4',
 };
 
 type StyledButtonProps = {
@@ -63,26 +63,34 @@ const StyledButton = styled(ButtonBase).attrs<StyledButtonProps>(
     switch (mode) {
       case 'secondary':
         className = `${
-          bgWhite ? 'bg-ui-50 disabled:bg-ui-50' : 'bg-ui-0 disabled:bg-ui-100'
-        } ${isActive ? 'text-ui-800 bg-ui-200' : 'text-ui-600'} ${
+          bgWhite
+            ? 'bg-neutral-50 disabled:bg-neutral-50'
+            : 'bg-neutral-0 disabled:bg-neutral-100'
+        } ${
+          isActive ? 'text-neutral-800 bg-neutral-200' : 'text-neutral-600'
+        } ${
           paddingStyles[size]
-        } hover:text-ui-800 hover:bg-ui-100 active:text-ui-800 active:bg-ui-200 disabled:text-ui-300`;
+        } hover:text-neutral-800 hover:bg-neutral-100 active:text-neutral-800 active:bg-neutral-200 disabled:text-neutral-300`;
         break;
 
       case 'ghost':
         className = `${
           bgWhite
-            ? `${isActive ? 'bg-primary-50' : 'bg-ui-0'} active:bg-primary-50`
-            : `${isActive ? 'bg-ui-0' : 'bg-transparent'} active:bg-ui-0`
-        } ${isActive ? 'ext-primary-500' : 'text-ui-500'} ${
+            ? `${
+                isActive ? 'bg-primary-50' : 'bg-neutral-0'
+              } active:bg-primary-50`
+            : `${
+                isActive ? 'bg-neutral-0' : 'bg-[transparent]'
+              } active:bg-neutral-0`
+        } ${isActive ? 'text-primary-500' : 'text-neutral-500'} ${
           paddingStyles[size]
-        } focus:text-primary-400 hover:text-primary-500 active:text-primary-500 disabled:text-ui-300 disabled:bg-transparent`;
+        } focus:text-primary-400 hover:text-primary-500 active:text-primary-500 disabled:text-neutral-300 disabled:bg-[transparent]`;
         break;
 
       default:
         className = `${isActive ? 'bg-primary-700' : 'bg-primary-400'} ${
           paddingStyles[size]
-        } text-ui-0 hover:bg-primary-500 active:bg-primary-700 disabled:text-primary-300 disabled:bg-primary-100`;
+        } text-neutral-0 hover:bg-primary-500 active:bg-primary-700 disabled:text-primary-300 disabled:bg-primary-100`;
         break;
     }
 

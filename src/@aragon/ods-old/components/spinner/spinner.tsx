@@ -27,14 +27,14 @@ const StyledSpinner = styled.div.attrs<SpinnerProps>(({size}) => {
   // added it as a new size so as to avoid refactoring existing components
   // TODO clean up sizes.
   const sizes: SizesType = {
-    xs: 'w-2 h-2',
-    small: 'w-3 h-3',
-    default: 'w-5 h-5',
-    big: 'w-6 h-6',
+    xs: 'w-4 h-4',
+    small: 'w-6 h-6',
+    default: 'w-10 h-10',
+    big: 'w-12 h-12',
   };
   const className = `rounded-full
         ease-linear border-2
-        border-t-2 border-transparent
+        border-t-2 border-neutral-0
         ${sizes[size]}
     `;
 

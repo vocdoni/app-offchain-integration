@@ -104,7 +104,7 @@ export const DelegationGatingMenu: React.FC = () => {
       isOpen={isOpen}
       title={t('modal.delegationActive.label')}
     >
-      <div className="flex flex-col gap-3 px-2 py-3 text-center">
+      <div className="flex flex-col gap-6 px-4 py-6 text-center">
         <ContentGroup className="items-center">
           {needsSelfDelegation ? (
             <IllustrationHuman
@@ -118,8 +118,10 @@ export const DelegationGatingMenu: React.FC = () => {
           ) : (
             <IlluObject object="warning" />
           )}
-          <p className="text-xl text-ui-800">{t(`modal.${bodyLabel}.title`)}</p>
-          <p className="text-ui-600">
+          <p className="text-2xl leading-tight text-neutral-800">
+            {t(`modal.${bodyLabel}.title`)}
+          </p>
+          <p className="text-neutral-600">
             {t(`modal.${bodyLabel}.desc`, {
               balance: tokenAmount,
               tokenSymbol: daoToken?.symbol,
@@ -157,5 +159,5 @@ export const DelegationGatingMenu: React.FC = () => {
 };
 
 const ContentGroup = styled.div.attrs({
-  className: 'flex flex-col gap-1.5' as string,
+  className: 'flex flex-col gap-3' as string,
 })``;

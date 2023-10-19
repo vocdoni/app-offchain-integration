@@ -241,14 +241,14 @@ const DateTimeSelector: React.FC<Props> = ({
 
 export default DateTimeSelector;
 const InputWrapper = styled.div.attrs({
-  className: 'space-y-0.5 w-1/2 tablet:w-full',
+  className: 'space-y-1 w-1/2 md:w-full',
 })``;
 
 const LabelWrapper = styled.span.attrs({
-  className: 'text-sm font-bold text-ui-800 capitalize',
+  className: 'text-sm leading-normal font-semibold text-neutral-800 capitalize',
 })``;
 
 const SpecificTimeContainer = styled.div.attrs({
   className:
-    'flex flex-col tablet:flex-row space-y-1.5 tablet:space-y-0 tablet:space-x-1.5 p-3 bg-ui-0 rounded-xl',
+    'flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3 p-6 bg-neutral-0 rounded-xl',
 })``;

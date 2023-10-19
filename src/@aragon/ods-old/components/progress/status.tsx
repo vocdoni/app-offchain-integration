@@ -69,8 +69,8 @@ export const ProgressStatus: React.FC<ProgressStatusProps> = ({
       {block && mayHaveBlock && (
         <BlockContainer>
           <p>{block}</p>
-          <div className="pt-0.25">
-            <IconBlock className="text-ui-400" />
+          <div className="pt-0.5">
+            <IconBlock className="text-neutral-400" />
           </div>
         </BlockContainer>
       )}{' '}
@@ -83,27 +83,27 @@ type ModeProps = {
 };
 
 const TopContainer = styled.div.attrs({
-  className: 'flex justify-between gap-x-1.5',
+  className: 'flex justify-between gap-x-3',
 })``;
 
 const LeftContainer = styled.div.attrs<ModeProps>(({mode}) => {
-  const className: string | undefined = `flex space-x-1.5 ${textColors[mode]}`;
+  const className: string | undefined = `flex space-x-3 ${textColors[mode]}`;
   return {className};
 })<ModeProps>``;
 
-const IconContainer = styled.div.attrs({className: 'my-2'})``;
+const IconContainer = styled.div.attrs({className: 'my-4'})``;
 
-const LabelContainer = styled.div.attrs({className: 'my-1.5'})``;
+const LabelContainer = styled.div.attrs({className: 'my-3'})``;
 
 const BlockContainer = styled.div.attrs({
   className:
-    'flex items-start max-h-full space-x-1 my-2 text-ui-500 ft-text-sm',
+    'flex items-start max-h-full space-x-2 my-4 text-neutral-500 ft-text-sm',
 })``;
 
 const textColors: Record<ModeType, string> = {
   active: 'text-primary-500',
   upcoming: 'text-primary-500',
-  done: 'text-ui-800',
+  done: 'text-neutral-800',
   succeeded: 'text-success-800',
   failed: 'text-critical-800',
 };
@@ -111,7 +111,7 @@ const textColors: Record<ModeType, string> = {
 const iconColors: Record<ModeType, string> = {
   active: 'text-primary-500',
   upcoming: 'text-primary-500',
-  done: 'text-ui-600',
+  done: 'text-neutral-600',
   succeeded: 'text-success-500',
   failed: 'text-critical-500',
 };
@@ -144,17 +144,17 @@ const CustomLabel: React.FC<CustomLabelProps> = ({label, helpText}) => {
 };
 
 const VStack = styled.div.attrs({
-  className: 'space-y-0.5',
+  className: 'space-y-1',
 })``;
 
 const LabelLine = styled.div.attrs({
-  className: 'flex space-x-1.5',
+  className: 'flex space-x-3',
 })``;
 
 const Heading = styled.p.attrs({
-  className: 'font-bold',
+  className: 'font-semibold',
 })``;
 
 const HelpText = styled.p.attrs({
-  className: 'ft-text-sm font-normal text-ui-500',
+  className: 'ft-text-sm font-normal text-neutral-500',
 })``;

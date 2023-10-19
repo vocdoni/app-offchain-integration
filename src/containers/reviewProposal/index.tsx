@@ -296,30 +296,32 @@ const ReviewProposal: React.FC<ReviewProposalProps> = ({
 
 export default ReviewProposal;
 
-const Header = styled.p.attrs({className: 'font-bold text-ui-800 text-3xl'})``;
+const Header = styled.p.attrs({
+  className: 'font-semibold text-neutral-800 text-4xl leading-tight',
+})``;
 
 const BadgeContainer = styled.div.attrs({
-  className: 'tablet:flex items-baseline mt-3 tablet:space-x-3',
+  className: 'md:flex items-baseline mt-6 md:space-x-6',
 })``;
 
 const ProposerLink = styled.p.attrs({
-  className: 'mt-1.5 tablet:mt-0 text-ui-500',
+  className: 'mt-3 md:mt-0 text-neutral-500',
 })``;
 
 const SummaryText = styled.p.attrs({
-  className: 'text-lg text-ui-600 mt-3',
+  className: 'text-xl leading-normal text-neutral-600 mt-6',
 })``;
 
 const ProposalContainer = styled.div.attrs({
-  className: 'space-y-3 tablet:w-3/5',
+  className: 'space-y-6 md:w-3/5',
 })``;
 
 const AdditionalInfoContainer = styled.div.attrs({
-  className: 'space-y-3 tablet:w-2/5',
+  className: 'space-y-6 md:w-2/5',
 })``;
 
 const ContentContainer = styled.div.attrs({
-  className: 'mt-3 tablet:flex tablet:space-x-3 space-y-3 tablet:space-y-0',
+  className: 'mt-6 md:flex md:space-x-6 space-y-6 md:space-y-0',
 })``;
 
 export const StyledEditorContent = styled(EditorContent)`

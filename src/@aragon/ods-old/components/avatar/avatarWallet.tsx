@@ -19,8 +19,8 @@ type SizesType = Record<
 >;
 
 const styles: SizesType = {
-  small: {style: 'w-2 h-2', scale: 2},
-  medium: {style: 'w-3 h-3', scale: 3},
+  small: {style: 'w-4 h-4', scale: 2},
+  medium: {style: 'w-6 h-6', scale: 3},
 };
 
 export const AvatarWallet: React.FC<AvatarWalletProps> = ({

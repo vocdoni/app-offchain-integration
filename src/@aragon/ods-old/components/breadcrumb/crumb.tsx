@@ -16,14 +16,16 @@ const Crumb: React.FC<CrumbProps> = props => {
   return (
     <CrumbContainer
       onClick={props.onClick}
-      className={props.last ? 'cursor-default text-ui-600' : 'text-primary-500'}
+      className={
+        props.last ? 'cursor-default text-neutral-600' : 'text-primary-500'
+      }
     >
       {props.first &&
         props.icon &&
         React.cloneElement(props.icon, {
-          className: 'desktop:w-2.5 desktop:h-2.5',
+          className: 'xl:w-5 xl:h-5',
         })}
-      <p className="font-bold">{props.label}</p>
+      <p className="font-semibold">{props.label}</p>
       {props.last && props.tag}
     </CrumbContainer>
   );
@@ -32,5 +34,5 @@ const Crumb: React.FC<CrumbProps> = props => {
 export default Crumb;
 
 const CrumbContainer = styled.button.attrs({
-  className: 'flex items-center space-x-1 desktop:space-x-1.5' as string,
+  className: 'flex items-center space-x-2 xl:space-x-3' as string,
 })``;
