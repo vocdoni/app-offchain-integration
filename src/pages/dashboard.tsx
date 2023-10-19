@@ -2,6 +2,7 @@ import {
   ButtonText,
   HeaderDao,
   IconCheckmark,
+  IconClose,
   IconSpinner,
   IlluObject,
   IllustrationHuman,
@@ -13,32 +14,32 @@ import styled from 'styled-components';
 
 import {Loading} from 'components/temporary';
 import {MembershipSnapshot} from 'containers/membershipSnapshot';
-import ProposalSnapshot from 'containers/proposalSnapshot';
-import TreasurySnapshot from 'containers/treasurySnapshot';
-import {useAlertContext} from 'context/alert';
-import {NavigationDao} from 'context/apolloClient';
-import {useNetwork} from 'context/network';
-import {useDaoQuery} from 'hooks/useDaoDetails';
-import {useDaoVault} from 'hooks/useDaoVault';
-import {usePendingDao, useRemovePendingDaoMutation} from 'hooks/usePendingDao';
-import {PluginTypes} from 'hooks/usePluginClient';
-import useScreen from 'hooks/useScreen';
-import {CHAIN_METADATA} from 'utils/constants';
-import {formatDate} from 'utils/date';
-import {toDisplayEns} from 'utils/library';
-import {Dashboard as DashboardPath, NotFound} from 'utils/paths';
-import {Container} from './governance';
 import {
   EmptyStateContainer,
   EmptyStateHeading,
 } from 'containers/pageEmptyState';
+import ProposalSnapshot from 'containers/proposalSnapshot';
+import TreasurySnapshot from 'containers/treasurySnapshot';
+import {useAlertContext} from 'context/alert';
+import {NavigationDao} from 'context/apolloClient';
 import {useGlobalModalContext} from 'context/globalModals';
-import {useProposals} from 'services/aragon-sdk/queries/use-proposals';
+import {useNetwork} from 'context/network';
+import {useDaoQuery} from 'hooks/useDaoDetails';
+import {useDaoVault} from 'hooks/useDaoVault';
 import {
   useAddFollowedDaoMutation,
   useFollowedDaosQuery,
   useRemoveFollowedDaoMutation,
 } from 'hooks/useFollowedDaos';
+import {usePendingDao, useRemovePendingDaoMutation} from 'hooks/usePendingDao';
+import {PluginTypes} from 'hooks/usePluginClient';
+import useScreen from 'hooks/useScreen';
+import {useProposals} from 'services/aragon-sdk/queries/use-proposals';
+import {CHAIN_METADATA} from 'utils/constants';
+import {formatDate} from 'utils/date';
+import {toDisplayEns} from 'utils/library';
+import {Dashboard as DashboardPath, NotFound} from 'utils/paths';
+import {Container} from './governance';
 
 enum DaoCreationState {
   ASSEMBLING_DAO,
@@ -63,15 +64,27 @@ export const Dashboard: React.FC = () => {
 
   // following DAOS
   const addFollowedDaoMutation = useAddFollowedDaoMutation({
-    onMutate: () => alert(t('alert.chip.favorited')),
+    onMutate: () => {
+      alert(t('alert.chip.favorited'));
+    },
   });
 
   const removeFollowedDaoMutation = useRemoveFollowedDaoMutation({
-    onMutate: () => alert(t('alert.chip.unfavorite')),
+    onMutate: () => {
+      alert(t('alert.chip.unfavorite'), <IconClose />);
+    },
   });
 
-  const {data: fallowedDaos, isLoading: followedDaosLoading} =
-    useFollowedDaosQuery();
+  const {
+    data: fallowedDaos,
+    isLoading: followedDaosLoading,
+    isFetching: followedDaosFetching,
+  } = useFollowedDaosQuery();
+
+  const enableFollowing =
+    !followedDaosFetching &&
+    !addFollowedDaoMutation.isLoading &&
+    !removeFollowedDaoMutation.isLoading;
 
   // live DAO
   const {
@@ -172,21 +185,28 @@ export const Dashboard: React.FC = () => {
 
   const handleFollowedClick = useCallback(
     async (dao: NavigationDao) => {
-      try {
-        if (isFollowedDao) {
-          await removeFollowedDaoMutation.mutateAsync({dao});
-        } else {
-          await addFollowedDaoMutation.mutateAsync({dao});
-        }
-      } catch (error) {
-        const action = isFollowedDao
-          ? 'removing DAO from list of followed DAOs'
-          : 'adding DAO to list of followed DAOs';
+      if (enableFollowing) {
+        try {
+          if (isFollowedDao) {
+            await removeFollowedDaoMutation.mutateAsync({dao});
+          } else {
+            await addFollowedDaoMutation.mutateAsync({dao});
+          }
+        } catch (error) {
+          const action = isFollowedDao
+            ? 'removing DAO from list of followed DAOs'
+            : 'adding DAO to list of followed DAOs';
 
-        console.error(`Error ${action}`, error);
+          console.error(`Error ${action}`, error);
+        }
       }
     },
-    [isFollowedDao, removeFollowedDaoMutation, addFollowedDaoMutation]
+    [
+      enableFollowing,
+      isFollowedDao,
+      removeFollowedDaoMutation,
+      addFollowedDaoMutation,
+    ]
   );
 
   /*************************************************
@@ -282,7 +302,7 @@ export const Dashboard: React.FC = () => {
             daoType={daoType}
             following={isFollowedDao}
             onCopy={onCopy}
-            onFollowClick={() =>
+            onFollowClick={() => {
               handleFollowedClick({
                 address: liveDao.address.toLowerCase(),
                 chain: CHAIN_METADATA[network].id,
@@ -293,14 +313,12 @@ export const Dashboard: React.FC = () => {
                   avatar: liveDao?.metadata?.avatar,
                   description: liveDao.metadata.description,
                 },
-              })
-            }
+              });
+            }}
             links={links}
             translation={{
               follow: t('dao.follow.false'),
               following: t('dao.follow.true'),
-              readLess: '',
-              readMore: '',
             }}
           />
         </HeaderWrapper>
