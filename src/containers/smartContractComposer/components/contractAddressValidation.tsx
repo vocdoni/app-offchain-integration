@@ -686,23 +686,24 @@ const ContractAddressValidation: React.FC<Props> = props => {
                   // Manual ABI flow starting
                   // setABIFlowState(ManualABIFlowState.ABI_INPUT);
 
-                //Retry
-                resetField('contractAddress', {defaultValue: ''});
-                setVerificationState(TransactionState.WAITING);
-                setABIFlowState(ManualABIFlowState.NOT_STARTED);
+                  //Retry
+                  resetField('contractAddress', {defaultValue: ''});
+                  setVerificationState(TransactionState.WAITING);
+                  setABIFlowState(ManualABIFlowState.NOT_STARTED);
+                }
+              }}
+              iconLeft={
+                isTransactionLoading ? (
+                  <Spinner size="xs" color="white" />
+                ) : undefined
               }
-            }}
-            iconLeft={
-              isTransactionLoading ? (
-                <Spinner size="xs" color="white" />
-              ) : undefined
-            }
-            iconRight={icons[verificationState]}
-            isActive={isTransactionLoading}
-            disabled={isButtonDisabled}
-            size="large"
-            className="mt-6 w-full"
-          />
+              iconRight={icons[verificationState]}
+              isActive={isTransactionLoading}
+              disabled={isButtonDisabled}
+              size="large"
+              className="mt-6 w-full"
+            />
+          )
         )}
         {isTransactionError && ABIFlowState === ManualABIFlowState.WAITING && (
           <ButtonText
