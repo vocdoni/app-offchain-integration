@@ -1,4 +1,4 @@
-import {AlertInline, CheckboxListItem, Label} from '@aragon/ods';
+import {AlertInline, CheckboxListItem, Label} from '@aragon/ods-old';
 import React, {useCallback, useMemo, useState} from 'react';
 import {Controller, useFormContext, useWatch} from 'react-hook-form';
 import {useTranslation} from 'react-i18next';
@@ -112,7 +112,7 @@ const SetupMultisigVotingForm: React.FC = () => {
 
   // handles the toggling between start time options
   const handleStartToggle = useCallback(
-    (changeValue, onChange: (value: string) => void) => {
+    (changeValue: string, onChange: (value: string) => void) => {
       onChange(changeValue);
       if (changeValue === 'now') resetStartDate();
       else setValue('startUtc', currTimezone);
@@ -122,7 +122,7 @@ const SetupMultisigVotingForm: React.FC = () => {
 
   // handles the toggling between end time options
   const handleEndToggle = useCallback(
-    (changeValue, onChange: (value: string) => void) => {
+    (changeValue: string, onChange: (value: string) => void) => {
       onChange(changeValue);
 
       if (changeValue === 'duration') resetEndDate();
@@ -205,7 +205,9 @@ const SetupMultisigVotingForm: React.FC = () => {
             <ToggleCheckList
               items={startItems}
               value={value}
-              onChange={changeValue => handleStartToggle(changeValue, onChange)}
+              onChange={changeValue =>
+                handleStartToggle(changeValue as string, onChange)
+              }
             />
           )}
         />
@@ -238,7 +240,9 @@ const SetupMultisigVotingForm: React.FC = () => {
             <ToggleCheckList
               value={value}
               items={expirationItems}
-              onChange={changeValue => handleEndToggle(changeValue, onChange)}
+              onChange={changeValue =>
+                handleEndToggle(changeValue as string, onChange)
+              }
             />
           )}
         />
@@ -305,7 +309,7 @@ export const ToggleCheckList: React.FC<Props> = ({onChange, items, value}) => {
 };
 
 const ToggleCheckListContainer = styled.div.attrs({
-  className: 'flex gap-y-1.5 gap-x-3',
+  className: 'flex gap-y-3 gap-x-6',
 })``;
 
 const ToggleCheckListItemWrapper = styled.div.attrs({className: 'flex-1'})``;

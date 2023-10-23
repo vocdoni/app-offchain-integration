@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import {useTranslation} from 'react-i18next';
-import {ButtonText, Link} from '@aragon/ods';
+import {ButtonText, Link} from '@aragon/ods-old';
 
 type PrivacyPolicyContentProps = {
   isDesktop: boolean;
@@ -64,10 +64,10 @@ const PrivacyPolicyContent: React.FC<PrivacyPolicyContentProps> = ({
 export default PrivacyPolicyContent;
 
 const Text = styled.div.attrs({
-  className: 'flex-1 ft-text-sm text-ui-600',
+  className: 'flex-1 ft-text-sm text-neutral-600',
 })``;
 
 const ButtonGroup = styled.div.attrs({
   className:
-    'space-y-1.5 desktop:space-y-0 desktop:flex desktop:justify-end desktop:items-center desktop:space-x-1.5',
+    'space-y-3 xl:space-y-0 xl:flex xl:justify-end xl:items-center xl:space-x-3',
 })``;

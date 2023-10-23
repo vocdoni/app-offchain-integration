@@ -1,4 +1,4 @@
-import {AlertInline} from '@aragon/ods';
+import {AlertInline} from '@aragon/ods-old';
 import React, {useState} from 'react';
 import {
   FieldErrors,
@@ -97,7 +97,7 @@ export const MintToken: React.FC = () => {
               isNextButtonDisabled={!actionIsValid(errors, formActions)}
               onNextButtonDisabledClicked={() => formMethods.trigger('actions')}
             >
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <AlertInline
                   label={t('newProposal.mintTokens.additionalInfo')}
                   mode="neutral"

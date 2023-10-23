@@ -17,7 +17,7 @@ import {
   SearchInput,
   VoterType,
   VotersTable,
-} from '@aragon/ods';
+} from '@aragon/ods-old';
 import React, {useEffect, useMemo, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import styled from 'styled-components';
@@ -269,7 +269,7 @@ export const VotingTerminal: React.FC<VotingTerminalProps> = ({
       {votingInProcess ? (
         <VotingContainer>
           <Heading2>{t('votingTerminal.chooseOption')}</Heading2>
-          <p className="mt-1 text-ui-500">
+          <p className="mt-2 text-neutral-500">
             {t('votingTerminal.chooseOptionHelptext')}
           </p>
 
@@ -324,7 +324,7 @@ export const VotingTerminal: React.FC<VotingTerminalProps> = ({
                 label={voteButtonLabel || t('votingTerminal.voteNow')}
                 size="large"
                 onClick={onVoteClicked}
-                className="w-full tablet:w-max"
+                className="w-full md:w-max"
                 disabled={voteNowDisabled}
               />
               <AlertInline
@@ -335,7 +335,7 @@ export const VotingTerminal: React.FC<VotingTerminalProps> = ({
             </VoteContainer>
 
             {alertMessage && (
-              <div className="pt-2 tablet:mt-3 tablet:pt-0">
+              <div className="pt-4 md:mt-6 md:pt-0">
                 <AlertCard title={alertMessage} mode="warning" />
               </div>
             )}
@@ -361,40 +361,41 @@ const StatusIcon: React.FC<StatusProp> = ({status}) => {
 };
 
 const Container = styled.div.attrs({
-  className: 'tablet:p-3 py-2.5 px-2 rounded-xl bg-ui-0 border border-ui-100',
+  className:
+    'md:p-6 py-5 px-4 rounded-xl bg-neutral-0 border border-neutral-100',
 })``;
 
 const Header = styled.div.attrs({
   className:
-    'tablet:flex tablet:justify-between tablet:items-center space-y-2 tablet:space-y-0',
+    'md:flex md:justify-between md:items-center space-y-4 md:space-y-0',
 })``;
 
 const Heading1 = styled.h1.attrs({
-  className: 'ft-text-xl font-bold text-ui-800 grow',
+  className: 'ft-text-xl font-semibold text-neutral-800 grow',
 })``;
 
 const VotingContainer = styled.div.attrs({
-  className: 'mt-6 tablet:mt-5',
+  className: 'mt-12 md:mt-10',
 })``;
 
 const Heading2 = styled.h2.attrs({
-  className: 'ft-text-xl font-bold text-ui-800',
+  className: 'ft-text-xl font-semibold text-neutral-800',
 })``;
 
 const CheckboxContainer = styled.div.attrs({
-  className: 'mt-3 space-y-1.5',
+  className: 'mt-6 space-y-3',
 })``;
 
 const VoteContainer = styled.div.attrs({
   className:
-    'flex flex-col tablet:flex-row tablet:justify-between tablet:space-x-3 items-center tablet:items-center mt-3 space-y-2 tablet:space-y-0' as string,
+    'flex flex-col md:flex-row md:justify-between md:space-x-6 items-center md:items-center mt-6 space-y-4 md:space-y-0' as string,
 })``;
 
 const ButtonWrapper = styled.div.attrs({
   className:
-    'flex flex-col tablet:flex-row space-y-2 space-x-0 tablet:space-y-0 tablet:space-x-2 w-full tablet:w-max',
+    'flex flex-col md:flex-row space-y-4 space-x-0 md:space-y-0 md:space-x-4 w-full md:w-max',
 })``;
 
 const VotersTabContainer = styled.div.attrs({
-  className: 'mt-3 desktop:mt-5 space-y-2',
+  className: 'mt-6 xl:mt-10 space-y-4',
 })``;

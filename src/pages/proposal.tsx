@@ -6,7 +6,7 @@ import {
   IconGovernance,
   Link,
   WidgetStatus,
-} from '@aragon/ods';
+} from '@aragon/ods-old';
 import {
   MultisigClient,
   MultisigProposal,
@@ -19,16 +19,20 @@ import {DaoAction, ProposalStatus} from '@aragon/sdk-client-common';
 import TipTapLink from '@tiptap/extension-link';
 import {useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import {BigNumber, constants} from 'ethers';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {generatePath, useNavigate, useParams} from 'react-router-dom';
 import sanitizeHtml from 'sanitize-html';
 import styled from 'styled-components';
+import {Address} from 'viem';
+import {useBalance} from 'wagmi';
 
 import {ExecutionWidget} from 'components/executionWidget';
 import ResourceList from 'components/resourceList';
 import {Loading} from 'components/temporary';
 import {StyledEditorContent} from 'containers/reviewProposal';
+import {UpdateVerificationCard} from 'containers/updateVerificationCard';
 import {TerminalTabs, VotingTerminal} from 'containers/votingTerminal';
 import {useGlobalModalContext} from 'context/globalModals';
 import {useNetwork} from 'context/network';
@@ -38,20 +42,22 @@ import {useCache} from 'hooks/useCache';
 import {useClient} from 'hooks/useClient';
 import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 import {useDaoMembers} from 'hooks/useDaoMembers';
-import {useDaoProposal} from 'hooks/useDaoProposal';
+import {useDaoToken} from 'hooks/useDaoToken';
 import {useMappedBreadcrumbs} from 'hooks/useMappedBreadcrumbs';
 import {PluginTypes, usePluginClient} from 'hooks/usePluginClient';
+import useScreen from 'hooks/useScreen';
+import {useWallet} from 'hooks/useWallet';
+import {useWalletCanVote} from 'hooks/useWalletCanVote';
+import {usePastVotingPower} from 'services/aragon-sdk/queries/use-past-voting-power';
+import {useProposal} from 'services/aragon-sdk/queries/use-proposal';
 import {
   isMultisigVotingSettings,
   isTokenVotingSettings,
   useVotingSettings,
 } from 'services/aragon-sdk/queries/use-voting-settings';
-import useScreen from 'hooks/useScreen';
-import {useWallet} from 'hooks/useWallet';
-import {useWalletCanVote} from 'hooks/useWalletCanVote';
 import {useTokenAsync} from 'services/token/queries/use-token';
 import {CHAIN_METADATA, SupportedNetworks} from 'utils/constants';
-import {constants} from 'ethers';
+import {featureFlags} from 'utils/featureFlags';
 import {
   decodeAddMembersToAction,
   decodeMetadataToAction,
@@ -77,16 +83,6 @@ import {
   stripPlgnAdrFromProposalId,
 } from 'utils/proposals';
 import {Action, ProposalId} from 'utils/types';
-import {useDaoToken} from 'hooks/useDaoToken';
-import {BigNumber} from 'ethers';
-import {usePastVotingPower} from 'services/aragon-sdk/queries/use-past-voting-power';
-import {Address} from 'viem';
-import {useBalance} from 'wagmi';
-import {UpdateVerificationCard} from 'containers/updateVerificationCard';
-import {featureFlags} from 'utils/featureFlags';
-
-// TODO: @Sepehr Please assign proper tags on action decoding
-// const PROPOSAL_TAGS = ['Finance', 'Withdraw'];
 
 const PENDING_PROPOSAL_STATUS_INTERVAL = 1000 * 10;
 const PROPOSAL_STATUS_INTERVAL = 1000 * 60;
@@ -132,7 +128,6 @@ export const Proposal: React.FC = () => {
   const {address, isConnected, isOnWrongNetwork} = useWallet();
 
   const [voteStatus, setVoteStatus] = useState('');
-  const [intervalInMills, setIntervalInMills] = useState(0);
   const [decodedActions, setDecodedActions] =
     useState<(Action | undefined)[]>();
 
@@ -148,14 +143,23 @@ export const Proposal: React.FC = () => {
   const {
     data: proposal,
     error: proposalError,
+    isFetched: proposalIsFetched,
     isLoading: proposalIsLoading,
-  } = useDaoProposal(
-    daoDetails?.address as string,
-    proposalId!,
-    pluginType,
-    pluginAddress,
-    intervalInMills
+    refetch,
+  } = useProposal(
+    {
+      pluginType: pluginType,
+      id: proposalId?.toString() ?? '',
+    },
+    {
+      // refetch active proposal data every minute
+      refetchInterval: data =>
+        data?.status === ProposalStatus.ACTIVE
+          ? PROPOSAL_STATUS_INTERVAL
+          : false,
+    }
   );
+
   const proposalStatus = proposal?.status;
 
   const {data: canVote} = useWalletCanVote(
@@ -412,16 +416,18 @@ export const Proposal: React.FC = () => {
         // remove interval timer once the proposal has started
         if (proposal.startDate.valueOf() <= new Date().valueOf()) {
           clearInterval(interval);
-          setIntervalInMills(PROPOSAL_STATUS_INTERVAL);
           setVoteStatus(v);
-        } else if (proposalStatus === 'Pending') {
+          if (proposalStatus === ProposalStatus.PENDING) {
+            refetch();
+          }
+        } else if (proposalStatus === ProposalStatus.PENDING) {
           setVoteStatus(v);
         }
       }, PENDING_PROPOSAL_STATUS_INTERVAL);
 
       return () => clearInterval(interval);
     }
-  }, [proposal, proposalStatus, t]);
+  }, [proposal, proposalStatus, refetch, t]);
 
   /*************************************************
    *              Handlers and Callbacks           *
@@ -542,7 +548,7 @@ export const Proposal: React.FC = () => {
         voteNowDisabled: false,
         onClick: () => {
           if (isMultisigDAO) {
-            handleSubmitVote(VoteValues.YES);
+            handleSubmitVote({vote: VoteValues.YES});
           } else {
             setVotingInProcess(true);
           }
@@ -631,12 +637,12 @@ export const Proposal: React.FC = () => {
   /*************************************************
    *                     Render                    *
    *************************************************/
-  if (proposalError) {
-    navigate(NotFound, {replace: true, state: {invalidProposal: proposalId}});
+  if (paramsAreLoading || proposalIsLoading || detailsAreLoading) {
+    return <Loading />;
   }
 
-  if (paramsAreLoading || proposalIsLoading || detailsAreLoading || !proposal) {
-    return <Loading />;
+  if (proposalError || (proposalIsFetched && proposal === null) || !proposal) {
+    navigate(NotFound, {replace: true, state: {invalidProposal: proposalId}});
   }
 
   return (
@@ -679,9 +685,9 @@ export const Proposal: React.FC = () => {
           </ProposerLink>
         </ContentWrapper>
         <SummaryText>{proposal?.metadata.summary}</SummaryText>
-        {proposal.metadata.description && !expandedProposal && (
+        {proposal?.metadata.description && !expandedProposal && (
           <ButtonText
-            className="w-full tablet:w-max"
+            className="w-full md:w-max"
             size="large"
             label={t('governance.proposals.buttons.readFullProposal')}
             mode="secondary"
@@ -693,11 +699,11 @@ export const Proposal: React.FC = () => {
 
       <ContentContainer expandedProposal={expandedProposal}>
         <ProposalContainer>
-          {proposal.metadata.description && expandedProposal && (
+          {proposal?.metadata.description && expandedProposal && (
             <>
               <StyledEditorContent editor={editor} />
               <ButtonText
-                className="mt-3 w-full tablet:w-max"
+                className="mt-6 w-full md:w-max"
                 label={t('governance.proposals.buttons.closeFullProposal')}
                 mode="secondary"
                 iconRight={<IconChevronUp />}
@@ -707,13 +713,15 @@ export const Proposal: React.FC = () => {
           )}
 
           {/* @todo: Add isUpdateProposal check once it's developed */}
-          {featureFlags.getValue('VITE_FEATURE_FLAG_OSX_UPDATES') ===
-            'true' && (
-            <UpdateVerificationCard
-              proposal={proposal}
-              actions={decodedActions}
-            />
-          )}
+          {proposal &&
+            featureFlags.getValue('VITE_FEATURE_FLAG_OSX_UPDATES') ===
+              'true' && (
+              <UpdateVerificationCard
+                proposal={proposal}
+                actions={decodedActions}
+                proposalId={proposalId}
+              />
+            )}
 
           <VotingTerminal
             status={proposalStatus}
@@ -729,10 +737,11 @@ export const Proposal: React.FC = () => {
             voteNowDisabled={voteNowDisabled}
             votingInProcess={votingInProcess}
             onVoteSubmitClicked={vote =>
-              handleSubmitVote(
+              handleSubmitVote({
                 vote,
-                (proposal as TokenVotingProposal).token?.address
-              )
+                replacement: voted || voteSubmitted,
+                token: (proposal as TokenVotingProposal).token?.address,
+              })
             }
             {...mappedProps}
           />
@@ -755,49 +764,49 @@ export const Proposal: React.FC = () => {
 };
 
 const Container = styled.div.attrs({
-  className: 'col-span-full desktop:col-start-2 desktop:col-end-12',
+  className: 'col-span-full xl:col-start-2 xl:col-end-12',
 })``;
 
 const HeaderContainer = styled.div.attrs({
-  className: 'flex flex-col gap-y-2 desktop:p-0 tablet:px-3 pt-2',
+  className: 'flex flex-col gap-y-4 xl:p-0 md:px-6 pt-4',
 })``;
 
 const ProposalTitle = styled.p.attrs({
-  className: 'font-bold text-ui-800 text-3xl',
+  className: 'font-semibold text-neutral-800 text-4xl leading-tight',
 })``;
 
 const ContentWrapper = styled.div.attrs({
-  className: 'flex flex-col tablet:flex-row gap-x-3 gap-y-1.5',
+  className: 'flex flex-col md:flex-row gap-x-6 gap-y-3',
 })``;
 
 // const BadgeContainer = styled.div.attrs({
-//   className: 'flex flex-wrap gap-x-1.5',
+//   className: 'flex flex-wrap gap-x-3',
 // })``;
 
 const ProposerLink = styled.p.attrs({
-  className: 'text-ui-500',
+  className: 'text-neutral-500',
 })``;
 
 const SummaryText = styled.p.attrs({
-  className: 'text-lg text-ui-600',
+  className: 'text-xl leading-normal text-neutral-600',
 })``;
 
 const ProposalContainer = styled.div.attrs({
-  className: 'space-y-3 tablet:w-3/5',
+  className: 'space-y-6 md:w-3/5',
 })``;
 
 const AdditionalInfoContainer = styled.div.attrs({
-  className: 'space-y-3 tablet:w-2/5',
+  className: 'space-y-6 md:w-2/5',
 })``;
 
 type ContentContainerProps = {
   expandedProposal: boolean;
 };
 
-const ContentContainer = styled.div.attrs(
-  ({expandedProposal}: ContentContainerProps) => ({
+const ContentContainer = styled.div.attrs<ContentContainerProps>(
+  ({expandedProposal}) => ({
     className: `${
-      expandedProposal ? 'tablet:mt-5' : 'tablet:mt-8'
-    } mt-3 tablet:flex tablet:space-x-3 space-y-3 tablet:space-y-0`,
+      expandedProposal ? 'md:mt-10' : 'md:mt-16'
+    } mt-6 md:flex md:space-x-6 space-y-6 md:space-y-0`,
   })
 )<ContentContainerProps>``;
