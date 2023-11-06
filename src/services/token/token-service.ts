@@ -182,6 +182,7 @@ class TokenService {
     address,
     network,
     ignoreZeroBalances = true,
+    nativeTokenBalance,
   }: IFetchTokenBalancesParams): Promise<AssetBalance[] | null> => {
     const {networkId} = CHAIN_METADATA[network].covalent ?? {};
 
@@ -212,8 +213,12 @@ class TokenService {
     }
 
     return data.items.flatMap(({native_token, ...item}) => {
-      // ignore zero balances if indicated
-      if (ignoreZeroBalances && BigNumber.from(item.balance).isZero())
+      if (
+        ignoreZeroBalances &&
+        ((native_token && nativeTokenBalance === BigInt(0)) ||
+          BigNumber.from(item.balance).isZero())
+      )
+        // ignore zero balances if indicated
         return [];
 
       return {
@@ -231,7 +236,9 @@ class TokenService {
           : item.nft_data
           ? TokenType.ERC721
           : TokenType.ERC20) as tokenType,
-        balance: BigInt(item.balance),
+        balance: native_token
+          ? (nativeTokenBalance as bigint)
+          : BigInt(item.balance),
         updateDate: new Date(data.updated_at),
       };
     });

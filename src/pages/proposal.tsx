@@ -180,13 +180,22 @@ export const Proposal: React.FC = () => {
   });
   const tokenBalance = BigNumber.from(tokenBalanceData?.value ?? 0);
 
+  const shouldFetchPastVotingPower =
+    address != null &&
+    daoToken != null &&
+    proposal != null &&
+    proposal.status === ProposalStatus.ACTIVE;
+
   const {data: pastVotingPower = constants.Zero} = usePastVotingPower(
     {
       address: address as string,
       tokenAddress: daoToken?.address as string,
       blockNumber: proposal?.creationBlockNumber as number,
+      network,
     },
-    {enabled: address != null && daoToken != null && proposal != null}
+    {
+      enabled: shouldFetchPastVotingPower,
+    }
   );
 
   const pluginClient = usePluginClient(pluginType);
@@ -444,7 +453,7 @@ export const Proposal: React.FC = () => {
         votingSettings,
         isMultisigProposal(proposal) ? members : undefined
       );
-  }, [address, votingSettings, members, proposal, t]);
+  }, [address, members, proposal, t, votingSettings]);
 
   // get early execution status
   let canExecuteEarly = false;
@@ -730,6 +739,7 @@ export const Proposal: React.FC = () => {
                 handlePrepareVote({
                   vote,
                   replacement: voted || voteOrApprovalSubmitted,
+                  votingPower: pastVotingPower,
                   voteTokenAddress: (proposal as TokenVotingProposal).token
                     ?.address,
                 })
