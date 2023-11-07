@@ -31,7 +31,6 @@ import {
   getCanonicalTime,
   getCanonicalUtcOffset,
   getFormattedUtcOffset,
-  minutesToMills,
 } from 'utils/date';
 import {getErc20VotingParticipation, getNonEmptyActions} from 'utils/proposals';
 import {ProposalResource, SupportedVotingSettings} from 'utils/types';
@@ -83,18 +82,15 @@ const ReviewProposal: React.FC<ReviewProposalProps> = ({
     const {startSwitch, startDate, startTime, startUtc} = values;
 
     if (startSwitch === 'now') {
-      const startMinutesDelay = isMultisig ? 0 : 10;
       return new Date(
-        `${getCanonicalDate()}T${getCanonicalTime({
-          minutes: startMinutesDelay,
-        })}:00${getCanonicalUtcOffset()}`
+        `${getCanonicalDate()}T${getCanonicalTime()}:00${getCanonicalUtcOffset()}`
       );
     } else {
       return Date.parse(
         `${startDate}T${startTime}:00${getCanonicalUtcOffset(startUtc)}`
       );
     }
-  }, [isMultisig, values]);
+  }, [values]);
 
   const formattedStartDate = useMemo(() => {
     const {startSwitch} = values;
@@ -159,7 +155,6 @@ const ReviewProposal: React.FC<ReviewProposalProps> = ({
       durationHours,
       durationMinutes,
       durationSwitch,
-      startSwitch,
       endDate,
       endTime,
       endUtc,
@@ -180,19 +175,11 @@ const ReviewProposal: React.FC<ReviewProposalProps> = ({
       );
     }
 
-    // adding 10 minutes to offset the 10 minutes added by starting now
-    if (startSwitch === 'now') {
-      const startMinutesDelay = isMultisig ? 0 : 10;
-      endDateTime = new Date(
-        endDateTime.getTime() + minutesToMills(startMinutesDelay)
-      );
-    }
-
     return `~${format(
       endDateTime,
       KNOWN_FORMATS.proposals
     )} ${getFormattedUtcOffset()}`;
-  }, [isMultisig, values]);
+  }, [values]);
 
   const terminalProps = useMemo(() => {
     if (votingSettings) {
