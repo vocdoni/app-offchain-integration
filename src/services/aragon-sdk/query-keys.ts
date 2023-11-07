@@ -3,6 +3,7 @@ import {ProposalStatus} from '@aragon/sdk-client-common';
 
 import type {
   IFetchDelegateeParams,
+  IFetchMemberParams,
   IFetchMembersParams,
   IFetchPastVotingPowerParams,
   IFetchProposalParams,
@@ -21,6 +22,7 @@ export enum AragonSdkQueryItem {
   LOCAL_PROPOSALS = 'LOCAL_PROPOSALS',
   VOTING_POWER = 'VOTING_POWER',
   VOTING_SETTINGS = 'VOTING_SETTINGS',
+  GET_MEMBER = 'GET_MEMBER',
 }
 
 // Add address and network parameters to all query keys to use the most updated DAO plugin client
@@ -62,4 +64,8 @@ export const aragonSdkQueryKeys = {
     AragonSdkQueryItem.VOTING_SETTINGS,
     params,
   ],
+  getMember: (
+    baseParams: IAragonSdkBaseParams,
+    params: IFetchMemberParams
+  ): QueryKey => [AragonSdkQueryItem.GET_MEMBER, baseParams, params],
 };
