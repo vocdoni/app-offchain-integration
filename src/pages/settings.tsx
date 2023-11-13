@@ -30,12 +30,13 @@ import {SettingsUpdateCard} from 'containers/settings/updateCard';
 import {VersionInfoCard} from 'containers/settings/versionInfoCard';
 import {useNetwork} from 'context/network';
 import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
-import {PluginTypes} from 'hooks/usePluginClient';
+import {GaselessPluginName, PluginTypes} from 'hooks/usePluginClient';
 import useScreen from 'hooks/useScreen';
 import {CHAIN_METADATA} from 'utils/constants';
 import {featureFlags} from 'utils/featureFlags';
 import {shortenAddress, toDisplayEns} from 'utils/library';
 import {EditSettings} from 'utils/paths';
+import GaslessVotingSettings from '../containers/settings/gaslessVoting';
 
 export const Settings: React.FC = () => {
   const {t} = useTranslation();
@@ -293,6 +294,14 @@ const PluginSettingsWrapper: React.FC<IPluginSettings> = ({daoDetails}) => {
 
     case 'multisig.plugin.dao.eth':
       return <MultisigSettings daoDetails={daoDetails} />;
+
+    case GaselessPluginName:
+      return (
+        <>
+          <MajorityVotingSettings daoDetails={daoDetails} />
+          <GaslessVotingSettings daoDetails={daoDetails} />
+        </>
+      );
 
     default:
       // TODO: need to be designed

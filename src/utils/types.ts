@@ -17,6 +17,10 @@ import {TokenVotingWalletField} from 'components/addWallets/row';
 import {MultisigWalletField} from 'components/multisigWallets/row';
 import {TimeFilter, TransferTypes} from './constants';
 import {Web3Address} from './library';
+import {
+  GaslessVotingProposal,
+  GaslessPluginVotingSettings,
+} from '@vocdoni/gasless-voting';
 import {TokenType} from './validators';
 
 /*************************************************
@@ -57,6 +61,13 @@ export type CreateDaoFormData = {
   voteReplacement: boolean;
   multisigWallets: MultisigWalletField[];
   multisigMinimumApprovals: number;
+
+  votingType: 'onChain' | 'gasless';
+  executionExpirationMinutes: string;
+  executionExpirationHours: string;
+  executionExpirationDays: string;
+  committee: MultisigWalletField[];
+  committeeMinimumApproval: string;
 };
 
 /*************************************************
@@ -175,13 +186,20 @@ export type Erc20ProposalVote = {
   weight: bigint;
 };
 
-export type DetailedProposal = MultisigProposal | TokenVotingProposal;
+export type DetailedProposal =
+  | MultisigProposal
+  | TokenVotingProposal
+  | GaslessVotingProposal;
 export type ProposalListItem =
   | TokenVotingProposalListItem
-  | MultisigProposalListItem;
+  | MultisigProposalListItem
+  | GaslessVotingProposal;
 export type SupportedProposals = DetailedProposal | ProposalListItem;
 
-export type SupportedVotingSettings = MultisigVotingSettings | VotingSettings;
+export type SupportedVotingSettings =
+  | MultisigVotingSettings
+  | GaslessPluginVotingSettings
+  | VotingSettings;
 
 /* ACTION TYPES ============================================================= */
 

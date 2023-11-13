@@ -13,7 +13,7 @@ import {
 } from 'containers/networkErrorMenu';
 import {useGlobalModalContext} from 'context/globalModals';
 import {useNetwork} from 'context/network';
-import {PluginTypes} from 'hooks/usePluginClient';
+import {GaselessPluginName, PluginTypes} from 'hooks/usePluginClient';
 import WalletIcon from 'public/wallet.svg';
 import {Community} from 'utils/paths';
 import {
@@ -58,7 +58,9 @@ export const GatingMenu: React.FC = () => {
   };
 
   const pluginType = plugins?.[0].id as PluginTypes;
-  const isTokenBasedDao = pluginType === 'token-voting.plugin.dao.eth';
+  const isTokenBasedDao =
+    pluginType === 'token-voting.plugin.dao.eth' ||
+    pluginType === GaselessPluginName;
 
   const displayWrapToken = isTokenBasedDao && isDAOTokenWrapped;
   const wrapTokenSymbol =

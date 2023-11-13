@@ -8,8 +8,8 @@ import {
 } from '@aragon/sdk-client';
 import {useQueryClient} from '@tanstack/react-query';
 import React, {
-  ReactNode,
   createContext,
+  ReactNode,
   useCallback,
   useContext,
   useMemo,
@@ -27,6 +27,8 @@ import {
   isMultisigClient,
   isTokenVotingClient,
   usePluginClient,
+  isGaslessVotingClient,
+  GaselessPluginName,
 } from 'hooks/usePluginClient';
 import {usePollGasFee} from 'hooks/usePollGasfee';
 import {useWallet} from 'hooks/useWallet';
@@ -40,6 +42,9 @@ import {executionStorage, voteStorage} from 'utils/localStorage';
 import {ProposalId} from 'utils/types';
 import {useNetwork} from './network';
 import {useProviders} from './providers';
+import GaslessVotingModal from '../containers/transactionModals/gaslessVotingModal';
+import {ApproveTallyStep} from '@vocdoni/gasless-voting';
+import {GaslessVoteOrApprovalVote} from '../services/aragon-sdk/selectors';
 
 type SubmitVoteParams = {
   vote: VoteValues;
@@ -52,6 +57,8 @@ type ProposalTransactionContextType = {
   handlePrepareVote: (params: SubmitVoteParams) => void;
   handlePrepareApproval: (params: ApproveMultisigProposalParams) => void;
   handlePrepareExecution: () => void;
+  handleGaslessVoting: (params: SubmitVoteParams) => void;
+  handleExecutionMultisigApprove: (params: SubmitVoteParams) => void;
   isLoading: boolean;
   voteOrApprovalSubmitted: boolean;
   executionSubmitted: boolean;
@@ -83,8 +90,11 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
 
   // state values
   const [showVoteModal, setShowVoteModal] = useState(false);
+  const [showGaslessModal, setShowGaslessModal] = useState(false);
   const [showExecutionModal, setShowExecutionModal] = useState(false);
   const [voteTokenAddress, setVoteTokenAddress] = useState<string>();
+  const [showCommitteeApprovalModal, setShowCommitteeApprovalModal] =
+    useState(false);
 
   const [voteParams, setVoteParams] = useState<VoteProposalParams>();
   const [approvalParams, setApprovalParams] =
@@ -111,6 +121,8 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
     !!pluginClient && isMultisigClient(pluginClient);
   const isTokenVotingPluginClient =
     !!pluginClient && isTokenVotingClient(pluginClient);
+  const isGaslessVotingPluginClient =
+    !!pluginClient && isGaslessVotingClient(pluginClient);
 
   const isWaitingForVoteOrApproval =
     (voteParams != null || approvalParams != null) &&
@@ -152,6 +164,24 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
     [proposalId]
   );
 
+  const handleGaslessVoting = useCallback(
+    (params: SubmitVoteParams) => {
+      setVoteParams({proposalId, vote: params.vote});
+      setVoteTokenAddress(params.voteTokenAddress);
+      setShowGaslessModal(true);
+    },
+    [proposalId]
+  );
+
+  const handleExecutionMultisigApprove = useCallback(
+    (params: SubmitVoteParams) => {
+      setVoteParams({proposalId, vote: params.vote});
+      setShowCommitteeApprovalModal(true);
+      setVoteOrApprovalProcessState(TransactionState.WAITING);
+    },
+    [proposalId]
+  );
+
   const handlePrepareExecution = useCallback(() => {
     setShowExecutionModal(true);
     setExecutionProcessState(TransactionState.WAITING);
@@ -161,6 +191,10 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
    *                  Estimations                  *
    *************************************************/
   const estimateVoteOrApprovalFees = useCallback(async () => {
+    if (isGaslessVotingPluginClient && voteParams) {
+      return pluginClient?.estimation.approve(voteParams.proposalId);
+    }
+
     if (isTokenVotingPluginClient && voteParams && voteTokenAddress) {
       return pluginClient.estimation.voteProposal(voteParams);
     }
@@ -175,8 +209,10 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
     pluginClient,
     voteTokenAddress,
     voteParams,
+    isGaslessVotingPluginClient,
   ]);
 
+  // estimate proposal execution fees
   const estimateExecutionFees = useCallback(async () => {
     return pluginClient?.estimation.executeProposal(proposalId);
   }, [pluginClient?.estimation, proposalId]);
@@ -313,6 +349,48 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
     ]
   );
 
+  const onGaslessVoteOrApprovalSubmitted = useCallback(
+    async (proposalId: string, vote: VoteValues, isApproval?: boolean) => {
+      setVoteParams(undefined);
+      setVoteOrApprovalSubmitted(true);
+      setVoteOrApprovalProcessState(TransactionState.SUCCESS);
+
+      if (!address) return;
+
+      let voteToPersist;
+      if (pluginType === GaselessPluginName) {
+        if (isApproval) {
+          voteToPersist = {
+            type: 'approval',
+            vote: address.toLowerCase(),
+          } as GaslessVoteOrApprovalVote;
+        } else if (voteTokenAddress != null) {
+          const weight = await fetchVotingPower({
+            tokenAddress: voteTokenAddress,
+            address,
+          });
+          voteToPersist = {
+            type: 'gaslessVote',
+            vote: {
+              address: address.toLowerCase(),
+              vote,
+              weight: weight.toBigInt(),
+            },
+          } as GaslessVoteOrApprovalVote;
+        }
+      }
+
+      if (voteToPersist) {
+        voteStorage.addVote(
+          CHAIN_METADATA[network].id,
+          proposalId.toString(),
+          voteToPersist
+        );
+      }
+    },
+    [address, fetchVotingPower, network, pluginType, voteTokenAddress]
+  );
+
   // handles closing vote/approval modal
   const handleCloseVoteModal = useCallback(() => {
     switch (voteOrApprovalProcessState) {
@@ -320,9 +398,11 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
         break;
       case TransactionState.SUCCESS:
         setShowVoteModal(false);
+        setShowCommitteeApprovalModal(false);
         break;
       default: {
         setShowVoteModal(false);
+        setShowCommitteeApprovalModal(false);
         stopPolling();
       }
     }
@@ -373,6 +453,8 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
 
     if (pluginType === 'multisig.plugin.dao.eth' && approvalParams) {
       handleMultisigApproval(approvalParams);
+    } else if (pluginType === GaselessPluginName && voteParams) {
+      handleExecutionMultisigApproval(voteParams);
     } else if (pluginType === 'token-voting.plugin.dao.eth' && voteParams) {
       handleTokenVotingVote(voteParams);
     }
@@ -383,6 +465,7 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
       if (!isMultisigPluginClient) return;
 
       const approveSteps = pluginClient.methods.approveProposal(params);
+
       if (!approveSteps) {
         throw new Error('Approval function is not initialized correctly');
       }
@@ -409,6 +492,51 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
       }
     },
     [isMultisigPluginClient, onApprovalSuccess, pluginClient?.methods]
+  );
+
+  // For gasless voting
+  const handleExecutionMultisigApproval = useCallback(
+    async (params: VoteProposalParams) => {
+      if (!isGaslessVotingPluginClient) return;
+
+      const approveSteps = await pluginClient?.methods.approve(
+        params.proposalId
+      );
+
+      if (!approveSteps) {
+        throw new Error('Approval function is not initialized correctly');
+      }
+
+      setVoteOrApprovalSubmitted(false);
+
+      // tx hash is necessary for caching when approving and executing
+      // at the same time
+      // let txHash = '';
+      try {
+        for await (const step of approveSteps) {
+          switch (step.key) {
+            case ApproveTallyStep.EXECUTING:
+              // txHash = step.txHash;
+              break;
+            case ApproveTallyStep.DONE:
+              onGaslessVoteOrApprovalSubmitted(
+                params.proposalId,
+                params.vote,
+                true
+              );
+              break;
+          }
+        }
+      } catch (error) {
+        console.error(error);
+        setVoteOrApprovalProcessState(TransactionState.ERROR);
+      }
+    },
+    [
+      isGaslessVotingPluginClient,
+      onGaslessVoteOrApprovalSubmitted,
+      pluginClient?.methods,
+    ]
   );
 
   const handleTokenVotingVote = useCallback(
@@ -502,8 +630,8 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
     proposalId,
     pluginAddress,
     isConnected,
-    pluginClient?.methods,
     handleCloseExecuteModal,
+    pluginClient?.methods,
     onExecutionSuccess,
   ]);
 
@@ -512,6 +640,8 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
       handlePrepareVote,
       handlePrepareApproval,
       handlePrepareExecution,
+      handleGaslessVoting,
+      handleExecutionMultisigApprove,
       isLoading,
       voteOrApprovalSubmitted,
       executionSubmitted,
@@ -522,6 +652,8 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
       handlePrepareVote,
       handlePrepareApproval,
       handlePrepareExecution,
+      handleGaslessVoting,
+      handleExecutionMultisigApprove,
       isLoading,
       voteOrApprovalSubmitted,
       executionSubmitted,
@@ -535,7 +667,7 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
    *************************************************/
   // modal values
   const isExecutionContext = showExecutionModal;
-  const isVotingContext = showVoteModal;
+  const isVotingContext = showVoteModal || showCommitteeApprovalModal;
 
   const state =
     (isExecutionContext ? executionProcessState : voteOrApprovalProcessState) ??
@@ -551,7 +683,10 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
       : t('governance.proposals.buttons.execute'),
   };
 
-  if (isVotingContext && pluginType === 'multisig.plugin.dao.eth') {
+  if (
+    (isVotingContext && pluginType === 'multisig.plugin.dao.eth') ||
+    (isVotingContext && pluginType === GaselessPluginName)
+  ) {
     title = t('transactionModal.multisig.title.approveProposal');
     labels.WAITING = t('transactionModal.multisig.ctaApprove');
     labels.LOADING = t('transactionModal.multisig.ctaWaitingConfirmation');
@@ -563,7 +698,8 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
     }
   }
 
-  const isOpen = showVoteModal || showExecutionModal;
+  const isOpen =
+    showVoteModal || showExecutionModal || showCommitteeApprovalModal;
 
   const onClose = isExecutionContext
     ? handleCloseExecuteModal
@@ -580,6 +716,13 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
   return (
     <ProposalTransactionContext.Provider value={value}>
       {children}
+      <GaslessVotingModal
+        vote={voteParams}
+        setShowVoteModal={setShowGaslessModal}
+        showVoteModal={showGaslessModal}
+        setVoteSubmitted={setVoteOrApprovalSubmitted}
+        onVoteSubmitted={onGaslessVoteOrApprovalSubmitted}
+      />
       <PublishModal
         title={title}
         buttonStateLabels={labels}

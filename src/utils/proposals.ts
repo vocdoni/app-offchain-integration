@@ -29,6 +29,7 @@ import {MultisigDaoMember} from 'hooks/useDaoMembers';
 import {PluginTypes} from 'hooks/usePluginClient';
 import {
   isMultisigVotingSettings,
+  isGaslessVotingSettings,
   isTokenVotingSettings,
 } from 'services/aragon-sdk/queries/use-voting-settings';
 import {i18n} from '../../i18n.config';
@@ -43,6 +44,10 @@ import {
   SupportedProposals,
   SupportedVotingSettings,
 } from './types';
+import {
+  GaslessPluginVotingSettings,
+  GaslessVotingProposal,
+} from '@vocdoni/gasless-voting';
 
 export type TokenVotingOptions = StrictlyExclude<
   VoterType['option'],
@@ -88,6 +93,13 @@ export function isMultisigProposal(
 ): proposal is MultisigProposal {
   if (!proposal) return false;
   return 'approvals' in proposal;
+}
+
+export function isGaslessProposal(
+  proposal: SupportedProposals | undefined | null
+): proposal is GaslessVotingProposal {
+  if (!proposal) return false;
+  return 'vochainProposalId' in proposal;
 }
 
 /**
@@ -448,7 +460,75 @@ export function getLiveProposalTerminalProps(
   let supportThreshold;
   let strategy;
 
-  if (isErc20VotingProposal(proposal)) {
+  if (isGaslessProposal(proposal) && isGaslessVotingSettings(votingSettings)) {
+    // token
+    token = {
+      name: proposal.token.name,
+      symbol: proposal.token.symbol,
+    };
+
+    // voters
+    voters =
+      proposal.voters?.map(voter => {
+        return {wallet: voter, src: voter, option: 'none'} as VoterType;
+      }) ?? [];
+
+    // results
+    const results: ProposalVoteResults = getErc20Results(
+      proposal.vochain.tally.parsed,
+      proposal.token.decimals
+    );
+    // calculate participation
+    const {currentPart, currentPercentage, minPart, missingPart, totalWeight} =
+      getErc20VotingParticipation(
+        proposal.settings.minParticipation,
+        proposal.totalUsedWeight,
+        proposal.totalVotingWeight,
+        proposal.token.decimals
+      );
+
+    minParticipation = t('votingTerminal.participationErc20', {
+      participation: minPart,
+      totalWeight,
+      tokenSymbol: token.symbol,
+      percentage: Math.round(proposal.settings.minParticipation * 100),
+    });
+
+    currentParticipation = t('votingTerminal.participationErc20', {
+      participation: currentPart,
+      totalWeight,
+      tokenSymbol: token.symbol,
+      percentage: currentPercentage,
+    });
+
+    missingParticipation = missingPart;
+
+    // support threshold
+    supportThreshold = Math.round(proposal.settings.supportThreshold * 100);
+
+    // strategy
+    strategy = t('votingTerminal.tokenVoting');
+    return {
+      token,
+      voters,
+      results,
+      strategy,
+      supportThreshold,
+      minParticipation,
+      currentParticipation,
+      missingParticipation,
+      voteOptions: t('votingTerminal.yes+no'),
+      startDate: `${format(
+        proposal.startDate,
+        KNOWN_FORMATS.proposals
+      )}  ${getFormattedUtcOffset()}`,
+
+      endDate: `${format(
+        proposal.endDate,
+        KNOWN_FORMATS.proposals
+      )}  ${getFormattedUtcOffset()}`,
+    };
+  } else if (isErc20VotingProposal(proposal)) {
     // token
     token = {
       name: proposal.token.name,
@@ -642,7 +722,10 @@ export function getVoteStatus(proposal: DetailedProposal, t: TFunction) {
 
 export function getVoteButtonLabel(
   proposal: DetailedProposal,
-  voteSettings: MajorityVotingSettings | MultisigVotingSettings,
+  voteSettings:
+    | MajorityVotingSettings
+    | MultisigVotingSettings
+    | GaslessPluginVotingSettings,
   votedOrApproved: boolean,
   executableWithNextApproval: boolean,
   t: TFunction
@@ -654,6 +737,10 @@ export function getVoteButtonLabel(
       executableWithNextApproval,
       t
     );
+  }
+
+  if (isGaslessProposal(proposal) && isGaslessVotingSettings(voteSettings)) {
+    return getTokenBasedLabel(proposal, voteSettings, votedOrApproved, t);
   }
 
   if (isTokenBasedProposal(proposal) && isTokenVotingSettings(voteSettings)) {
@@ -684,18 +771,19 @@ function getMultisigLabel(
 }
 
 function getTokenBasedLabel(
-  proposal: TokenVotingProposal,
-  voteSettings: MajorityVotingSettings,
+  proposal: TokenVotingProposal | GaslessVotingProposal,
+  voteSettings: MajorityVotingSettings | GaslessPluginVotingSettings,
   voted: boolean,
   t: TFunction
 ): string {
   if (proposal.status === ProposalStatus.PENDING) {
     return t('votingTerminal.voteNow');
   }
-
   if (voted) {
     // voted on plugin with voteReplacement
     if (
+      isTokenBasedProposal(proposal) &&
+      isTokenVotingSettings(voteSettings) &&
       proposal.status === ProposalStatus.ACTIVE &&
       voteSettings.votingMode === VotingMode.VOTE_REPLACEMENT
     ) {
@@ -761,11 +849,19 @@ export function isEarlyExecutable(
 export function getProposalExecutionStatus(
   proposalStatus: ProposalStatus | undefined,
   canExecuteEarly: boolean,
-  executionFailed: boolean
+  executionFailed: boolean,
+  isGaselessProposalExecutable?: boolean // Additional checks for gasless proposals. Undefined for others
 ) {
   switch (proposalStatus) {
     case 'Succeeded':
-      return executionFailed ? 'executable-failed' : 'executable';
+      if (executionFailed) {
+        return 'executable-failed';
+      }
+      // Condition will be false if undefined
+      if (isGaselessProposalExecutable === false) {
+        return 'default';
+      }
+      return 'executable';
     case 'Executed':
       return 'executed';
     case 'Defeated':

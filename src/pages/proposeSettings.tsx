@@ -40,6 +40,7 @@ import {
   isMultisigClient,
   isTokenVotingClient,
   usePluginClient,
+  isGaslessVotingClient,
 } from 'hooks/usePluginClient';
 import {usePollGasFee} from 'hooks/usePollGasfee';
 import {useTokenSupply} from 'hooks/useTokenSupply';
@@ -608,6 +609,10 @@ const ProposeSettingWrapper: React.FC<Props> = ({
     }
     if (!proposalCreationData) return;
 
+    // todo(kon): implement this
+    // The propose settings flow is not currently handled by the gasless voting client
+    if (!proposalCreationData || isGaslessVotingClient(pluginClient)) return;
+
     return pluginClient?.estimation.createProposal(proposalCreationData);
   }, [pluginClient, proposalCreationData]);
 
@@ -657,6 +662,24 @@ const ProposeSettingWrapper: React.FC<Props> = ({
       creationProcessState === TransactionState.LOADING
     ) {
       console.log('Transaction is running');
+      return;
+    }
+
+    // let proposalIterator: AsyncGenerator<ProposalCreationStepValue>;
+    // if (isGaslessVotingClient(pluginClient)) {
+    //   proposalIterator = (
+    //     pluginClient as GaslessVotingClient
+    //   ).methods.createProposal(
+    //     proposalCreationData as CreateGasslessProposalParams
+    //   );
+    // } else {
+    //   proposalIterator =
+    //     pluginClient.methods.createProposal(proposalCreationData);
+    // }
+
+    // todo(kon): implement this
+    // The propose settings flow is not currently handled by the gasless voting client
+    if (isGaslessVotingClient(pluginClient)) {
       return;
     }
 

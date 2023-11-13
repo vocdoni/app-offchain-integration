@@ -20,6 +20,7 @@ import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 import {MultisigDaoMember, useDaoMembers} from 'hooks/useDaoMembers';
 import {PluginTypes} from 'hooks/usePluginClient';
 import {
+  isGaslessVotingSettings,
   isMultisigVotingSettings,
   isTokenVotingSettings,
   useVotingSettings,
@@ -34,8 +35,6 @@ import {
 } from 'utils/date';
 import {getErc20VotingParticipation, getNonEmptyActions} from 'utils/proposals';
 import {ProposalResource, SupportedVotingSettings} from 'utils/types';
-import {UpdateVerificationCard} from 'containers/updateVerificationCard';
-import {featureFlags} from 'utils/featureFlags';
 
 type ReviewProposalProps = {
   defineProposalStepNumber: number;
@@ -233,7 +232,7 @@ const ReviewProposal: React.FC<ReviewProposalProps> = ({
             </>
           )}
 
-          {/* TODO: Add isUpdateProposal check once it's developed */}
+          {/* TODO: Add isUpdateProposal check once it's developed
           {featureFlags.getValue('VITE_FEATURE_FLAG_OSX_UPDATES') ===
             'true' && (
             <UpdateVerificationCard
@@ -244,10 +243,17 @@ const ReviewProposal: React.FC<ReviewProposalProps> = ({
                   : undefined
               )}
             />
-          )}
+          )} */}
 
           {votingSettings && (
             <VotingTerminal
+              title={
+                isMultisigVotingSettings(votingSettings)
+                  ? t('votingTerminal.multisig.title')
+                  : isGaslessVotingSettings(votingSettings)
+                  ? t('votingTerminal.vocdoni.titleCommunityVoting')
+                  : t('votingTerminal.title')
+              }
               pluginType={pluginType}
               breakdownTabDisabled
               votersTabDisabled

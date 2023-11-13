@@ -22,7 +22,11 @@ import {usePollGasFee} from 'hooks/usePollGasfee';
 import {useWallet} from 'hooks/useWallet';
 import {TransactionState} from 'utils/constants';
 import {CreateProposalFormData} from 'utils/types';
-import {PluginTypes, usePluginClient} from 'hooks/usePluginClient';
+import {
+  isGaslessVotingClient,
+  PluginTypes,
+  usePluginClient,
+} from 'hooks/usePluginClient';
 import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 
 type PrepareUpdateContextType = {
@@ -143,15 +147,17 @@ const PrepareUpdateProvider: React.FC<{children: ReactElement}> = ({
   // estimate creation fees
   const estimateCreationFees = useCallback(async () => {
     if (!daoUpdateData) return;
-    if (showModal.type === 'plugin')
+    if (showModal.type === 'plugin') {
+      // todo(kon): implement this on the min sdk
+      // The propose settings flow is not currently handled by the gasless voting client
+      if (pluginClient && isGaslessVotingClient(pluginClient)) {
+        return;
+      }
+
       return pluginClient?.estimation.prepareUpdate(daoUpdateData);
-    else client?.estimation.prepareUpdate(daoUpdateData as PrepareUpdateParams);
-  }, [
-    client?.estimation,
-    daoUpdateData,
-    pluginClient?.estimation,
-    showModal.type,
-  ]);
+    } else
+      client?.estimation.prepareUpdate(daoUpdateData as PrepareUpdateParams);
+  }, [client?.estimation, daoUpdateData, pluginClient, showModal.type]);
 
   const {
     tokenPrice,
@@ -171,7 +177,10 @@ const PrepareUpdateProvider: React.FC<{children: ReactElement}> = ({
     }
     const preparePluginIterator =
       showModal.type === 'plugin'
-        ? pluginClient?.methods.prepareUpdate(daoUpdateData)
+        ? // todo(kon): implement this on the min sdk
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          pluginClient?.methods.prepareUpdate(daoUpdateData)
         : client?.methods.prepareUpdate(daoUpdateData as PrepareUpdateParams);
 
     // Check if preparePluginIterator function is initialized
