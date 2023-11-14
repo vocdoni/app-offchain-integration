@@ -431,7 +431,7 @@ export const Proposal: React.FC = () => {
         votingSettings,
         isMultisigProposal(proposal) ? members : undefined
       );
-  }, [address, votingSettings, members, proposal, t]);
+  }, [address, members, proposal, t, votingSettings]);
 
   // get early execution status
   let canExecuteEarly = false;

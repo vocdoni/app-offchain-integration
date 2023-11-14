@@ -134,6 +134,7 @@ export const VotingTerminal: React.FC<VotingTerminalProps> = ({
               tokenAddress: daoToken.address as string,
               address: wallet.address as string,
               blockNumber: blockNumber as number,
+              network,
             });
           }
           return {
@@ -159,6 +160,7 @@ export const VotingTerminal: React.FC<VotingTerminalProps> = ({
     daoToken?.decimals,
     daoToken?.symbol,
     fetchPastVotingPower,
+    network,
     provider,
     voters,
   ]);

@@ -21,6 +21,7 @@ import {useParams} from 'react-router-dom';
 import PublishModal, {
   TransactionStateLabels,
 } from 'containers/transactionModals/publishModal';
+import {BigNumber} from 'ethers';
 import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 import {
   PluginTypes,
@@ -32,7 +33,6 @@ import {
 } from 'hooks/usePluginClient';
 import {usePollGasFee} from 'hooks/usePollGasfee';
 import {useWallet} from 'hooks/useWallet';
-import {useVotingPowerAsync} from 'services/aragon-sdk/queries/use-voting-power';
 import {
   AragonSdkQueryItem,
   aragonSdkQueryKeys,
@@ -48,6 +48,7 @@ import {GaslessVoteOrApprovalVote} from '../services/aragon-sdk/selectors';
 
 type SubmitVoteParams = {
   vote: VoteValues;
+  votingPower: BigNumber;
   voteTokenAddress?: string;
   replacement?: boolean;
 };
@@ -85,7 +86,6 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
   const {network} = useNetwork();
   const queryClient = useQueryClient();
   const {api: provider} = useProviders();
-  const fetchVotingPower = useVotingPowerAsync();
   const {data: daoDetails, isLoading} = useDaoDetailsQuery();
 
   // state values
@@ -100,6 +100,7 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
   const [approvalParams, setApprovalParams] =
     useState<ApproveMultisigProposalParams>();
 
+  const [votingPower, setVotingPower] = useState<BigNumber>(BigNumber.from(0));
   const [replacingVote, setReplacingVote] = useState(false);
   const [voteOrApprovalSubmitted, setVoteOrApprovalSubmitted] = useState(false);
   const [voteOrApprovalProcessState, setVoteOrApprovalProcessState] =
@@ -154,6 +155,7 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
 
   const handlePrepareVote = useCallback(
     (params: SubmitVoteParams) => {
+      setVotingPower(params.votingPower);
       setReplacingVote(!!params.replacement);
       setVoteTokenAddress(params.voteTokenAddress);
 
@@ -263,12 +265,8 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
         proposalId.toString(),
         executionDetails
       );
-
-      // invalidate proposal queries to either pick
-      // up cached values or remove them
-      invalidateProposalQueries();
     },
-    [address, daoDetails?.address, invalidateProposalQueries, network, provider]
+    [address, daoDetails?.address, network, provider]
   );
 
   // cleans up and caches successful approval tx
@@ -297,10 +295,8 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
         setExecutionTxHash(txHash);
         onExecutionSuccess(proposalId, txHash);
       }
-
-      invalidateProposalQueries();
     },
-    [address, invalidateProposalQueries, network, onExecutionSuccess]
+    [address, network, onExecutionSuccess]
   );
 
   // cleans up and caches successful vote
@@ -316,14 +312,10 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
       if (address != null && voteTokenAddress != null) {
         // fetch token user balance, ie vote weight
         try {
-          const weight = await fetchVotingPower({
-            tokenAddress: voteTokenAddress,
-            address,
-          });
           const voteToPersist = {
             address: address.toLowerCase(),
             vote,
-            weight: weight.toBigInt(),
+            weight: votingPower.toBigInt(),
             voteReplaced: !!voteReplaced,
           };
 
@@ -338,15 +330,9 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
         }
       }
 
-      invalidateProposalQueries();
+      setVotingPower(BigNumber.from(0));
     },
-    [
-      address,
-      fetchVotingPower,
-      invalidateProposalQueries,
-      network,
-      voteTokenAddress,
-    ]
+    [address, network, voteTokenAddress, votingPower]
   );
 
   const onGaslessVoteOrApprovalSubmitted = useCallback(
@@ -398,6 +384,8 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
         break;
       case TransactionState.SUCCESS:
         setShowVoteModal(false);
+        invalidateProposalQueries();
+
         setShowCommitteeApprovalModal(false);
         break;
       default: {
@@ -406,7 +394,7 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
         stopPolling();
       }
     }
-  }, [stopPolling, voteOrApprovalProcessState]);
+  }, [invalidateProposalQueries, stopPolling, voteOrApprovalProcessState]);
 
   // handles closing execute modal
   const handleCloseExecuteModal = useCallback(() => {
@@ -417,6 +405,7 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
         {
           setShowExecutionModal(false);
           setExecuteSubmitted(true);
+          invalidateProposalQueries();
         }
         break;
       default: {
@@ -424,7 +413,7 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
         stopPolling();
       }
     }
-  }, [executionProcessState, stopPolling]);
+  }, [executionProcessState, invalidateProposalQueries, stopPolling]);
 
   /*************************************************
    *              Submit Transactions              *
