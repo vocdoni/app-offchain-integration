@@ -252,7 +252,7 @@ export const Proposal: React.FC = () => {
 
   // decode proposal actions
   useEffect(() => {
-    if (!proposal) return;
+    if (!proposal || !client || !pluginClient) return;
 
     let mintTokenActionsIndex = 0;
     const mintTokenActionsData: Uint8Array[] = [];
