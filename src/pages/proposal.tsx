@@ -82,6 +82,8 @@ import {Action} from 'utils/types';
 import {GaslessVotingProposal} from '@vocdoni/gasless-voting';
 import {useGaslessHasAlreadyVote} from '../context/useGaslessVoting';
 import {GaslessVotingTerminal} from '../containers/votingTerminal/gaslessVotingTerminal';
+import {usePastVotingPower} from 'services/aragon-sdk/queries/use-past-voting-power';
+import {constants} from 'ethers';
 
 export const PENDING_PROPOSAL_STATUS_INTERVAL = 1000 * 10;
 export const PROPOSAL_STATUS_INTERVAL = 1000 * 60;
@@ -173,6 +175,24 @@ export const Proposal: React.FC = () => {
     pluginType,
     proposal?.status as string,
     isGaslessProposal(proposal) ? proposal.vochainProposalId : undefined
+  );
+
+  const shouldFetchPastVotingPower =
+    address != null &&
+    daoToken != null &&
+    proposal != null &&
+    proposal.status === ProposalStatus.ACTIVE;
+
+  const {data: pastVotingPower = constants.Zero} = usePastVotingPower(
+    {
+      address: address as string,
+      tokenAddress: daoToken?.address as string,
+      blockNumber: proposal?.creationBlockNumber as number,
+      network,
+    },
+    {
+      enabled: shouldFetchPastVotingPower,
+    }
   );
 
   const {hasAlreadyVote: gaslessAlreadyVote} = useGaslessHasAlreadyVote({
@@ -649,12 +669,14 @@ export const Proposal: React.FC = () => {
         isGaslessProposal(proposal)
           ? handleGaslessVoting({
               vote,
+              votingPower: pastVotingPower,
               voteTokenAddress: (proposal as GaslessVotingProposal).token
                 ?.address,
             })
           : handlePrepareVote({
               vote,
               replacement: voted || voteOrApprovalSubmitted,
+              votingPower: pastVotingPower,
               voteTokenAddress: (proposal as TokenVotingProposal).token
                 ?.address,
             })
@@ -744,6 +766,7 @@ export const Proposal: React.FC = () => {
               onExecuteClicked={handleExecuteNowClicked}
               actions={decodedActions}
               pluginType={pluginType}
+              votingPower={pastVotingPower}
             >
               <VTerminal />
             </GaslessVotingTerminal>

@@ -45,6 +45,7 @@ import {useProviders} from './providers';
 import GaslessVotingModal from '../containers/transactionModals/gaslessVotingModal';
 import {ApproveTallyStep} from '@vocdoni/gasless-voting';
 import {GaslessVoteOrApprovalVote} from '../services/aragon-sdk/selectors';
+import {useVotingPowerAsync} from 'services/aragon-sdk/queries/use-voting-power';
 
 type SubmitVoteParams = {
   vote: VoteValues;
@@ -86,6 +87,7 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
   const {network} = useNetwork();
   const queryClient = useQueryClient();
   const {api: provider} = useProviders();
+  const fetchVotingPower = useVotingPowerAsync();
   const {data: daoDetails, isLoading} = useDaoDetailsQuery();
 
   // state values

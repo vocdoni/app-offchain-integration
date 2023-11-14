@@ -26,6 +26,7 @@ import {
   getCommitteVoteButtonLabel,
 } from '../../utils/committeeVoting';
 import {PluginTypes} from '../../hooks/usePluginClient';
+import {BigNumber} from 'ethers';
 
 type CommitteeExecutionWidgetProps = Pick<
   ExecutionWidgetProps,
@@ -41,11 +42,13 @@ type CommitteeVotingTerminalProps = {
     wasOnWrongNetwork: boolean;
   }>;
   pluginType: PluginTypes;
+  votingPower: BigNumber;
 } & CommitteeExecutionWidgetProps &
   PropsWithChildren;
 
 export const GaslessVotingTerminal: React.FC<CommitteeVotingTerminalProps> = ({
   votingStatusLabel,
+  votingPower,
   proposal,
   pluginAddress,
   statusRef,
@@ -155,18 +158,22 @@ export const GaslessVotingTerminal: React.FC<CommitteeVotingTerminalProps> = ({
       return {
         voteNowDisabled: false,
         onClick: () => {
-          handleExecutionMultisigApprove({vote: VoteValues.YES});
+          handleExecutionMultisigApprove({
+            vote: VoteValues.YES,
+            votingPower,
+          });
         },
       };
     } else return {voteNowDisabled: true};
   }, [
-    address,
-    canApprove,
-    handleExecutionMultisigApprove,
     isApprovalPeriod,
+    canApprove,
+    approved,
+    address,
     isOnWrongNetwork,
     statusRef,
-    approved,
+    handleExecutionMultisigApprove,
+    votingPower,
   ]);
 
   /**
