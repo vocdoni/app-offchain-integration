@@ -19,6 +19,7 @@ type GaslessVotingModalProps = {
     vote: VoteValues,
     isApproval?: boolean
   ) => Promise<void>;
+  invalidateProposalQueries: () => void;
 };
 
 const GaslessVotingModal: React.FC<GaslessVotingModalProps> = ({
@@ -27,6 +28,7 @@ const GaslessVotingModal: React.FC<GaslessVotingModalProps> = ({
   setShowVoteModal,
   setVoteSubmitted,
   onVoteSubmitted,
+  invalidateProposalQueries,
 }): // props: OffChainVotingModalProps<X>
 JSX.Element => {
   const {t} = useTranslation();
@@ -39,7 +41,7 @@ JSX.Element => {
   } = useGaslessVoting();
 
   const btnLabel: BtnLabels = {
-    [StepStatus.WAITING]: t('modalTransaction.submitVote.ctaLabel'),
+    [StepStatus.WAITING]: t('modalTransaction.vocdoni.submitVote.ctaLabel'),
     [StepStatus.LOADING]: undefined,
     [StepStatus.SUCCESS]: t('modalTransaction.vocdoni.submitVote.ctaSeeVote'),
     [StepStatus.ERROR]: t('modal.transaction.multisig.ctaLabel.tryAgain'),
@@ -60,12 +62,13 @@ JSX.Element => {
         break;
       case StepStatus.SUCCESS:
         setShowVoteModal(false);
+        invalidateProposalQueries();
         break;
       default: {
         setShowVoteModal(false);
       }
     }
-  }, [gaslessGlobalState, setShowVoteModal]);
+  }, [gaslessGlobalState, invalidateProposalQueries, setShowVoteModal]);
 
   const handleVoteExecution = useCallback(async () => {
     if (gaslessGlobalState === StepStatus.SUCCESS) {
@@ -110,7 +113,9 @@ JSX.Element => {
       gasEstimationError={undefined}
       tokenPrice={0}
       title={t('modalTransaction.vocdoni.submitVote.title')}
-      subtitle={t('modalTransaction.vocdoni.submitVote.desc')}
+      subtitle={t('modalTransaction.vocdoni.submitVote.desc', {
+        votingBlockchain: 'Vocdoni',
+      })}
     />
   );
 };

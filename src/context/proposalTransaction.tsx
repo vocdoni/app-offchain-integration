@@ -713,6 +713,7 @@ const ProposalTransactionProvider: React.FC<Props> = ({children}) => {
         showVoteModal={showGaslessModal}
         setVoteSubmitted={setVoteOrApprovalSubmitted}
         onVoteSubmitted={onGaslessVoteOrApprovalSubmitted}
+        invalidateProposalQueries={invalidateProposalQueries}
       />
       <PublishModal
         title={title}

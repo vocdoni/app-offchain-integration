@@ -99,8 +99,7 @@ const ProposalList: React.FC<ProposalListProps> = ({
           navigate,
           t,
           daoAddressOrEns,
-          address,
-          pluginAddress
+          address
         )
       ),
     [
@@ -111,7 +110,6 @@ const ProposalList: React.FC<ProposalListProps> = ({
       t,
       daoAddressOrEns,
       address,
-      pluginAddress,
     ]
   );
 
@@ -160,8 +158,7 @@ export function proposal2CardProps(
   navigate: NavigateFunction,
   t: TFunction,
   daoAddressOrEns: string,
-  address: string | null,
-  pluginAddress: string
+  address: string | null
 ): {id: string} & CardProposalProps {
   const publisherDisplayName =
     address && proposal.creatorAddress.toLowerCase() === address.toLowerCase()
@@ -204,15 +201,6 @@ export function proposal2CardProps(
       ),
       title: proposal.vochain.metadata.title.default,
       description: proposal.vochain.metadata.questions[0].title.default,
-      onClick: () => {
-        navigate(
-          generatePath(Proposal, {
-            network,
-            dao: daoAddressOrEns,
-            id: pluginAddress + '_' + proposal.id,
-          })
-        );
-      },
     };
     return {...props, ...specificProps};
   } else if (isErc20VotingProposal(proposal)) {

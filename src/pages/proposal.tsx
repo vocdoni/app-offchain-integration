@@ -40,7 +40,11 @@ import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 import {useDaoMembers} from 'hooks/useDaoMembers';
 import {useDaoToken} from 'hooks/useDaoToken';
 import {useMappedBreadcrumbs} from 'hooks/useMappedBreadcrumbs';
-import {PluginTypes, usePluginClient} from 'hooks/usePluginClient';
+import {
+  GaselessPluginName,
+  PluginTypes,
+  usePluginClient,
+} from 'hooks/usePluginClient';
 import useScreen from 'hooks/useScreen';
 import {useWallet} from 'hooks/useWallet';
 import {useWalletCanVote} from 'hooks/useWalletCanVote';
@@ -104,6 +108,7 @@ export const Proposal: React.FC = () => {
   const pluginType = daoDetails?.plugins?.[0]?.id as PluginTypes;
   const isMultisigPlugin = pluginType === 'multisig.plugin.dao.eth';
   const isTokenVotingPlugin = pluginType === 'token-voting.plugin.dao.eth';
+  const isGaslessVotingPlugin = pluginType === GaselessPluginName;
 
   const {data: daoToken} = useDaoToken(pluginAddress);
 
@@ -531,6 +536,7 @@ export const Proposal: React.FC = () => {
   const votingDisabled =
     proposal?.status !== ProposalStatus.ACTIVE ||
     (isMultisigPlugin && voted) ||
+    (isGaslessVotingPlugin && voted) ||
     (isTokenVotingPlugin && voted && !canRevote);
 
   const handleApprovalClick = useCallback(
@@ -646,15 +652,15 @@ export const Proposal: React.FC = () => {
       title={
         isMultisigProposal(proposal)
           ? t('votingTerminal.multisig.title')
-          : isGaslessProposal(proposal)
-          ? t('votingTerminal.vocdoni.titleCommunityVoting')
-          : t('votingTerminal.title')
+          : isTokenVotingPlugin
+          ? t('votingTerminal.title')
+          : undefined // Title will be shown on the GaslessVotingTerminal
       }
       status={proposalStatus}
       pluginType={pluginType}
       daoToken={daoToken}
       blockNumber={proposal.creationBlockNumber}
-      statusLabel={voteStatus}
+      statusLabel={isGaslessProposal(proposal) ? undefined : voteStatus} // Status will be shown on the GaslessVotingTerminal
       selectedTab={terminalTab}
       alertMessage={alertMessage}
       onTabSelected={setTerminalTab}
@@ -680,6 +686,11 @@ export const Proposal: React.FC = () => {
               voteTokenAddress: (proposal as TokenVotingProposal).token
                 ?.address,
             })
+      }
+      className={
+        isGaslessProposal(proposal)
+          ? 'border border-t-0 border-neutral-100 bg-neutral-0 px-4 py-5 md:p-6'
+          : undefined
       }
       {...mappedProps}
     />
@@ -812,7 +823,7 @@ const ContentWrapper = styled.div.attrs({
   className: 'flex flex-col md:flex-row gap-x-6 gap-y-3',
 })``;
 
-const ProposerLink = styled.p.attrs({
+const ProposerLink = styled.div.attrs({
   className: 'text-neutral-500',
 })``;
 
