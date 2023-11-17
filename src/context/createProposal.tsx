@@ -15,10 +15,13 @@ import {
 } from '@aragon/sdk-client';
 import {
   DaoAction,
+  hexToBytes,
+  LIVE_CONTRACTS,
   ProposalMetadata,
   ProposalStatus,
+  SupportedNetworksArray,
+  SupportedVersion,
   TokenType,
-  hexToBytes,
 } from '@aragon/sdk-client-common';
 import {useQueryClient} from '@tanstack/react-query';
 import differenceInSeconds from 'date-fns/differenceInSeconds';
@@ -32,7 +35,7 @@ import React, {
 } from 'react';
 import {useFormContext} from 'react-hook-form';
 import {useTranslation} from 'react-i18next';
-import {generatePath, useNavigate} from 'react-router-dom';
+import {generatePath, useNavigate, useParams} from 'react-router-dom';
 
 import {Loading} from 'components/temporary';
 import PublishModal from 'containers/transactionModals/publishModal';
@@ -68,25 +71,32 @@ import {
   minutesToMills,
   offsetToMills,
 } from 'utils/date';
-import {getDefaultPayableAmountInputName, toDisplayEns} from 'utils/library';
+import {
+  getDefaultPayableAmountInputName,
+  toDisplayEns,
+  translateToNetworkishName,
+} from 'utils/library';
 import {proposalStorage} from 'utils/localStorage/proposalStorage';
 import {Proposal} from 'utils/paths';
 import {getNonEmptyActions} from 'utils/proposals';
 import {isNativeToken} from 'utils/tokens';
 import {ProposalFormData, ProposalId, ProposalResource} from 'utils/types';
+import GaslessProposalModal from '../containers/transactionModals/gaslessProposalModal';
+import {StepStatus} from '../hooks/useFunctionStepper';
+import {useCreateGaslessProposal} from './createGaslessProposal';
 import {useGlobalModalContext} from './globalModals';
 import {useNetwork} from './network';
 import {useProviders} from './providers';
-import {useCreateGaslessProposal} from './createGaslessProposal';
-import GaslessProposalModal from '../containers/transactionModals/gaslessProposalModal';
-import {StepStatus} from '../hooks/useFunctionStepper';
 
 import {
   CreateGasslessProposalParams,
-  GaslessVotingProposal,
   GaslessVotingClient,
+  GaslessVotingProposal,
 } from '@vocdoni/gasless-voting';
 import {TokenCensus} from '@vocdoni/sdk';
+import {usePluginVersions} from 'services/aragon-sdk/queries/use-plugin-versions';
+import {useProtocolVersion} from 'services/aragon-sdk/queries/use-protocol-version';
+import {ProposalTypes} from 'utils/types';
 
 type Props = {
   showTxModal: boolean;
@@ -107,6 +117,7 @@ const CreateProposalWrapper: React.FC<Props> = ({
   children,
 }) => {
   const {t} = useTranslation();
+  const {type} = useParams();
   const {open} = useGlobalModalContext();
   const queryClient = useQueryClient();
 
@@ -114,12 +125,21 @@ const CreateProposalWrapper: React.FC<Props> = ({
   const {getValues} = useFormContext<ProposalFormData>();
 
   const {network} = useNetwork();
+  const translatedNetwork = translateToNetworkishName(network);
   const {isOnWrongNetwork, provider, address} = useWallet();
   const {api: apiProvider} = useProviders();
 
   const {data: daoDetails, isLoading: daoDetailsLoading} = useDaoDetailsQuery();
   const pluginAddress = daoDetails?.plugins?.[0]?.instanceAddress as string;
   const pluginType = daoDetails?.plugins?.[0]?.id as PluginTypes;
+
+  const {data: pluginAvailableVersions} = usePluginVersions(
+    {
+      pluginType,
+      daoAddress: daoDetails?.address as string,
+    },
+    {enabled: type === ProposalTypes.OSUpdates}
+  );
 
   const {data: daoToken} = useDaoToken(pluginAddress);
   const {data: tokenSupply} = useTokenSupply(daoToken?.address || '');
@@ -128,6 +148,8 @@ const CreateProposalWrapper: React.FC<Props> = ({
     {tokenAddress: daoToken?.address as string, address: address as string},
     {enabled: !!daoToken?.address && !!address}
   );
+
+  const {data: versions} = useProtocolVersion(daoDetails?.address as string);
 
   const {client} = useClient();
 
@@ -317,18 +339,62 @@ const CreateProposalWrapper: React.FC<Props> = ({
             })
           );
           break;
+
+        case 'os_update': {
+          if (
+            translatedNetwork !== 'unsupported' &&
+            SupportedNetworksArray.includes(translatedNetwork) &&
+            daoDetails?.address &&
+            versions
+          ) {
+            actions.push(
+              Promise.resolve(
+                client.encoding.daoUpdateAction(daoDetails?.address, {
+                  previousVersion: versions as [number, number, number],
+                  daoFactoryAddress:
+                    LIVE_CONTRACTS[action.inputs.version as SupportedVersion][
+                      translatedNetwork
+                    ].daoFactoryAddress,
+                })
+              )
+            );
+          }
+          break;
+        }
+
+        case 'plugin_update': {
+          const daoActionsArray = client.encoding.applyUpdateAction(
+            daoDetails?.address as string,
+            {
+              permissions: action.inputs.permissions,
+              initData: new Uint8Array([]),
+              helpers: action.inputs.helpers,
+              versionTag: action.inputs.versionTag,
+              pluginRepo: pluginAvailableVersions?.address as string,
+              pluginAddress: pluginAddress,
+            }
+          );
+          daoActionsArray.map(daoAction => {
+            actions.push(Promise.resolve(daoAction));
+          });
+          break;
+        }
       }
     }
 
     return Promise.all(actions);
   }, [
-    getValues,
-    pluginClient,
     client,
-    pluginAddress,
-    votingSettings,
+    daoDetails?.address,
+    getValues,
     network,
+    pluginAddress,
+    pluginAvailableVersions?.address,
+    pluginClient,
     t,
+    translatedNetwork,
+    versions,
+    votingSettings,
   ]);
 
   // Because getValues does NOT get updated on each render, leaving this as

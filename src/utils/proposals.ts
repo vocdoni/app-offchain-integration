@@ -7,6 +7,7 @@
 
 import {ModeType, ProgressStatusProps, VoterType} from '@aragon/ods-old';
 import {
+  Client,
   CreateMajorityVotingProposalParams,
   Erc20TokenDetails,
   MajorityVotingSettings,
@@ -18,11 +19,22 @@ import {
   VotingMode,
   VotingSettings,
 } from '@aragon/sdk-client';
-import {ProposalMetadata, ProposalStatus} from '@aragon/sdk-client-common';
+import {
+  DaoAction,
+  LIVE_CONTRACTS,
+  ProposalMetadata,
+  ProposalStatus,
+  SupportedNetworksArray,
+  SupportedVersion,
+} from '@aragon/sdk-client-common';
 import Big from 'big.js';
 import {Locale, format, formatDistanceToNow} from 'date-fns';
 import * as Locales from 'date-fns/locale';
 import {TFunction} from 'i18next';
+import {
+  GaslessPluginVotingSettings,
+  GaslessVotingProposal,
+} from '@vocdoni/gasless-voting';
 
 import {ProposalVoteResults} from 'containers/votingTerminal';
 import {MultisigDaoMember} from 'hooks/useDaoMembers';
@@ -34,7 +46,7 @@ import {
 } from 'services/aragon-sdk/queries/use-voting-settings';
 import {i18n} from '../../i18n.config';
 import {KNOWN_FORMATS, getFormattedUtcOffset} from './date';
-import {formatUnits} from './library';
+import {formatUnits, translateToNetworkishName} from './library';
 import {abbreviateTokenAmount} from './tokens';
 import {
   Action,
@@ -44,10 +56,8 @@ import {
   SupportedProposals,
   SupportedVotingSettings,
 } from './types';
-import {
-  GaslessPluginVotingSettings,
-  GaslessVotingProposal,
-} from '@vocdoni/gasless-voting';
+
+import {SupportedNetworks} from './constants';
 
 export type TokenVotingOptions = StrictlyExclude<
   VoterType['option'],
@@ -882,7 +892,7 @@ export function getProposalExecutionStatus(
 export function getNonEmptyActions(
   actions: Array<Action>,
   msVoteSettings?: MultisigVotingSettings
-) {
+): Action[] {
   return actions.flatMap(action => {
     if (action.name === 'modify_multisig_voting_settings') {
       // minimum approval or onlyListed changed: return action or don't include
@@ -938,4 +948,42 @@ export function recalculateProposalStatus<
     }
   }
   return proposal;
+}
+
+export function isVerifiedAragonUpdateProposal(
+  proposalActions: DaoAction[],
+  client: Client
+) {
+  return (
+    client.methods.isDaoUpdate(proposalActions) ||
+    client.methods.isPluginUpdate(proposalActions)
+  );
+}
+
+export async function encodeOsUpdateAction(
+  currentVersion: [number, number, number] | undefined,
+  selectedVersion: SupportedVersion,
+  network: SupportedNetworks | undefined,
+  daoAddress: string | undefined,
+  client: Client | undefined
+) {
+  const translatedNetwork = translateToNetworkishName(network ?? 'unsupported');
+  if (
+    translatedNetwork !== 'unsupported' &&
+    SupportedNetworksArray.includes(translatedNetwork) &&
+    currentVersion &&
+    daoAddress &&
+    client
+  ) {
+    try {
+      const encodedAction = await client.encoding.daoUpdateAction(daoAddress, {
+        previousVersion: currentVersion,
+        daoFactoryAddress:
+          LIVE_CONTRACTS[selectedVersion][translatedNetwork].daoFactoryAddress,
+      });
+      return encodedAction;
+    } catch (error) {
+      console.error('Error encoding OSxUpdate Action', error);
+    }
+  }
 }

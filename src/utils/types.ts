@@ -1,4 +1,6 @@
+import {InputValue} from '@aragon/ods-old';
 import {
+  ApplyInstallationParams,
   DaoMetadata,
   Erc20TokenDetails,
   MultisigProposal,
@@ -9,18 +11,17 @@ import {
   VoteValues,
   VotingSettings,
 } from '@aragon/sdk-client';
-import {VersionTag} from '@aragon/sdk-client-common';
+import {SupportedVersion, VersionTag} from '@aragon/sdk-client-common';
+import {
+  GaslessPluginVotingSettings,
+  GaslessVotingProposal,
+} from '@vocdoni/gasless-voting';
 import {BigNumber} from 'ethers';
 
-import {InputValue} from '@aragon/ods-old';
 import {TokenVotingWalletField} from 'components/addWallets/row';
 import {MultisigWalletField} from 'components/multisigWallets/row';
 import {TimeFilter, TransferTypes} from './constants';
 import {Web3Address} from './library';
-import {
-  GaslessVotingProposal,
-  GaslessPluginVotingSettings,
-} from '@vocdoni/gasless-voting';
 import {TokenType} from './validators';
 
 /*************************************************
@@ -253,7 +254,9 @@ export type ActionsTypes =
   | 'modify_token_voting_settings'
   | 'modify_metadata'
   | 'modify_multisig_voting_settings'
-  | 'update_minimum_approval';
+  | 'update_minimum_approval'
+  | 'os_update'
+  | 'plugin_update';
 
 export type ActionWithdraw = {
   amount: number;
@@ -323,6 +326,18 @@ export type ActionMintToken = {
   };
 };
 
+export type ActionOSUpdate = {
+  name: 'os_update';
+  inputs: {
+    version: SupportedVersion;
+  };
+};
+
+export type ActionPluginUpdate = {
+  name: 'plugin_update';
+  inputs: ApplyInstallationParams;
+};
+
 export type ActionUpdateMultisigPluginSettings = {
   name: 'modify_multisig_voting_settings';
   inputs: MultisigVotingSettings;
@@ -384,7 +399,9 @@ export type Action =
   | ActionUpdateMinimumApproval
   | ActionUpdateMultisigPluginSettings
   | ActionSCC
-  | ActionWC;
+  | ActionWC
+  | ActionOSUpdate
+  | ActionPluginUpdate;
 
 export type ParamType = {
   type: string;
@@ -540,6 +557,15 @@ export interface Link {
   url: string;
 }
 
+export interface OsSelectedVersion {
+  version: string;
+}
+
+export interface PluginSelectedVersion {
+  version: VersionTag;
+  isPrepared: boolean;
+}
+
 export interface ProposalFormData {
   actions: Action[];
   startDate: string;
@@ -562,21 +588,17 @@ export interface ProposalFormData {
   startTimeWarning: boolean;
   areSettingsLoading: boolean;
   links: Link[];
-  osUpdate?: {
+  updateFramework?: {
     os: boolean;
     plugin: boolean;
   };
-  osxSelectedVersion?: {
-    version: VersionTag;
-    isLatest: boolean;
-    isPrepared: boolean;
-  };
-  pluginSelectedVersion?: {
-    address: string;
-    version: VersionTag;
-    isLatest: boolean;
-    isPrepared: boolean;
-  };
+  osSelectedVersion?: OsSelectedVersion;
+  pluginSelectedVersion?: PluginSelectedVersion;
+}
+
+export enum ProposalTypes {
+  OSUpdates = 'os-update',
+  Default = 'default',
 }
 
 export type ProposalSettingsFormData = ProposalFormData & {

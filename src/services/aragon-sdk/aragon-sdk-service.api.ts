@@ -50,3 +50,19 @@ export interface IFetchMemberParams {
   address: string;
   blockNumber?: number;
 }
+
+export interface IFetchPluginVersionsParams {
+  pluginType?: PluginTypes;
+  daoAddress: string;
+}
+
+export interface IFetchPreparedPluginsParams {
+  pluginAddress: string;
+  pluginType: PluginTypes;
+  daoAddressOrEns: string;
+}
+
+export interface IFetchIsMemberParams {
+  pluginAddress: string;
+  address: string;
+}

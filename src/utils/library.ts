@@ -1,5 +1,6 @@
 import {
   Client,
+  DaoUpdateDecodedParams,
   Erc20TokenDetails,
   MintTokenParams,
   MultisigClient,
@@ -11,7 +12,10 @@ import {
 } from '@aragon/sdk-client';
 import {
   DaoAction,
+  LIVE_CONTRACTS,
   SupportedNetwork as SdkSupportedNetworks,
+  SupportedNetworksArray,
+  SupportedVersion,
   bytesToHex,
   resolveIpfsCid,
 } from '@aragon/sdk-client-common';
@@ -24,6 +28,8 @@ import {
 } from 'ethers/lib/utils';
 import {TFunction} from 'i18next';
 
+import {MultisigWalletField} from 'components/multisigWallets/row';
+import {PluginTypes} from 'hooks/usePluginClient';
 import {getEtherscanVerifiedContract} from 'services/etherscanAPI';
 import {Token} from 'services/token/domain';
 import {IFetchTokenParams} from 'services/token/token-service.api';
@@ -43,6 +49,7 @@ import {
   ActionExternalContract,
   ActionMintToken,
   ActionRemoveAddress,
+  ActionSCC,
   ActionUpdateMetadata,
   ActionUpdateMultisigPluginSettings,
   ActionUpdatePluginSettings,
@@ -54,7 +61,6 @@ import {i18n} from '../../i18n.config';
 import {addABI, decodeMethod} from './abiDecoder';
 import {attachEtherNotice} from './contract';
 import {getTokenInfo} from './tokens';
-import {MultisigWalletField} from 'components/multisigWallets/row';
 
 export function formatUnits(amount: BigNumberish, decimals: number) {
   if (amount.toString().includes('.') || !decimals) {
@@ -477,6 +483,60 @@ export async function decodeToExternalAction(
     }
   } catch (error) {
     console.error('Failed to decode external contract action:', error);
+  }
+}
+
+/**
+ * Decodes the OS update action and prepares data for an external contract action.
+ * @param encodedAction The encoded action to decode.
+ * @param client The client instance used for decoding.
+ * @param t The translation function.
+ * @returns ActionSCC object representing the decoded action, or undefined if decoding fails.
+ */
+export function decodeOsUpdateAction(
+  encodedAction: DaoAction | undefined,
+  client: Client | undefined,
+  t: TFunction
+) {
+  if (!client) {
+    console.error('SDK client is not initialized correctly');
+    return;
+  }
+
+  if (!encodedAction) return;
+
+  try {
+    const decoded: DaoUpdateDecodedParams = client.decoding.daoUpdateAction(
+      encodedAction.data
+    );
+
+    const inputs = Object.entries(decoded).map(([key, value]) => {
+      let displayedValue = value;
+      let displayedType = typeof value as string;
+
+      if (typeof value === 'object' && Object.keys(value).length === 0)
+        displayedValue = ' ';
+
+      if (typeof value === 'string') displayedType = 'address';
+      else if (value instanceof Array) displayedType = 'bytes';
+
+      return {name: key, type: displayedType, value: displayedValue};
+    });
+
+    return {
+      name: 'external_contract_action',
+      functionName:
+        client.decoding.findInterface(encodedAction.data)?.functionName ??
+        'upgradeToAndCall',
+      contractName: t('labels.aragonOSx'),
+      contractAddress: encodedAction.to,
+      inputs,
+    } as ActionSCC;
+  } catch (error) {
+    console.error(
+      'decodeOsUpdateAction: failed to decode os_update action',
+      error
+    );
   }
 }
 
@@ -1038,3 +1098,56 @@ export const walletInWalletList = (
         w.address.toLowerCase() === wallet.address?.toLowerCase()) ||
       (w.ensName && w.ensName.toLowerCase() === wallet.ensName?.toLowerCase())
   );
+
+/**
+ * Compares two version strings and returns a number indicating their order.
+ * @param version1 - The first version string to compare.
+ * @param version2 - The second version string to compare.
+ * @returns A number indicating the order of the version strings:
+ *          - 1 if version1 is greater than version2
+ *          - -1 if version1 is less than version2
+ *          - 0 if version1 is equal to version2
+ */
+export function compareVersions(version1: string, version2: string): boolean {
+  if (!version1 || !version2) return false;
+
+  const v1 = version1.split('.').map(Number);
+  const v2 = version2.split('.').map(Number);
+
+  for (let i = 0; i < v1.length; i++) {
+    if (v1[i] > v2[i]) {
+      return true;
+    } else if (v1[i] < v2[i]) {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Retrieves the repository address for a specific plugin type on a supported network and protocol version.
+ * @param network - The supported network
+ * @param pluginType - The type of plugin
+ * @param protocolVersion - The protocol version as an array of three numbers.
+ * @returns The repository address based on the provided parameters.
+ */
+export function getPluginRepoAddress(
+  network: SupportedNetworks,
+  pluginType: PluginTypes,
+  protocolVersion: [number, number, number]
+) {
+  const translatedNetwork = translateToNetworkishName(network);
+  if (
+    translatedNetwork !== 'unsupported' &&
+    SupportedNetworksArray.includes(translatedNetwork)
+  ) {
+    return pluginType === 'multisig.plugin.dao.eth'
+      ? LIVE_CONTRACTS[protocolVersion?.join('.') as SupportedVersion]?.[
+          translatedNetwork
+        ].multisigRepoAddress
+      : LIVE_CONTRACTS[protocolVersion?.join('.') as SupportedVersion]?.[
+          translatedNetwork
+        ].tokenVotingRepoAddress;
+  }
+}

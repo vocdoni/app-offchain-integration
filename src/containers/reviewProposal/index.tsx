@@ -5,27 +5,31 @@ import {EditorContent, useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {Locale, format, formatDistanceToNow} from 'date-fns';
 import * as Locales from 'date-fns/locale';
-import React, {useEffect, useMemo} from 'react';
-import {useFormContext} from 'react-hook-form';
-import {useTranslation} from 'react-i18next';
 import {TFunction} from 'i18next';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {useFormContext, useWatch} from 'react-hook-form';
+import {useTranslation} from 'react-i18next';
 import styled from 'styled-components';
+import {Markdown} from 'tiptap-markdown';
 
 import {ExecutionWidget} from 'components/executionWidget';
 import {useFormStep} from 'components/fullScreenStepper';
 import ResourceList from 'components/resourceList';
 import {Loading} from 'components/temporary';
 import {VotingTerminal} from 'containers/votingTerminal';
+import {useClient} from 'hooks/useClient';
 import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 import {MultisigDaoMember, useDaoMembers} from 'hooks/useDaoMembers';
 import {PluginTypes} from 'hooks/usePluginClient';
+import {useTokenSupply} from 'hooks/useTokenSupply';
+import {useParams} from 'react-router-dom';
+import {useProtocolVersion} from 'services/aragon-sdk/queries/use-protocol-version';
 import {
   isGaslessVotingSettings,
   isMultisigVotingSettings,
   isTokenVotingSettings,
   useVotingSettings,
 } from 'services/aragon-sdk/queries/use-voting-settings';
-import {useTokenSupply} from 'hooks/useTokenSupply';
 import {
   KNOWN_FORMATS,
   getCanonicalDate,
@@ -33,8 +37,18 @@ import {
   getCanonicalUtcOffset,
   getFormattedUtcOffset,
 } from 'utils/date';
-import {getErc20VotingParticipation, getNonEmptyActions} from 'utils/proposals';
-import {ProposalResource, SupportedVotingSettings} from 'utils/types';
+import {decodeOsUpdateAction} from 'utils/library';
+import {
+  encodeOsUpdateAction,
+  getErc20VotingParticipation,
+  getNonEmptyActions,
+} from 'utils/proposals';
+import {
+  Action,
+  ProposalResource,
+  ProposalTypes,
+  SupportedVotingSettings,
+} from 'utils/types';
 
 type ReviewProposalProps = {
   defineProposalStepNumber: number;
@@ -45,12 +59,22 @@ const ReviewProposal: React.FC<ReviewProposalProps> = ({
   defineProposalStepNumber,
   addActionsStepNumber,
 }) => {
+  const {type} = useParams();
+  const {client, network} = useClient();
   const {t, i18n} = useTranslation();
   const {setStep} = useFormStep();
 
+  const [displayedActions, setDisplayedActions] = useState<Action[]>([]);
+
+  const osSelectedVersion = useWatch({name: 'osSelectedVersion'});
+  const updateFramework = useWatch({name: 'updateFramework'});
+
   const {data: daoDetails, isLoading: detailsLoading} = useDaoDetailsQuery();
+  const daoAddress = daoDetails?.address as string;
   const pluginAddress = daoDetails?.plugins?.[0]?.instanceAddress as string;
   const pluginType = daoDetails?.plugins?.[0]?.id as PluginTypes;
+
+  const {data: protocolVersion} = useProtocolVersion(daoAddress);
 
   const {data: votingSettings, isLoading: votingSettingsLoading} =
     useVotingSettings({pluginAddress, pluginType});
@@ -71,6 +95,7 @@ const ReviewProposal: React.FC<ReviewProposalProps> = ({
     content: values.proposal,
     extensions: [
       StarterKit,
+      Markdown,
       TipTapLink.configure({
         openOnClick: false,
       }),
@@ -194,8 +219,74 @@ const ReviewProposal: React.FC<ReviewProposalProps> = ({
   }, [votingSettings, daoToken, members, t, totalSupply?.raw]);
 
   /*************************************************
+   *             Callbacks & Handlers              *
+   *************************************************/
+  const getDecodedUpdateActions = useCallback(async () => {
+    if (!client) return;
+
+    const updateActions = [];
+
+    for (const action of values.actions as Action[]) {
+      if (
+        action.name === 'os_update' &&
+        updateFramework?.os &&
+        osSelectedVersion?.version
+      ) {
+        // encode and decode the osUpdateAction so that it can be
+        // decoded and passed to the generic SCC external action card
+        const encodedOsAction = await encodeOsUpdateAction(
+          protocolVersion,
+          osSelectedVersion.version,
+          network,
+          daoAddress,
+          client
+        );
+
+        // decode using the SDK to get around the proxy issue
+        // TODO: remove this when the implementation contract and ABI can be
+        // fetched properly by the generic action decoder
+        const decoded = decodeOsUpdateAction(encodedOsAction, client, t);
+
+        if (decoded) {
+          updateActions.push(decoded);
+        }
+      }
+    }
+
+    setDisplayedActions(updateActions);
+  }, [
+    client,
+    daoAddress,
+    network,
+    osSelectedVersion?.version,
+    protocolVersion,
+    t,
+    updateFramework?.os,
+    values.actions,
+  ]);
+
+  /*************************************************
    *                    Effects                    *
    *************************************************/
+  useEffect(() => {
+    if (type === ProposalTypes.Default) {
+      setDisplayedActions(
+        getNonEmptyActions(
+          values.actions,
+          isMultisig ? votingSettings : undefined
+        )
+      );
+    } else {
+      getDecodedUpdateActions();
+    }
+  }, [
+    getDecodedUpdateActions,
+    isMultisig,
+    type,
+    values.actions,
+    votingSettings,
+  ]);
+
   useEffect(() => {
     if (values.proposal === '<p></p>') {
       setValue('proposal', '');
@@ -226,11 +317,7 @@ const ReviewProposal: React.FC<ReviewProposalProps> = ({
 
       <ContentContainer>
         <ProposalContainer>
-          {values.proposal && (
-            <>
-              <StyledEditorContent editor={editor} />
-            </>
-          )}
+          {values.proposal && <StyledEditorContent editor={editor} />}
 
           {/* TODO: Add isUpdateProposal check once it's developed
           {featureFlags.getValue('VITE_FEATURE_FLAG_OSX_UPDATES') ===
@@ -269,10 +356,7 @@ const ReviewProposal: React.FC<ReviewProposalProps> = ({
           )}
 
           <ExecutionWidget
-            actions={getNonEmptyActions(
-              values.actions,
-              isMultisig ? votingSettings : undefined
-            )}
+            actions={displayedActions}
             onAddAction={
               addActionsStepNumber
                 ? () => setStep(addActionsStepNumber)
