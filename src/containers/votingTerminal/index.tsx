@@ -62,6 +62,7 @@ export type VotingTerminalProps = {
   blockNumber?: Number;
   results?: ProposalVoteResults;
   approvals?: string[];
+  voted?: boolean;
   votingInProcess?: boolean;
   voteOptions?: string;
   onApprovalClicked?: (tryExecution: boolean) => void;
@@ -98,6 +99,7 @@ export const VotingTerminal: React.FC<VotingTerminalProps> = ({
   status,
   statusLabel,
   strategy,
+  voted = false,
   voteOptions = '',
   onApprovalClicked,
   onVoteClicked,
@@ -364,7 +366,7 @@ export const VotingTerminal: React.FC<VotingTerminalProps> = ({
               {isMultisigProposal ? (
                 <div className="flex w-full flex-col gap-y-4">
                   <div className="flex w-full flex-col gap-x-4 gap-y-3 xl:flex-row">
-                    {executableWithNextApproval && (
+                    {executableWithNextApproval && !voted && (
                       <ButtonText
                         label={t('transactionModal.multisig.ctaApproveExecute')}
                         size="large"
@@ -379,7 +381,7 @@ export const VotingTerminal: React.FC<VotingTerminalProps> = ({
                       onClick={() => onApprovalClicked?.(false)}
                       className="w-full md:w-max"
                       disabled={voteNowDisabled}
-                      {...(executableWithNextApproval
+                      {...(executableWithNextApproval && !voted
                         ? {mode: 'secondary', bgWhite: true}
                         : {mode: 'primary'})}
                     />
