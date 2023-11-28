@@ -20,7 +20,6 @@ import {
   VotingSettings,
 } from '@aragon/sdk-client';
 import {
-  DaoAction,
   LIVE_CONTRACTS,
   ProposalMetadata,
   ProposalStatus,
@@ -964,22 +963,6 @@ export function recalculateProposalStatus<
 }
 
 /**
- * Checks if a proposal contains verified updates for Aragon DAO or plugins.
- * @param proposalActions - An array of `DaoAction` objects representing proposal actions.
- * @param client - An instance of the `Client` class providing methods for DAO and plugin updates.
- * @returns A boolean indicating whether the proposal contains verified updates for Aragon DAO or plugins.
- */
-export function isVerifiedAragonUpdateProposal(
-  proposalActions: DaoAction[],
-  client: Client
-) {
-  return (
-    client.methods.isDaoUpdate(proposalActions) ||
-    client.methods.isPluginUpdate(proposalActions)
-  );
-}
-
-/**
  * Encodes an OS update action for a DAO on a specified network.
  * @param currentVersion - The current version of the OS in the format [major, minor, patch].
  * @param selectedVersion - The selected version of the OS to update to.
@@ -1072,10 +1055,11 @@ export async function getDecodedUpdateActions(
     ) as ActionPluginUpdate | undefined;
 
     if (pluginAction && updateFramework?.plugin) {
-      const encodedPluginActions = client.encoding.applyUpdateAction(
-        daoAddress,
-        pluginAction.inputs
-      );
+      const encodedPluginActions =
+        client.encoding.applyUpdateAndPermissionsActionBlock(
+          daoAddress,
+          pluginAction.inputs
+        );
 
       const decodedPluginActions = [];
       for (const [
