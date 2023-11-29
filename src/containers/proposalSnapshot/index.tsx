@@ -28,6 +28,7 @@ import {htmlIn} from 'utils/htmlIn';
 import {Governance, NewProposal} from 'utils/paths';
 import {ProposalTypes} from 'utils/types';
 import {useIsUpdateProposal} from 'hooks/useIsUpdateProposal';
+import {useTotalProposalCount} from 'services/aragon-subgraph/queries/use-total-proposal-count';
 
 type Props = {
   daoAddressOrEns: string;
@@ -68,14 +69,20 @@ const ProposalSnapshot: React.FC<Props> = ({
   const {address} = useWallet();
   const {network} = useNetwork();
 
-  const {
-    data,
-    isFetched: proposalsFetched,
-    isLoading: proposalsAreLoading,
-  } = useProposals({
+  const {data, isLoading: proposalsAreLoading} = useProposals({
     daoAddressOrEns,
     pluginType,
     pluginAddress,
+  });
+
+  const {
+    data: proposalCount,
+    error: proposalCountError,
+    isLoading: proposalCountIsLoading,
+    isFetched: proposalCountIsFetched,
+  } = useTotalProposalCount({
+    pluginAddress,
+    pluginType,
   });
 
   const {data: members} = useDaoMembers(pluginAddress, pluginType, {
@@ -97,11 +104,11 @@ const ProposalSnapshot: React.FC<Props> = ({
       );
     });
 
-  if (proposalsAreLoading) {
+  if (proposalsAreLoading || proposalCountIsLoading) {
     return <Loading />;
   }
 
-  if ((proposalsFetched && mappedProposals?.length === 0) || !mappedProposals) {
+  if (proposalCountIsFetched && (proposalCount === 0 || proposalCountError)) {
     return (
       <StateEmpty
         type="Human"
@@ -129,11 +136,15 @@ const ProposalSnapshot: React.FC<Props> = ({
     );
   }
 
+  // gasless plugin does not have a proposal count yet; use the length
+  // of the page
+  const displayedCount = proposalCount ?? data?.pages.flat().length;
+
   return (
     <Container>
       <ListItemHeader
         icon={<IconGovernance />}
-        value={mappedProposals.length.toString()}
+        value={displayedCount?.toString() ?? '0'}
         label={t('dashboard.proposalsTitle')}
         buttonText={t('newProposal.title')}
         orientation="horizontal"
@@ -148,7 +159,7 @@ const ProposalSnapshot: React.FC<Props> = ({
         }
       />
 
-      {mappedProposals.map(({id, ...p}) => (
+      {mappedProposals?.map(({id, ...p}) => (
         <ProposalItem {...p} proposalId={id} key={id} type="list" />
       ))}
 
