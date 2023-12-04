@@ -62,9 +62,8 @@ export default class CreateDAO {
     cy.confirmMetamaskTransaction();
     cy.switchToCypressWindow();
 
-    // Waits till the tx completes by checking the state of the primary button the tx modal
-    cy.get('button[mode="primary"]').contains('Launch DAO Dashboard');
-
+    // Waits till the tx completes by checking the state of the primary button the tx modal and continues to DAO Dashboard
+    cy.get('button[mode="primary"]').contains('Launch DAO Dashboard').click();
     cy.wait(5000);
   }
 }
