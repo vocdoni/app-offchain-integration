@@ -41,7 +41,7 @@ export const WithdrawCard: React.FC<{
   const explorerURL = CHAIN_METADATA[network].explorer;
   const daoExplorerURL = `${explorerURL}address/${daoAddress}`;
 
-  const recipient = (action.to.ensName ?? action.to.address) as string;
+  const recipient = (action.to.ensName || action.to.address) as string;
   const recipientURL = `${explorerURL}address/${recipient}`;
 
   return (
