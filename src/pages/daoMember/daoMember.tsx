@@ -23,6 +23,7 @@ import {useEnsAvatar, useEnsName, useEnsResolver} from 'wagmi';
 import {useMember} from 'services/aragon-sdk/queries/use-member';
 import {NumberFormat, formatterUtils} from '@aragon/ods';
 import {useCreatorProposals} from 'services/aragon-sdk/queries/use-creator-proposals';
+import {UserProposalList} from 'components/userProposalList';
 
 export const DaoMember: React.FC = () => {
   const {t} = useTranslation();
@@ -76,13 +77,13 @@ export const DaoMember: React.FC = () => {
   const {data: daoMember, isLoading: isMemberDataLoading} = useMember(
     {
       address: memberAddress,
-      pluginAddress: pluginAddress || '',
+      pluginAddress: pluginAddress as string,
     },
-    {enabled: !!memberAddress && !!daoDetails}
+    {enabled: memberAddress != null && pluginAddress != null}
   );
 
   const {
-    data: memberCreatedProposals,
+    data: memberCreatedProposals = [],
     isLoading: isMemberCreatedProposalsLoading,
   } = useCreatorProposals(
     {
@@ -104,12 +105,10 @@ export const DaoMember: React.FC = () => {
     featureFlags.getValue('VITE_FEATURE_FLAG_DELEGATION') === 'true';
 
   const stats = useMemo<HeaderMemberStat[]>(() => {
-    const totalProposalsCreated = memberCreatedProposals?.length || 0;
-
     if (!isTokenBasedDao) {
       return [
         {
-          value: totalProposalsCreated,
+          value: memberCreatedProposals.length,
           description: t('members.profile.labelProposalCreated'),
         },
       ];
@@ -223,6 +222,12 @@ export const DaoMember: React.FC = () => {
           )
         }
       />
+      <div className="flex flex-col gap-16 px-4 md:flex-row md:px-0">
+        <div className="flex grow flex-col gap-10">
+          <UserProposalList proposals={memberCreatedProposals} />
+        </div>
+        <div className="flex w-full grow md:max-w-[400px]" />
+      </div>
     </HeaderWrapper>
   );
 };
