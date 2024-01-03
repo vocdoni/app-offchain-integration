@@ -20,10 +20,12 @@ import {useDaoToken} from 'hooks/useDaoToken';
 import {useWallet} from 'hooks/useWallet';
 import {Address, formatUnits} from 'viem';
 import {useEnsAvatar, useEnsName, useEnsResolver} from 'wagmi';
-import {useMember} from 'services/aragon-sdk/queries/use-member';
+import {useMember, useMemberDAOs} from 'services/aragon-sdk/queries/use-member';
 import {NumberFormat, formatterUtils} from '@aragon/ods';
+import {TokenVotingMember} from '@aragon/sdk-client';
 import {useCreatorProposals} from 'services/aragon-sdk/queries/use-creator-proposals';
 import {UserProposalList} from 'components/userProposalList';
+import {MembershipDAOList} from 'components/membershipDAOList/membershipDAOList';
 
 export const DaoMember: React.FC = () => {
   const {t} = useTranslation();
@@ -94,7 +96,16 @@ export const DaoMember: React.FC = () => {
     {enabled: !!memberAddress && !!daoDetails && !!pluginAddress}
   );
 
-  const isDelegating = !!daoMember?.delegators?.find(
+  const {data: daoMemberList} = useMemberDAOs(
+    {
+      address: memberAddress?.toLowerCase(),
+      pluginType: pluginType,
+      daoAddress: daoDetails?.address,
+    },
+    {enabled: !!memberAddress && !!daoDetails}
+  );
+
+  const isDelegating = !!(daoMember as TokenVotingMember)?.delegators?.find(
     item => item.address.toLowerCase() === address?.toLowerCase()
   );
 
@@ -226,7 +237,12 @@ export const DaoMember: React.FC = () => {
         <div className="flex grow flex-col gap-10">
           <UserProposalList proposals={memberCreatedProposals} />
         </div>
-        <div className="flex w-full grow md:max-w-[400px]" />
+        <div className="flex w-full grow flex-col md:max-w-[400px]">
+          <MembershipDAOList
+            daos={daoMemberList}
+            memberAddress={memberAddress}
+          />
+        </div>
       </div>
     </HeaderWrapper>
   );
