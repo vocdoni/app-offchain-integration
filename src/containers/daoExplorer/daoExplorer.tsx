@@ -1,30 +1,43 @@
-import {DaoSortBy} from '@aragon/sdk-client';
 import {
   ButtonGroup,
   ButtonText,
   IconChevronDown,
+  IconReload,
   Option,
   Spinner,
 } from '@aragon/ods-old';
-import {UseInfiniteQueryResult} from '@tanstack/react-query';
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useMemo, useReducer, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {generatePath, useNavigate} from 'react-router-dom';
 import styled from 'styled-components';
+import {Address} from 'viem';
 
 import {DaoCard} from 'components/daoCard';
-import {useFollowedDaosInfiniteQuery} from 'hooks/useFollowedDaos';
+import DaoFilterModal, {DEFAULT_FILTERS} from 'containers/daoFilterModal';
 import {
-  AugmentedDaoListItem,
-  ExploreFilter,
-  EXPLORE_FILTER,
-  useDaosInfiniteQuery,
-} from 'hooks/useDaos';
-import {PluginTypes} from 'hooks/usePluginClient';
+  FilterActionTypes,
+  daoFiltersReducer,
+} from 'containers/daoFilterModal/reducer';
+import {NavigationDao} from 'context/apolloClient';
+import {useFollowedDaosInfiniteQuery} from 'hooks/useFollowedDaos';
 import {useWallet} from 'hooks/useWallet';
-import {getSupportedNetworkByChainId, SupportedChainID} from 'utils/constants';
-import {toDisplayEns} from 'utils/library';
-import {Dashboard} from 'utils/paths';
+import {IDao} from 'services/aragon-backend/domain/dao';
+import {OrderDirection} from 'services/aragon-backend/domain/ordered-request';
+import {useDaos} from 'services/aragon-backend/queries/use-daos';
+import {getSupportedNetworkByChainId} from 'utils/constants';
+import {StateEmpty} from 'components/stateEmpty';
+import {EXPLORE_FILTER, ExploreFilter} from 'hooks/useDaos';
+
+const followedDaoToDao = (dao: NavigationDao): IDao => ({
+  creatorAddress: '' as Address,
+  daoAddress: dao.address as Address,
+  ens: dao.ensDomain,
+  network: getSupportedNetworkByChainId(dao.chain)!,
+  name: dao.metadata.name,
+  description: dao.metadata.description ?? '',
+  logo: dao.metadata.avatar ?? '',
+  createdAt: '',
+  pluginName: dao.plugins[0].id,
+});
 
 function isExploreFilter(filterValue: string): filterValue is ExploreFilter {
   return EXPLORE_FILTER.some(ef => ef === filterValue);
@@ -32,64 +45,67 @@ function isExploreFilter(filterValue: string): filterValue is ExploreFilter {
 
 export const DaoExplorer = () => {
   const {t} = useTranslation();
-  const navigate = useNavigate();
   const {isConnected} = useWallet();
 
   const [filterValue, setFilterValue] = useState<ExploreFilter>('favorite');
 
-  // conditional api queries
-  const fetchFollowed = filterValue === 'favorite';
-  const followedApi = useFollowedDaosInfiniteQuery(fetchFollowed);
-  const daosApi = useDaosInfiniteQuery(fetchFollowed === false, {
-    sortBy: toDaoSortBy(filterValue),
-  });
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filters, dispatch] = useReducer(daoFiltersReducer, DEFAULT_FILTERS);
 
-  // resulting api response
-  const exploreDaosApi = useMemo(
-    () =>
-      (fetchFollowed ? followedApi : daosApi) as UseInfiniteQueryResult<
-        AugmentedDaoListItem,
-        unknown
-      >,
-    [daosApi, followedApi, fetchFollowed]
+  const useFollowList = isConnected && filterValue === 'favorite';
+
+  const followedDaosResult = useFollowedDaosInfiniteQuery(
+    {
+      governanceIds: filters.governanceIds,
+      networks: filters.networks,
+    },
+    {enabled: useFollowList}
   );
 
-  // whether the connected wallet has followed DAOS
-  const loggedInAndHasFollowedDaos =
-    isConnected && (followedApi.data?.pages || []).length > 0;
+  const newDaosResult = useDaos(
+    {
+      direction: OrderDirection.DESC,
+      orderBy: 'CREATED_AT' as const,
+    },
+    {enabled: !useFollowList}
+  );
 
-  /*************************************************
-   *             Callbacks and Handlers            *
-   *************************************************/
+  const newDaoList = newDaosResult.data?.pages.flatMap(page => page.data);
+  const followedDaoList = useMemo(
+    () =>
+      followedDaosResult.data?.pages.flatMap(page =>
+        page.data.map(followedDaoToDao)
+      ) ?? [],
+    [followedDaosResult.data]
+  );
+
+  const filteredDaoList = useFollowList ? followedDaoList : newDaoList;
+  const {isLoading, hasNextPage, isFetchingNextPage, fetchNextPage} =
+    useFollowList ? followedDaosResult : newDaosResult;
+
+  const totalDaosShown = filteredDaoList?.length ?? 0;
+  const totalDaos =
+    (useFollowList
+      ? followedDaosResult.data?.pages[0].total
+      : newDaosResult.data?.pages[0].total) ?? 0;
+
+  const noDaosFound = isLoading === false && totalDaos === 0;
+
+  const handleClearFilters = () => {
+    dispatch({type: FilterActionTypes.RESET, payload: DEFAULT_FILTERS});
+  };
+
   const handleFilterChange = (filterValue: string) => {
     if (isExploreFilter(filterValue)) {
       setFilterValue(filterValue);
     } else throw Error(`${filterValue} is not an acceptable filter value`);
   };
 
-  const handleDaoClicked = (dao: string, chain: SupportedChainID) => {
-    navigate(
-      generatePath(Dashboard, {
-        network: getSupportedNetworkByChainId(chain),
-        dao,
-      })
-    );
-  };
+  // whether the connected wallet has followed DAOS
+  const loggedInAndHasFollowedDaos = isConnected && followedDaoList.length > 0;
 
   /*************************************************
-   *                      Effects                  *
-   *************************************************/
-  useEffect(() => {
-    if (
-      followedApi.status === 'success' &&
-      loggedInAndHasFollowedDaos === false
-    ) {
-      setFilterValue('newest');
-    }
-  }, [followedApi.status, loggedInAndHasFollowedDaos]);
-
-  /*************************************************
-   *                     Render                    *
+   *                    Render                     *
    *************************************************/
   return (
     <Container>
@@ -97,87 +113,73 @@ export const DaoExplorer = () => {
         <HeaderWrapper>
           <Title>{t('explore.explorer.title')}</Title>
           {loggedInAndHasFollowedDaos && (
-            <ButtonGroupContainer>
-              <ButtonGroup
-                defaultValue={filterValue}
-                onChange={handleFilterChange}
-                bgWhite={false}
-              >
-                <Option label={t('explore.explorer.myDaos')} value="favorite" />
-
-                {/* <Option label={t('explore.explorer.popular')} value="popular" /> */}
-                <Option label={t('explore.explorer.newest')} value="newest" />
-              </ButtonGroup>
-            </ButtonGroupContainer>
+            <ButtonGroup
+              defaultValue={filterValue}
+              onChange={handleFilterChange}
+              bgWhite={false}
+            >
+              <Option label={t('explore.explorer.myDaos')} value="favorite" />
+              <Option label={t('explore.explorer.newest')} value="newest" />
+            </ButtonGroup>
           )}
         </HeaderWrapper>
-        <CardsWrapper>
-          {exploreDaosApi.isLoading ? (
-            <Spinner size="default" />
-          ) : (
-            exploreDaosApi.data?.pages?.map(dao => (
-              <DaoCard
-                key={dao.address}
-                name={dao.metadata.name}
-                ensName={toDisplayEns(dao.ensDomain)}
-                logo={dao.metadata.avatar}
-                description={dao.metadata.description}
-                chainId={dao.chain}
-                onClick={() =>
-                  handleDaoClicked(
-                    toDisplayEns(dao.ensDomain) || dao.address,
-                    dao.chain
-                  )
-                }
-                daoType={
-                  (dao?.plugins?.[0]?.id as PluginTypes) ===
-                  'token-voting.plugin.dao.eth'
-                    ? 'token-based'
-                    : 'wallet-based'
-                }
-              />
-            ))
-          )}
-        </CardsWrapper>
-      </MainContainer>
-      {exploreDaosApi.hasNextPage && (
-        <div>
-          <ButtonText
-            label={t('explore.explorer.showMore')}
-            iconRight={
-              exploreDaosApi.isFetching && exploreDaosApi.isFetchingNextPage ? (
-                <Spinner size="xs" />
-              ) : (
-                <IconChevronDown />
-              )
-            }
-            bgWhite
-            mode="ghost"
-            onClick={() => exploreDaosApi.fetchNextPage()}
+        {noDaosFound ? (
+          <StateEmpty
+            type="Object"
+            mode="card"
+            object="magnifying_glass"
+            title={t('explore.emptyStateSearch.title')}
+            description={t('explore.emptyStateSearch.description')}
+            contentWrapperClassName="lg:w-[560px]"
+            secondaryButton={{
+              label: t('explore.emptyStateSearch.ctaLabel'),
+              iconLeft: <IconReload />,
+              onClick: handleClearFilters,
+              className: 'w-full',
+            }}
           />
+        ) : (
+          <CardsWrapper>
+            {filteredDaoList?.map(dao => (
+              <DaoCard key={dao.daoAddress} dao={dao} />
+            ))}
+            {isLoading && <Spinner size="default" />}
+          </CardsWrapper>
+        )}
+      </MainContainer>
+      {totalDaos > 0 && totalDaosShown > 0 && (
+        <div className="flex items-center lg:gap-x-6">
+          {hasNextPage && (
+            <ButtonText
+              label={t('explore.explorer.showMore')}
+              className="self-start"
+              iconRight={
+                isFetchingNextPage ? <Spinner size="xs" /> : <IconChevronDown />
+              }
+              bgWhite={true}
+              mode="ghost"
+              onClick={() => fetchNextPage()}
+            />
+          )}
+          <span className="ml-auto font-semibold text-neutral-800 ft-text-base lg:ml-0">
+            {t('explore.pagination.label.amountOf DAOs', {
+              amount: totalDaosShown,
+              total: totalDaos,
+            })}
+          </span>
         </div>
       )}
+      <DaoFilterModal
+        isOpen={showAdvancedFilters}
+        filters={filters}
+        onFilterChange={dispatch}
+        onClose={() => {
+          setShowAdvancedFilters(false);
+        }}
+      />
     </Container>
   );
 };
-
-/**
- * Map explore filter to SDK DAO sort by
- * @param filter selected DAO category
- * @returns the equivalent of the SDK enum
- */
-function toDaoSortBy(filter: ExploreFilter) {
-  switch (filter) {
-    case 'newest':
-      return DaoSortBy.CREATED_AT;
-    default:
-      return DaoSortBy.CREATED_AT;
-  }
-}
-
-const ButtonGroupContainer = styled.div.attrs({
-  className: 'flex',
-})``;
 
 const MainContainer = styled.div.attrs({
   className: 'flex flex-col space-y-4 xl:space-y-6',
