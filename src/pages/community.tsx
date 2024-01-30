@@ -1,15 +1,15 @@
 import {
+  ButtonText,
+  Dropdown,
   IconAdd,
+  IconCheckmark,
+  IconFailure,
   IconLinkExternal,
+  IconSort,
+  IllustrationHuman,
+  ListItemAction,
   Pagination,
   SearchInput,
-  IllustrationHuman,
-  Dropdown,
-  ButtonText,
-  ListItemAction,
-  IconCheckmark,
-  IconSort,
-  IconFailure,
 } from '@aragon/ods-old';
 import React, {useCallback, useState} from 'react';
 import {useTranslation} from 'react-i18next';
@@ -24,7 +24,7 @@ import {useNetwork} from 'context/network';
 import {useDaoDetailsQuery} from 'hooks/useDaoDetails';
 import {useDaoMembers} from 'hooks/useDaoMembers';
 import {useDebouncedState} from 'hooks/useDebouncedState';
-import {PluginTypes} from 'hooks/usePluginClient';
+import {GaselessPluginName, PluginTypes} from 'hooks/usePluginClient';
 import {CHAIN_METADATA} from 'utils/constants';
 import PageEmptyState from 'containers/pageEmptyState';
 import {htmlIn} from 'utils/htmlIn';
@@ -90,6 +90,8 @@ export const Community: React.FC = () => {
 
   const walletBased =
     (daoDetails?.plugins[0].id as PluginTypes) === 'multisig.plugin.dao.eth';
+  const isGasless =
+    (daoDetails?.plugins[0].id as PluginTypes) === GaselessPluginName;
   const enableSearchSort = totalMemberCount <= 1000;
   const enableDelegation =
     featureFlags.getValue('VITE_FEATURE_FLAG_DELEGATION') === 'true';
@@ -221,6 +223,14 @@ export const Community: React.FC = () => {
               label: t('labels.seeAllHolders'),
               iconLeft: <IconLinkExternal />,
               onClick: navigateToTokenHoldersChart,
+            },
+          }
+        : isGasless && !isDAOTokenWrapped && !isTokenMintable
+        ? {
+            secondaryBtnProps: {
+              label: t('labels.seeAllHolders'),
+              iconLeft: <IconLinkExternal />,
+              onClick: handleSecondaryButtonClick,
             },
           }
         : {
