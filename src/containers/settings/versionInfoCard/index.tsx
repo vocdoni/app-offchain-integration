@@ -1,8 +1,8 @@
 import {IconLinkExternal, Link} from '@aragon/ods-old';
 import {
   LIVE_CONTRACTS,
-  SupportedVersion,
   SupportedNetworksArray,
+  SupportedVersion,
 } from '@aragon/sdk-client-common';
 import React from 'react';
 import {useTranslation} from 'react-i18next';
@@ -17,7 +17,7 @@ import {
   Term,
 } from '../settingsCard';
 import {useProtocolVersion} from 'services/aragon-sdk/queries/use-protocol-version';
-import {PluginTypes} from 'hooks/usePluginClient';
+import {GaselessPluginName, PluginTypes} from 'hooks/usePluginClient';
 
 export const VersionInfoCard: React.FC<{
   pluginAddress: string;
@@ -53,7 +53,7 @@ export const VersionInfoCard: React.FC<{
     case 'token-voting.plugin.dao.eth':
       pluginName = 'Token Voting';
       break;
-    case 'vocdoni-gasless-voting-poc.plugin.dao.eth':
+    case GaselessPluginName:
       pluginName = 'Vocdoni Gasless Voting';
       break;
     default:
