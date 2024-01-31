@@ -24,7 +24,6 @@ import {
   DelegateVotingFormField,
   IDelegateVotingFormValues,
 } from './delegateVotingUtils';
-import {PluginTypes} from '../../hooks/usePluginClient';
 
 export interface IDelegateVotingFormProps {
   initialMode?: 'delegate' | 'reclaim';

@@ -14,7 +14,6 @@ import {abbreviateTokenAmount} from 'utils/tokens';
 import {useWallet} from 'hooks/useWallet';
 import {TokenVotingProposal} from '@aragon/sdk-client';
 import {useMember} from 'services/aragon-sdk/queries/use-member';
-import {PluginTypes} from '../../hooks/usePluginClient';
 
 export interface IDelegationGatingMenuState {
   proposal?: TokenVotingProposal;
