@@ -14,6 +14,7 @@ import {abbreviateTokenAmount} from 'utils/tokens';
 import {useWallet} from 'hooks/useWallet';
 import {TokenVotingProposal} from '@aragon/sdk-client';
 import {useMember} from 'services/aragon-sdk/queries/use-member';
+import {PluginTypes} from '../../hooks/usePluginClient';
 
 export interface IDelegationGatingMenuState {
   proposal?: TokenVotingProposal;
@@ -72,7 +73,8 @@ export const DelegationGatingMenu: React.FC = () => {
 
   const {data: delegateData} = useDelegatee(
     {tokenAddress: daoToken?.address as string},
-    {enabled: daoToken != null}
+    {enabled: daoToken != null},
+    daoDetails?.plugins?.[0]?.id as PluginTypes
   );
 
   // The useDelegatee hook returns null when current delegate is connected address
