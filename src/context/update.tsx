@@ -346,7 +346,7 @@ const UpdateProvider: React.FC<{children: ReactElement}> = ({children}) => {
     if (!state.daoUpdateData) return;
     if (
       state.showModal.type === 'plugin' &&
-      pluginType !== 'vocdoni-gasless-voting-poc.plugin.dao.eth'
+      pluginType !== 'vocdoni-gasless-voting-poc-vanilla-erc20.plugin.dao.eth'
     )
       return (
         pluginClient as MultisigClient | TokenVotingClient
