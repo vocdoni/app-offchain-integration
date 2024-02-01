@@ -67,6 +67,7 @@ const Duration: React.FC<Props> = ({
     [daoMinDurationMills]
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const resetToMinDuration = useCallback(() => {
     setValue('durationDays', minimums.days);
     setValue('durationHours', minimums.hours);
@@ -97,8 +98,8 @@ const Duration: React.FC<Props> = ({
         setValue('durationHours', '0');
         setValue('durationMinutes', '0');
       } else if (value <= minimums.days && durationLTMinimum(formDuration)) {
-        resetToMinDuration();
-        e.target.value = minimums.days.toString();
+        // resetToMinDuration();
+        // e.target.value = minimums.days.toString();
       }
       trigger(['durationMinutes', 'durationHours', 'durationDays']);
       onChange(e);
@@ -108,7 +109,6 @@ const Duration: React.FC<Props> = ({
       getValues,
       maxDurationDays,
       minimums.days,
-      resetToMinDuration,
       setValue,
       trigger,
     ]
@@ -143,20 +143,13 @@ const Duration: React.FC<Props> = ({
           );
         }
       } else if (value <= minimums.hours && durationLTMinimum(formDuration)) {
-        resetToMinDuration();
-        e.target.value = minimums.hours.toString();
+        // resetToMinDuration();
+        // e.target.value = minimums.hours.toString();
       }
       trigger(['durationMinutes', 'durationHours', 'durationDays']);
       onChange(e);
     },
-    [
-      durationLTMinimum,
-      getValues,
-      minimums.hours,
-      resetToMinDuration,
-      setValue,
-      trigger,
-    ]
+    [durationLTMinimum, getValues, minimums.hours, setValue, trigger]
   );
 
   const handleMinutesChanged = useCallback(
@@ -191,20 +184,13 @@ const Duration: React.FC<Props> = ({
         setValue('durationHours', hours.toString());
         e.target.value = mins.toString();
       } else if (value <= minimums.minutes && durationLTMinimum(formDuration)) {
-        resetToMinDuration();
-        e.target.value = minimums.minutes.toString();
+        // resetToMinDuration();
+        // e.target.value = minimums.minutes.toString();
       }
       trigger(['durationMinutes', 'durationHours', 'durationDays']);
       onChange(e);
     },
-    [
-      durationLTMinimum,
-      getValues,
-      minimums.minutes,
-      resetToMinDuration,
-      setValue,
-      trigger,
-    ]
+    [durationLTMinimum, getValues, minimums.minutes, setValue, trigger]
   );
 
   /*************************************************
